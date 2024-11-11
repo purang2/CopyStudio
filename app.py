@@ -8,7 +8,7 @@ import pandas as pd
 
 # Page config
 st.set_page_config(
-    page_title="광고 카피 생성기",
+    page_title="CopyStudio",
     page_icon="✨",
     layout="wide"
 )
