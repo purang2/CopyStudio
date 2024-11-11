@@ -1,11 +1,11 @@
 # Core
-streamlit==1.31.0
+streamli
 pandas==2.1.4
 
 # LLM APIs
-openai==1.10.0
-google-generativeai==0.3.2
-anthropic==0.8.1
+openai
+google-generativeai
+anthropic
 
 # Data Visualization
 plotly==5.18.0
