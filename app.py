@@ -24,6 +24,159 @@ model_zoo = ['gpt-4o',
 # Gemini model configuration
 gemini_model = genai.GenerativeModel(model_zoo[1])
 
+
+# CSS 
+
+
+# Custom CSS for modern design
+st.markdown("""
+<style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+    /* 전체 폰트 및 색상 스타일 */
+    [data-testid="stAppViewContainer"] {
+        font-family: 'Pretendard', sans-serif;
+        background-color: #f8fafc;
+    }
+
+    /* 헤더 스타일링 */
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    /* 카드 스타일 */
+    .stCard {
+        border-radius: 15px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        padding: 1rem;
+        background-color: white;
+    }
+
+    /* 버튼 스타일링 */
+    .stButton > button {
+        background-color: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .stButton > button:hover {
+        background-color: #2563eb;
+        transform: translateY(-1px);
+    }
+
+    /* 사이드바 스타일링 */
+    [data-testid="stSidebar"] {
+        background-color: white;
+        border-right: 1px solid #e2e8f0;
+        padding: 2rem 1rem;
+    }
+    [data-testid="stSidebar"] .stMarkdown {
+        padding: 0.5rem 0;
+    }
+
+    /* 셀렉트박스 스타일링 */
+    .stSelectbox > div > div {
+        background-color: white;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        padding: 0.5rem;
+    }
+
+    /* 결과 카드 스타일링 */
+    .result-card {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* 모델 태그 스타일링 */
+    .model-tag {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    .gpt-tag { background-color: #10b981; color: white; }
+    .gemini-tag { background-color: #6366f1; color: white; }
+    .claude-tag { background-color: #8b5cf6; color: white; }
+
+    /* 평가 결과 스타일링 */
+    .evaluation-score {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
+    .evaluation-reason {
+        color: #64748b;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        margin-top: 0.5rem;
+    }
+
+    /* 텍스트 영역 스타일링 */
+    .stTextArea > div > textarea {
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        padding: 1rem;
+        font-family: 'Pretendard', sans-serif;
+    }
+
+    /* 로딩 스피너 스타일링 */
+    .stSpinner > div {
+        border-color: #3b82f6;
+    }
+
+    /* 탭 스타일링 */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        white-space: pre-wrap;
+        background-color: white;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        color: #1e293b;
+        font-weight: 500;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #3b82f6;
+        color: white;
+        border: none;
+    }
+
+    /* 경고/성공 메시지 스타일링 */
+    .stAlert {
+        border-radius: 8px;
+        padding: 1rem;
+    }
+    .stSuccess {
+        background-color: #ecfdf5;
+        color: #065f46;
+    }
+    .stError {
+        background-color: #fef2f2;
+        color: #991b1b;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+
+
+
+
+
+
+
 # MBTI 그룹 상수 정의
 MBTI_GROUPS = {
     "분석가형": ["INTJ", "INTP", "ENTJ", "ENTP"],
@@ -379,8 +532,37 @@ with col1:
                     }
                 }
                 st.session_state.history.append(experiment_data)
-
 with col2:
     st.subheader("📊 실험 결과")
     
-    for idx, experiment in enumerate(
+    for idx, experiment in enumerate(reversed(st.session_state.history)):
+        with st.container():
+            st.markdown(f"""
+            <div class="result-card">
+                <p style='color: #64748b; font-size: 0.875rem;'>{experiment['timestamp']}</p>
+                <div style='margin: 1rem 0;'>
+            """, unsafe_allow_html=True)
+            
+            for model in ["gpt", "gemini", "claude"]:
+                result = experiment['results'][model]
+                evaluation = experiment['evaluations'][model]
+                
+                st.markdown(f"""
+                <div style='margin-bottom: 1.5rem;'>
+                    <span class="model-tag {model}-tag">{model.upper()}</span>
+                    <div style='background-color: #f8fafc; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;'>
+                        {result}
+                    </div>
+                    <div class="evaluation-score">
+                        점수: {evaluation['score']}점
+                    </div>
+                    <div class="evaluation-reason">
+                        {evaluation['reason']}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                fig = visualize_evaluation_results(evaluation)
+                st.plotly_chart(fig, use_container_width=True)
+            
+            st.markdown("</div></div>", unsafe_allow_html=True)
