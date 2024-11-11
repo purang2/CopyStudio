@@ -626,37 +626,52 @@ with col1:
                     }
                 }
                 st.session_state.history.append(experiment_data)
+                
 with col2:
-    st.subheader("📊 실험 결과")
+    st.subheader("실험 결과")
     
-    for idx, experiment in enumerate(reversed(st.session_state.history)):
-        with st.container():
+    if st.session_state.history:
+        latest_experiment = st.session_state.history[-1]  # 변수명 명확하게 수정
+        
+        analysis = analyze_prompt_performance(st.session_state.history)
+        if analysis:
+            st.markdown(f"""
+            <div class="prompt-feedback">
+                <h4>📈 성능 분석</h4>
+                <p>현재 평균 점수: {analysis['current_score']:.1f}</p>
+                <p>이전 대비: {analysis['improvement']:+.1f}</p>
+                <p>최고 성능 모델: {analysis['top_model'].upper()}</p>
+                
+                <div class="improvement-tip">
+                    💡 개선 포인트:
+                    {'<br>'.join(f'- {s}' for s in analysis['suggestions'])}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # 결과 카드 표시
+        model_list = ["gpt", "gemini", "claude"]  # 모델 리스트 명시적 정의
+        for idx, model_name in enumerate(model_list):
+            result = latest_experiment['results'][model_name]
+            eval_data = latest_experiment['evaluations'][model_name]
+            
             st.markdown(f"""
             <div class="result-card">
-                <p style='color: #64748b; font-size: 0.875rem;'>{experiment['timestamp']}</p>
-                <div style='margin: 1rem 0;'>
-            """, unsafe_allow_html=True)
-            
-            for idx, model in enumerate(["gpt", "gemini", "claude"]):
-                result = latest['results'][model]
-                eval_data = latest['evaluations'][model]
-                
-                st.markdown(f"""
-                <div class="result-card">
-                    <span class="model-tag" style="background-color: {MODEL_COLORS[model]}">
-                        {model.upper()}
-                    </span>
-                    <div style="margin: 1rem 0;">
-                        {result}
-                    </div>
-                    <div class="score-badge">
-                        점수: {eval_data['score']}점
-                    </div>
-                    <div class="prompt-feedback">
-                        {eval_data['reason']}
-                    </div>
+                <span class="model-tag" style="background-color: {MODEL_COLORS[model_name]}">
+                    {model_name.upper()}
+                </span>
+                <div style="margin: 1rem 0;">
+                    {result}
                 </div>
-                """, unsafe_allow_html=True, key=f"result_card_{idx}")
-                
-                fig = visualize_evaluation_results(eval_data)
-                st.plotly_chart(fig, use_container_width=True, key=f"chart_{idx}")
+                <div class="score-badge">
+                    점수: {eval_data['score']}점
+                </div>
+                <div class="prompt-feedback">
+                    {eval_data['reason']}
+                </div>
+            </div>
+            """, unsafe_allow_html=True, key=f"result_card_{idx}")
+            
+            # 차트 생성 및 표시
+            fig = visualize_evaluation_results(eval_data)
+            st.plotly_chart(fig, use_container_width=True, key=f"chart_{idx}")
