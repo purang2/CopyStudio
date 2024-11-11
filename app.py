@@ -1,5 +1,6 @@
 import streamlit as st
-import openai
+#import openai
+from openai import OpenAI
 import google.generativeai as genai
 from anthropic import Anthropic
 from datetime import datetime
@@ -20,9 +21,11 @@ st.set_page_config(
 )
 
 # Initialize API keys from Streamlit secrets
-openai.api_key = st.secrets["chatgpt"]
+#openai.api_key = st.secrets["chatgpt"]
 genai.configure(api_key=st.secrets["gemini"])
 anthropic = Anthropic(api_key=st.secrets["claude"])
+client = OpenAI(api_key=st.secrets["chatgpt"])  # API 키 입력
+
 
 
 #챗-제-클 순서 오와열
@@ -295,7 +298,8 @@ class AdCopyEvaluator:
 """
             # API calls by model
             if model_name == "gpt":
-                response = openai.ChatCompletion.create(
+                #response = openai.ChatCompletion.create(
+                response = client.chat.completions.create(
                     model=model_zoo[0],
                     messages=[{"role": "user", "content": evaluation_prompt}]
                 )
@@ -360,7 +364,8 @@ def generate_copy(prompt: str, model_name: str) -> str:
     """광고 카피 생성"""
     try:
         if model_name == "gpt":
-            response = openai.ChatCompletion.create(
+            #response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model=model_zoo[0],
                 messages=[{"role": "user", "content": prompt}]
             )
