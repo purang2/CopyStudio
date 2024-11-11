@@ -22,6 +22,11 @@ st.set_page_config(
     layout="wide"
 )
 
+
+# 앱 제목
+st.title("🐻 광고문구 생성 카피 AI")
+
+
 # Initialize API keys from Streamlit secrets
 #openai.api_key = st.secrets["chatgpt"]
 genai.configure(api_key=st.secrets["gemini"])
