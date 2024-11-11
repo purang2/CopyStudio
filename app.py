@@ -15,11 +15,24 @@ openai.api_key = st.secrets["chatgpt"]
 genai.configure(api_key=st.secrets["gemini"])
 anthropic = Anthropic(api_key=st.secrets["claude"])
 
+
+#챗-제-클 순서 오와열
+model_zoo = ['gpt-4o',
+             'gemini-1.5-pro-exp-0827',
+             'claude-3-5-haiku-20241022']
+
 # Gemini model configuration
-gemini_model = genai.GenerativeModel('gemini-1.5-pro-exp-0827')
+gemini_model = genai.GenerativeModel(model_zoo[1])
 
+# MBTI 그룹 상수 정의
+MBTI_GROUPS = {
+    "분석가형": ["INTJ", "INTP", "ENTJ", "ENTP"],
+    "외교관형": ["INFJ", "INFP", "ENFJ", "ENFP"],
+    "관리자형": ["ISTJ", "ISFJ", "ESTJ", "ESFJ"],
+    "탐험가형": ["ISTP", "ISFP", "ESTP", "ESFP"]
+}
 
-# Load documents from docs folder
+# 문서 로드 함수 수정
 def load_docs() -> Dict[str, Dict[str, str]]:
     docs_path = pathlib.Path("docs")
     docs = {
@@ -28,28 +41,50 @@ def load_docs() -> Dict[str, Dict[str, str]]:
         "mbti": {}
     }
     
-    # Load region docs
+    # 지역 문서 로드
     region_path = docs_path / "regions"
     if region_path.exists():
         for file in region_path.glob("*.txt"):
             with open(file, "r", encoding="utf-8") as f:
                 docs["region"][file.stem] = f.read()
     
-    # Load generation docs
+    # 세대 문서 로드
     generation_path = docs_path / "generations"
     if generation_path.exists():
         for file in generation_path.glob("*.txt"):
             with open(file, "r", encoding="utf-8") as f:
                 docs["generation"][file.stem] = f.read()
     
-    # Load MBTI docs
-    mbti_path = docs_path / "mbti"
-    if mbti_path.exists():
-        for file in mbti_path.glob("*.txt"):
-            with open(file, "r", encoding="utf-8") as f:
-                docs["mbti"][file.stem] = f.read()
+    # MBTI 문서 로드 (단일 파일)
+    mbti_file = docs_path / "mbti" / "mbti_all.txt"
+    if mbti_file.exists():
+        with open(mbti_file, "r", encoding="utf-8") as f:
+            content = f.read()
+            # 각 MBTI 섹션 파싱
+            for group in MBTI_GROUPS.keys():
+                group_start = content.find(f"[{group}]")
+                next_group_start = len(content)
+                for other_group in MBTI_GROUPS.keys():
+                    if other_group != group:
+                        pos = content.find(f"[{other_group}]")
+                        if pos > group_start and pos < next_group_start:
+                            next_group_start = pos
+                
+                group_content = content[group_start:next_group_start].strip()
+                for mbti in MBTI_GROUPS[group]:
+                    mbti_start = group_content.find(mbti)
+                    next_mbti_start = len(group_content)
+                    for other_mbti in MBTI_GROUPS[group]:
+                        if other_mbti != mbti:
+                            pos = group_content.find(other_mbti)
+                            if pos > mbti_start and pos < next_mbti_start:
+                                next_mbti_start = pos
+                    
+                    mbti_content = group_content[mbti_start:next_mbti_start].strip()
+                    docs["mbti"][mbti.lower()] = mbti_content
     
     return docs
+
 
 @dataclass
 class ScoringConfig:
@@ -80,12 +115,12 @@ class AdCopyEvaluator:
     def evaluate(self, copy: str, model_name: str) -> Dict:
         """평가 실행 및 결과 파싱"""
         try:
-            # 캐시된 결과가 있는지 확인
+            # Check cache
             cache_key = f"{copy}_{model_name}"
             if cache_key in self.results_cache:
                 return self.results_cache[cache_key]
             
-            # 평가 프롬프트 구성
+            # Construct evaluation prompt
             evaluation_prompt = f"""
 {self.scoring_config.prompt}
 
@@ -99,10 +134,10 @@ class AdCopyEvaluator:
 이유: [평가 근거]
 상세점수: [각 기준별 점수를 쉼표로 구분]
 """
-            # 모델별 API 호출
+            # API calls by model
             if model_name == "gpt":
                 response = openai.ChatCompletion.create(
-                    model="gpt-4o",
+                    model=model_zoo[0],
                     messages=[{"role": "user", "content": evaluation_prompt}]
                 )
                 result_text = response.choices[0].message.content
@@ -111,15 +146,15 @@ class AdCopyEvaluator:
                 result_text = response.text
             else:  # claude
                 response = anthropic.messages.create(
-                    model="claude-3-5-haiku-20241022",
+                    model=model_zoo[2],
                     messages=[{"role": "user", "content": evaluation_prompt}]
                 )
                 result_text = response.content[0].text
             
-            # 결과 파싱
+            # Parse results
             parsed_result = self.parse_evaluation_result(result_text)
             
-            # 캐시에 저장
+            # Cache results
             self.results_cache[cache_key] = parsed_result
             
             return parsed_result
@@ -133,19 +168,16 @@ class AdCopyEvaluator:
             }
     
     def parse_evaluation_result(self, result_text: str) -> Dict:
-        """평가 결과 파싱 로직"""
+        """평가 결과 파싱"""
         try:
             lines = result_text.split('\n')
             
-            # 점수 추출
             score_line = next(l for l in lines if '점수:' in l)
             score = int(''.join(filter(str.isdigit, score_line)))
             
-            # 이유 추출
             reason_line = next(l for l in lines if '이유:' in l)
             reason = reason_line.split('이유:')[1].strip()
             
-            # 상세 점수 추출
             detailed_line = next(l for l in lines if '상세점수:' in l)
             detailed_scores = [
                 int(s.strip()) for s in 
@@ -166,11 +198,11 @@ class AdCopyEvaluator:
             }
 
 def generate_copy(prompt: str, model_name: str) -> str:
-    """광고 카피 생성 함수"""
+    """광고 카피 생성"""
     try:
         if model_name == "gpt":
             response = openai.ChatCompletion.create(
-                model="gpt-4o",
+                model=model_zoo[0],
                 messages=[{"role": "user", "content": prompt}]
             )
             return response.choices[0].message.content.strip()
@@ -179,7 +211,7 @@ def generate_copy(prompt: str, model_name: str) -> str:
             return response.text.strip()
         else:  # claude
             response = anthropic.messages.create(
-                model="claude-3-5-haiku-20241022",
+                model=model_zoo[2],
                 messages=[{"role": "user", "content": prompt}]
             )
             return response.content[0].text.strip()
@@ -187,7 +219,7 @@ def generate_copy(prompt: str, model_name: str) -> str:
         return f"생성 실패: {str(e)}"
 
 def visualize_evaluation_results(results: Dict):
-    """결과 시각화 함수"""
+    """결과 시각화"""
     fig = px.radar(
         pd.DataFrame({
             '기준': st.session_state.scoring_config.criteria,
@@ -199,13 +231,13 @@ def visualize_evaluation_results(results: Dict):
     )
     return fig
 
-# Streamlit 앱 설정
+# Streamlit app configuration
 st.set_page_config(page_title="CopyStudio Lab", page_icon="🔬", layout="wide")
 
-# 문서 로드
+# Load documents
 DOCS = load_docs()
 
-# 초기 평가 설정
+# Initial scoring configuration
 DEFAULT_SCORING_CONFIG = ScoringConfig(
     prompt="""
 주어진 광고 카피를 다음 기준으로 평가해주세요.
@@ -220,24 +252,18 @@ DEFAULT_SCORING_CONFIG = ScoringConfig(
     ]
 )
 
-# 세션 상태 초기화
+# Initialize session state
 if 'scoring_config' not in st.session_state:
     st.session_state.scoring_config = DEFAULT_SCORING_CONFIG
 if 'evaluator' not in st.session_state:
     st.session_state.evaluator = AdCopyEvaluator(st.session_state.scoring_config)
 if 'history' not in st.session_state:
     st.session_state.history = []
-if 'selected_docs' not in st.session_state:
-    st.session_state.selected_docs = {
-        'region': '',
-        'generation': '',
-        'mbti': []
-    }
 
-# 메인 UI
+# Main UI
 st.title("🔬 광고 카피 생성 연구 플랫폼")
 
-# 사이드바: 평가 설정
+# Sidebar configuration
 with st.sidebar:
     st.header("⚙️ 평가 시스템 설정")
     
@@ -260,7 +286,7 @@ with st.sidebar:
             st.session_state.evaluator = AdCopyEvaluator(new_config)
             st.success("평가 설정이 업데이트되었습니다!")
 
-    # 타겟 설정
+    # Target selection
     st.header("🎯 타겟 설정")
     
     selected_region = st.selectbox(
@@ -275,18 +301,23 @@ with st.sidebar:
         format_func=lambda x: "세대를 선택하세요" if x == "" else x
     )
     
+    st.subheader("MBTI 설정")
     selected_mbti_groups = st.multiselect(
-        "MBTI 선택",
-        options=list(DOCS["mbti"].keys())
+        "MBTI 그룹 선택",
+        options=MBTI_GROUPS.keys()
     )
+    
+    selected_mbti = []
+    for group in selected_mbti_groups:
+        selected_mbti.extend(MBTI_GROUPS[group])
 
-# 메인 컨텐츠
+# Main content
 col1, col2 = st.columns([3, 2])
 
 with col1:
     st.subheader("💡 프롬프트 작성")
     
-    # 프롬프트 생성
+    # Generate base prompt
     base_prompt = f"""
 다음 정보를 바탕으로 광고 카피를 생성해주세요:
 
@@ -297,12 +328,20 @@ with col1:
 {DOCS["generation"].get(selected_generation, "세대 정보가 없습니다.")}
 """
     
-    if selected_mbti_groups:
+    if selected_mbti:
         mbti_info = "\n".join([
-            f"[{mbti.upper()} 특성]\n{DOCS['mbti'].get(mbti, '정보 없음')}"
-            for mbti in selected_mbti_groups
+            f"[{mbti.upper()} 특성]\n{DOCS['mbti'].get(mbti.lower(), '정보 없음')}"
+            for mbti in selected_mbti
         ])
         base_prompt += f"\n[MBTI 특성]\n{mbti_info}"
+    
+    base_prompt += """
+요구사항:
+1. 선택된 타겟층의 특성을 반영한 톤앤매너로 작성
+2. 카피는 한 문장으로 작성
+3. 이모지를 적절히 활용
+4. 선택된 지역의 특징을 효과적으로 표현
+"""
     
     prompt = st.text_area(
         "생성 프롬프트",
@@ -315,19 +354,19 @@ with col1:
             st.error("지역과 세대를 선택해주세요!")
         else:
             with st.spinner("AI 모델이 광고 카피를 생성중입니다..."):
-                # 각 모델에서 카피 생성
+                # Generate copies
                 results = {
                     model: generate_copy(prompt, model)
                     for model in ["gpt", "gemini", "claude"]
                 }
                 
-                # 평가 수행
+                # Evaluate copies
                 evaluations = {
                     model: st.session_state.evaluator.evaluate(copy, model)
                     for model, copy in results.items()
                 }
                 
-                # 결과 저장
+                # Save results
                 experiment_data = {
                     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "prompt": prompt,
@@ -336,7 +375,7 @@ with col1:
                     "settings": {
                         "region": selected_region,
                         "generation": selected_generation,
-                        "mbti": selected_mbti_groups
+                        "mbti": selected_mbti
                     }
                 }
                 st.session_state.history.append(experiment_data)
@@ -344,32 +383,4 @@ with col1:
 with col2:
     st.subheader("📊 실험 결과")
     
-    for idx, experiment in enumerate(reversed(st.session_state.history)):
-        with st.expander(f"실험 {len(st.session_state.history)-idx}", expanded=idx==0):
-            st.text(f"시간: {experiment['timestamp']}")
-            
-            for model in ["gpt", "gemini", "claude"]:
-                result = experiment['results'][model]
-                evaluation = experiment['evaluations'][model]
-                
-                st.markdown(f"""
-                **{model.upper()}**
-                ```
-                {result}
-                ```
-                점수: {evaluation['score']}
-                이유: {evaluation['reason']}
-                """)
-                
-                fig = visualize_evaluation_results(evaluation)
-                st.plotly_chart(fig, use_container_width=True)
-
-# 실험 데이터 다운로드 버튼
-if st.session_state.history:
-    st.download_button(
-        "📥 실험 데이터 다운로드",
-        data=json.dumps(st.session_state.history, indent=2, ensure_ascii=False),
-        file_name="experiment_results.json",
-        mime="application/json"
-    )
-        
+    for idx, experiment in enumerate(
