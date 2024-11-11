@@ -403,18 +403,21 @@ class AdCopyEvaluator:
                 "reason": f"파싱 실패: {str(e)}",
                 "detailed_scores": [0] * len(self.scoring_config.criteria)
             }
-
-def generate_copy(prompt: str, model_name: str) -> str:
+def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
     """광고 카피 생성"""
     try:
         if model_name == "gpt":
-            #response = openai.ChatCompletion.create(
             response = client.chat.completions.create(
                 model=model_zoo[0],
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=1000
             )
-            return response.choices[0].message.content.strip()
+
+            return {
+                "success": True,
+                "content": response.choices[0].message.content.strip()
+            }
+            
         elif model_name == "gemini":
             try:
                 response = gemini_model.generate_content(
@@ -425,27 +428,53 @@ def generate_copy(prompt: str, model_name: str) -> str:
                     }
                 )
                 if not response.text:
-                    return "Gemini API 응답이 비어있습니다."
-                return response.text.strip()
+                    return {
+                        "success": False,
+                        "content": "Gemini API 응답이 비어있습니다."
+                    }
+                return {
+                    "success": True,
+                    "content": response.text.strip()
+                }
             except Exception as e:
-                return "Gemini API 호출 실패: API 키를 확인해주세요."
+                return {
+                    "success": False,
+                    "content": "Gemini API 호출 실패"
+                }
             
         else:  # claude
             try:
+                if "credit balance is too low" in str(e):
+                    return {
+                        "success": False,
+                        "content": "Claude API 크레딧이 부족하여 사용할 수 없습니다."
+                    }
                 response = anthropic.messages.create(
                     model=model_zoo[2],
-                    messages=[{"role": "user", "content": prompt}],
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
                     max_tokens=1000,
                     temperature=0.7
                 )
-                return response.content[0].text.strip()
+                return {
+                    "success": True,
+                    "content": response.content[0].text.strip()
+                }
             except Exception as e:
-                        if "credit balance is too low" in str(e):
-                            return "Claude API 호출 실패: API 크레딧이 부족합니다."
-                        return "Claude API 호출 실패: API 키를 확인해주세요."
+                return {
+                    "success": False,
+                    "content": "Claude API 호출 실패"
+                }
                 
     except Exception as e:
-        return f"생성 실패: {str(e)}"
+        return {
+            "success": False,
+            "content": f"생성 실패: {str(e)}"
+        }
         
 def visualize_evaluation_results(results: Dict):
     """결과 시각화 함수"""
@@ -477,61 +506,56 @@ def analyze_prompt_performance(history: List[dict]) -> dict:
         latest = history[-1]
         prev = history[-2] if len(history) > 1 else None
         
-        # 평가 결과에서 유효한 점수만 추출
-        valid_scores = [
-            e.get('score', 0)  # 점수가 없으면 0으로 처리
-            for e in latest['evaluations'].values()
-            if isinstance(e, dict)  # dictionary인 경우만 처리
-        ]
+        # 성공한 모델의 점수만 계산
+        valid_scores = []
+        for eval_data in latest['evaluations'].values():
+            if isinstance(eval_data, dict) and eval_data.get('score', 0) > 0:
+                valid_scores.append(eval_data['score'])
         
-        # 유효한 점수가 있는 경우에만 평균 계산
-        if valid_scores:
-            current_avg = sum(valid_scores) / len(valid_scores)
-        else:
-            current_avg = 0
+        if not valid_scores:  # 유효한 점수가 없는 경우
+            return {
+                "current_score": 0,
+                "improvement": 0,
+                "top_model": "없음",
+                "suggestions": ["현재 사용 가능한 모델로 다시 시도해보세요."]
+            }
         
-        # 이전 결과가 있는 경우 비교
+        current_avg = sum(valid_scores) / len(valid_scores)
+        
+        # 이전 결과와 비교
+        improvement = 0
         if prev:
             prev_valid_scores = [
-                e.get('score', 0)
-                for e in prev['evaluations'].values()
-                if isinstance(e, dict)
+                e.get('score', 0) 
+                for e in prev['evaluations'].values() 
+                if isinstance(e, dict) and e.get('score', 0) > 0
             ]
-            prev_avg = sum(prev_valid_scores) / len(prev_valid_scores) if prev_valid_scores else 0
-            improvement = current_avg - prev_avg
-        else:
-            improvement = 0
+            if prev_valid_scores:
+                prev_avg = sum(prev_valid_scores) / len(prev_valid_scores)
+                improvement = current_avg - prev_avg
         
-        # 최고 성능 모델 찾기
-        valid_evaluations = {
-            model: eval_data.get('score', 0)
-            for model, eval_data in latest['evaluations'].items()
-            if isinstance(eval_data, dict)
+        # 최고 성능 모델 찾기 (성공한 모델 중에서만)
+        valid_models = {
+            model: data.get('score', 0)
+            for model, data in latest['evaluations'].items()
+            if isinstance(data, dict) and data.get('score', 0) > 0
         }
         
-        top_model = max(valid_evaluations.items(), key=lambda x: x[1])[0] if valid_evaluations else "없음"
+        top_model = max(valid_models.items(), key=lambda x: x[1])[0] if valid_models else "없음"
         
-        analysis = {
+        return {
             "current_score": current_avg,
             "improvement": improvement,
             "top_model": top_model,
-            "suggestions": []
+            "suggestions": ["프롬프트를 개선해보세요."] if improvement <= 0 else []
         }
         
-        # 성능 기반 개선 제안
-        if improvement <= 0:
-            analysis["suggestions"].append("더 구체적인 지역 특징을 언급해보세요")
-            analysis["suggestions"].append("타겟층의 관심사를 더 반영해보세요")
-        
-        return analysis
-        
     except Exception as e:
-        st.error(f"성능 분석 중 오류 발생: {str(e)}")
         return {
             "current_score": 0,
             "improvement": 0,
             "top_model": "분석 실패",
-            "suggestions": ["일부 모델에서 오류가 발생했습니다. 프롬프트를 수정하고 다시 시도해보세요."]
+            "suggestions": ["분석 중 오류가 발생했습니다."]
         }
 
 def create_performance_chart(history: List[dict]) -> go.Figure:
@@ -747,15 +771,22 @@ with col1:
             st.error("지역과 세대를 선택해주세요!")
         else:
             with st.spinner("AI 모델이 광고 카피를 생성중입니다..."):
-                results = {
-                    model: generate_copy(edited_prompt, model)
-                    for model in ["gpt", "gemini", "claude"]
-                }
+                results = {}
+                evaluations = {}
                 
-                evaluations = {
-                    model: st.session_state.evaluator.evaluate(copy, model)
-                    for model, copy in results.items()
-                }
+                for model in ["gpt", "gemini", "claude"]:
+                    result = generate_copy(edited_prompt, model)
+                    if result["success"]:
+                        results[model] = result["content"]
+                        eval_result = st.session_state.evaluator.evaluate(result["content"], model)
+                        evaluations[model] = eval_result
+                    else:
+                        results[model] = result["content"]
+                        evaluations[model] = {
+                            "score": 0,
+                            "reason": result["content"],
+                            "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
+                        }
                 
                 experiment_data = {
                     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
