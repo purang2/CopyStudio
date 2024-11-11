@@ -295,7 +295,8 @@ class AdCopyEvaluator:
                 #response = openai.ChatCompletion.create(
                 response = client.chat.completions.create(
                     model=model_zoo[0],
-                    messages=[{"role": "user", "content": evaluation_prompt}]
+                    messages=[{"role": "user", "content": evaluation_prompt}],
+                    max_tokens=1000 
                 )
                 result_text = response.choices[0].message.content
             elif model_name == "gemini":
@@ -304,6 +305,7 @@ class AdCopyEvaluator:
             else:  # claude
                 response = anthropic.messages.create(
                     model=model_zoo[2],
+                    max_tokens=1000,
                     messages=[{"role": "user", "content": evaluation_prompt}]
                 )
                 result_text = response.content[0].text
@@ -325,37 +327,44 @@ class AdCopyEvaluator:
             }
 
     def parse_evaluation_result(self, result_text: str) -> Dict:
-        """평가 결과 파싱 로직"""
+    """평가 결과 파싱"""
+    try:
+        lines = result_text.split('\n')
+        
+        # 점수 추출 개선
+        score_line = next(l for l in lines if '점수:' in l)
+        # 숫자만 추출하는 로직 개선
+        score_text = ''.join(c for c in score_line.split('점수:')[1] if c.isdigit() and c != '*')
+        score = int(score_text) if score_text else 0
+        
+        # 이유 추출
+        reason_line = next(l for l in lines if '이유:' in l)
+        reason = reason_line.split('이유:')[1].strip()
+        
+        # 상세점수 추출 개선
         try:
-            lines = result_text.split('\n')
-            
-            # 점수 추출
-            score_line = next(l for l in lines if '점수:' in l)
-            score = int(''.join(filter(str.isdigit, score_line)))
-            
-            # 이유 추출
-            reason_line = next(l for l in lines if '이유:' in l)
-            reason = reason_line.split('이유:')[1].strip()
-            
-            # 상세 점수 추출
             detailed_line = next(l for l in lines if '상세점수:' in l)
-            detailed_scores = [
-                int(s.strip()) for s in 
-                detailed_line.split('상세점수:')[1].strip().split(',')
-            ]
+            detailed_scores_text = detailed_line.split('상세점수:')[1].strip()
+            detailed_scores = []
             
-            return {
-                "score": score,
-                "reason": reason,
-                "detailed_scores": detailed_scores
-            }
-        except Exception as e:
-            st.error(f"결과 파싱 중 오류 발생: {str(e)}")
-            return {
-                "score": 0,
-                "reason": f"파싱 실패: {str(e)}",
-                "detailed_scores": [0] * len(self.scoring_config.criteria)
-            }
+            for s in detailed_scores_text.split(','):
+                score_text = ''.join(c for c in s if c.isdigit() and c != '*')
+                detailed_scores.append(int(score_text) if score_text else 0)
+        except:
+            detailed_scores = [score] * len(self.scoring_config.criteria)
+        
+        return {
+            "score": score,
+            "reason": reason,
+            "detailed_scores": detailed_scores[:len(self.scoring_config.criteria)]
+        }
+    except Exception as e:
+        st.error(f"결과 파싱 중 오류 발생: {str(e)}")
+        return {
+            "score": 0,
+            "reason": f"파싱 실패: {str(e)}",
+            "detailed_scores": [0] * len(self.scoring_config.criteria)
+        }
 
 def generate_copy(prompt: str, model_name: str) -> str:
     """광고 카피 생성"""
@@ -628,26 +637,26 @@ with col2:
                 <div style='margin: 1rem 0;'>
             """, unsafe_allow_html=True)
             
-            for model in ["gpt", "gemini", "claude"]:
-                result = experiment['results'][model]
-                evaluation = experiment['evaluations'][model]
+            for idx, model in enumerate(["gpt", "gemini", "claude"]):
+                result = latest['results'][model]
+                eval_data = latest['evaluations'][model]
                 
                 st.markdown(f"""
-                <div style='margin-bottom: 1.5rem;'>
-                    <span class="model-tag {model}-tag">{model.upper()}</span>
-                    <div style='background-color: #f8fafc; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;'>
+                <div class="result-card">
+                    <span class="model-tag" style="background-color: {MODEL_COLORS[model]}">
+                        {model.upper()}
+                    </span>
+                    <div style="margin: 1rem 0;">
                         {result}
                     </div>
-                    <div class="evaluation-score">
-                        점수: {evaluation['score']}점
+                    <div class="score-badge">
+                        점수: {eval_data['score']}점
                     </div>
-                    <div class="evaluation-reason">
-                        {evaluation['reason']}
+                    <div class="prompt-feedback">
+                        {eval_data['reason']}
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True, key=f"result_card_{idx}")
                 
-                fig = visualize_evaluation_results(evaluation)
-                st.plotly_chart(fig, use_container_width=True)
-            
-            st.markdown("</div></div>", unsafe_allow_html=True)
+                fig = visualize_evaluation_results(eval_data)
+                st.plotly_chart(fig, use_container_width=True, key=f"chart_{idx}")
