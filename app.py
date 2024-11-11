@@ -195,10 +195,19 @@ MBTI_GROUPS = {
     "탐험가형": ["ISTP", "ISFP", "ESTP", "ESFP"]
 }
 
+# MBTI 상수 수정
+MBTI_TYPES = [
+    "INTJ", "INTP", "ENTJ", "ENTP",
+    "INFJ", "INFP", "ENFJ", "ENFP",
+    "ISTJ", "ISFJ", "ESTJ", "ESFJ",
+    "ISTP", "ISFP", "ESTP", "ESFP"
+]
+
+
 def create_adaptive_prompt(
     city_doc: str, 
     target_generation: str, 
-    mbti: list = None,
+    mbti: str = None,  # 단일 MBTI 문자열로 변경
     include_mbti: bool = False
 ) -> str:
     base_prompt = f"""
@@ -220,9 +229,9 @@ def create_adaptive_prompt(
 
     if include_mbti and mbti:
         mbti_prompt = f"""
-MBTI: {', '.join(mbti)}
+MBTI: {mbti}
 특별 고려사항: 
-- {', '.join(mbti)} 성향의 여행 선호도를 반영
+- {mbti} 성향의 여행 선호도를 반영
 - 해당 성향의 관심사와 가치관 고려"""
         base_prompt += mbti_prompt
 
@@ -510,20 +519,17 @@ with st.sidebar:
         format_func=lambda x: "세대를 선택하세요" if x == "" else x
     )
     
+    
     # MBTI 선택 UI 수정
     include_mbti = st.checkbox("MBTI 특성 포함하기", value=False)
     selected_mbti = None
     
     if include_mbti:
-        selected_mbti_groups = st.multiselect(
-            "MBTI 그룹 선택",
-            options=MBTI_GROUPS.keys()
+        selected_mbti = st.selectbox(
+            "MBTI 선택",
+            options=MBTI_TYPES,
+            help="MBTI 유형을 선택하면 해당 성향에 맞는 카피가 생성됩니다"
         )
-        
-        selected_mbti = []
-        for group in selected_mbti_groups:
-            selected_mbti.extend(MBTI_GROUPS[group])
-
 # Main content
 col1, col2 = st.columns([3, 2])
 
