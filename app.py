@@ -327,44 +327,44 @@ class AdCopyEvaluator:
             }
 
     def parse_evaluation_result(self, result_text: str) -> Dict:
-    """평가 결과 파싱"""
-    try:
-        lines = result_text.split('\n')
-        
-        # 점수 추출 개선
-        score_line = next(l for l in lines if '점수:' in l)
-        # 숫자만 추출하는 로직 개선
-        score_text = ''.join(c for c in score_line.split('점수:')[1] if c.isdigit() and c != '*')
-        score = int(score_text) if score_text else 0
-        
-        # 이유 추출
-        reason_line = next(l for l in lines if '이유:' in l)
-        reason = reason_line.split('이유:')[1].strip()
-        
-        # 상세점수 추출 개선
+        """평가 결과 파싱"""
         try:
-            detailed_line = next(l for l in lines if '상세점수:' in l)
-            detailed_scores_text = detailed_line.split('상세점수:')[1].strip()
-            detailed_scores = []
+            lines = result_text.split('\n')
             
-            for s in detailed_scores_text.split(','):
-                score_text = ''.join(c for c in s if c.isdigit() and c != '*')
-                detailed_scores.append(int(score_text) if score_text else 0)
-        except:
-            detailed_scores = [score] * len(self.scoring_config.criteria)
-        
-        return {
-            "score": score,
-            "reason": reason,
-            "detailed_scores": detailed_scores[:len(self.scoring_config.criteria)]
-        }
-    except Exception as e:
-        st.error(f"결과 파싱 중 오류 발생: {str(e)}")
-        return {
-            "score": 0,
-            "reason": f"파싱 실패: {str(e)}",
-            "detailed_scores": [0] * len(self.scoring_config.criteria)
-        }
+            # 점수 추출 개선
+            score_line = next(l for l in lines if '점수:' in l)
+            # 숫자만 추출하는 로직 개선
+            score_text = ''.join(c for c in score_line.split('점수:')[1] if c.isdigit() and c != '*')
+            score = int(score_text) if score_text else 0
+            
+            # 이유 추출
+            reason_line = next(l for l in lines if '이유:' in l)
+            reason = reason_line.split('이유:')[1].strip()
+            
+            # 상세점수 추출 개선
+            try:
+                detailed_line = next(l for l in lines if '상세점수:' in l)
+                detailed_scores_text = detailed_line.split('상세점수:')[1].strip()
+                detailed_scores = []
+                
+                for s in detailed_scores_text.split(','):
+                    score_text = ''.join(c for c in s if c.isdigit() and c != '*')
+                    detailed_scores.append(int(score_text) if score_text else 0)
+            except:
+                detailed_scores = [score] * len(self.scoring_config.criteria)
+            
+            return {
+                "score": score,
+                "reason": reason,
+                "detailed_scores": detailed_scores[:len(self.scoring_config.criteria)]
+            }
+        except Exception as e:
+            st.error(f"결과 파싱 중 오류 발생: {str(e)}")
+            return {
+                "score": 0,
+                "reason": f"파싱 실패: {str(e)}",
+                "detailed_scores": [0] * len(self.scoring_config.criteria)
+            }
 
 def generate_copy(prompt: str, model_name: str) -> str:
     """광고 카피 생성"""
