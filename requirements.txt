@@ -1,19 +1,7 @@
-# Core
 streamlit
-pandas==2.1.4
-
-# LLM APIs
+pandas
 openai
 google-generativeai
 anthropic
-
-# Data Visualization
-plotly==5.18.0
-
-# Utils
-python-dotenv==1.0.0
-pathlib==1.0.1
-
-# Data Types & Validation
-dataclasses==0.6
-typing==3.7.4.3
+plotly
+python-dotenv
