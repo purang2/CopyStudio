@@ -17,7 +17,7 @@ from typing import Dict, List, Optional, Union
 
 # Page config must be the first Streamlit command
 st.set_page_config(
-    page_title="CopyStudio Lab - 광고 카피 연구소", 
+    page_title="광고문구 생성 카피 AI", 
     page_icon="🔬", 
     layout="wide"
 )
