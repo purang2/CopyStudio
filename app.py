@@ -154,6 +154,17 @@ MODEL_COLORS = {
     "claude": "#8e44ad"  # Claude 퍼플
 }
 
+
+# 계절 상수 추가
+SEASONS = {
+    "봄": "spring",
+    "여름": "summer",
+    "가을": "autumn",
+    "겨울": "winter"
+}
+
+
+
 @dataclass
 class ScoringConfig:
     """평가 시스템 설정을 관리하는 클래스"""
