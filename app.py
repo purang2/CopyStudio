@@ -7,10 +7,11 @@ from datetime import datetime
 import pandas as pd
 import json
 import pathlib
-import plotly.express as px
 from typing import Dict, List, Optional
 from dataclasses import dataclass
 
+import plotly.express as px 
+import plotly.graph_objects as go
 
 
 # Page config must be the first Streamlit command
@@ -381,16 +382,23 @@ def generate_copy(prompt: str, model_name: str) -> str:
             return response.content[0].text.strip()
     except Exception as e:
         return f"생성 실패: {str(e)}"
-
 def visualize_evaluation_results(results: Dict):
-    """결과 시각화"""
-    fig = px.radar(
-        pd.DataFrame({
-            '기준': st.session_state.scoring_config.criteria,
-            '점수': results['detailed_scores']
-        }),
-        r='점수',
-        theta='기준',
+    """결과 시각화 함수"""
+    fig = go.Figure(data=go.Scatterpolar(
+        r=results['detailed_scores'],
+        theta=st.session_state.scoring_config.criteria,
+        fill='toself',
+        name='평가 점수'
+    ))
+
+    fig.update_layout(
+        polar=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0, 100]
+            )
+        ),
+        showlegend=False,
         title="평가 기준별 점수"
     )
     return fig
