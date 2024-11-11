@@ -1,182 +1,375 @@
 import streamlit as st
 import openai
-from google.generativeai import GenerativeModel
-import anthropic
-import json
+import google.generativeai as genai
+from anthropic import Anthropic
 from datetime import datetime
 import pandas as pd
+import json
+import pathlib
+import plotly.express as px
+from typing import Dict, List, Optional
+from dataclasses import dataclass
 
-# Page config
-st.set_page_config(
-    page_title="CopyStudio",
-    page_icon="✨",
-    layout="wide"
+# Initialize API keys from Streamlit secrets
+openai.api_key = st.secrets["chatgpt"]
+genai.configure(api_key=st.secrets["gemini"])
+anthropic = Anthropic(api_key=st.secrets["claude"])
+
+# Gemini model configuration
+gemini_model = genai.GenerativeModel('gemini-1.5-pro-exp-0827')
+
+
+# Load documents from docs folder
+def load_docs() -> Dict[str, Dict[str, str]]:
+    docs_path = pathlib.Path("docs")
+    docs = {
+        "region": {},
+        "generation": {},
+        "mbti": {}
+    }
+    
+    # Load region docs
+    region_path = docs_path / "regions"
+    if region_path.exists():
+        for file in region_path.glob("*.txt"):
+            with open(file, "r", encoding="utf-8") as f:
+                docs["region"][file.stem] = f.read()
+    
+    # Load generation docs
+    generation_path = docs_path / "generations"
+    if generation_path.exists():
+        for file in generation_path.glob("*.txt"):
+            with open(file, "r", encoding="utf-8") as f:
+                docs["generation"][file.stem] = f.read()
+    
+    # Load MBTI docs
+    mbti_path = docs_path / "mbti"
+    if mbti_path.exists():
+        for file in mbti_path.glob("*.txt"):
+            with open(file, "r", encoding="utf-8") as f:
+                docs["mbti"][file.stem] = f.read()
+    
+    return docs
+
+@dataclass
+class ScoringConfig:
+    """평가 시스템 설정을 관리하는 클래스"""
+    prompt: str
+    criteria: List[str]
+    min_score: int = 0
+    max_score: int = 100
+    
+    def to_dict(self) -> dict:
+        return {
+            "prompt": self.prompt,
+            "criteria": self.criteria,
+            "min_score": self.min_score,
+            "max_score": self.max_score
+        }
+    
+    @classmethod
+    def from_dict(cls, data: dict) -> 'ScoringConfig':
+        return cls(**data)
+
+class AdCopyEvaluator:
+    """광고 카피 평가를 관리하는 클래스"""
+    def __init__(self, scoring_config: ScoringConfig):
+        self.scoring_config = scoring_config
+        self.results_cache = {}
+    
+    def evaluate(self, copy: str, model_name: str) -> Dict:
+        """평가 실행 및 결과 파싱"""
+        try:
+            # 캐시된 결과가 있는지 확인
+            cache_key = f"{copy}_{model_name}"
+            if cache_key in self.results_cache:
+                return self.results_cache[cache_key]
+            
+            # 평가 프롬프트 구성
+            evaluation_prompt = f"""
+{self.scoring_config.prompt}
+
+평가 대상 카피: {copy}
+
+평가 기준:
+{chr(10).join(f'- {criterion}' for criterion in self.scoring_config.criteria)}
+
+다음 형식으로 응답해주세요:
+점수: [0-100 사이의 숫자]
+이유: [평가 근거]
+상세점수: [각 기준별 점수를 쉼표로 구분]
+"""
+            # 모델별 API 호출
+            if model_name == "gpt":
+                response = openai.ChatCompletion.create(
+                    model="gpt-4o",
+                    messages=[{"role": "user", "content": evaluation_prompt}]
+                )
+                result_text = response.choices[0].message.content
+            elif model_name == "gemini":
+                response = gemini_model.generate_content(evaluation_prompt)
+                result_text = response.text
+            else:  # claude
+                response = anthropic.messages.create(
+                    model="claude-3-5-haiku-20241022",
+                    messages=[{"role": "user", "content": evaluation_prompt}]
+                )
+                result_text = response.content[0].text
+            
+            # 결과 파싱
+            parsed_result = self.parse_evaluation_result(result_text)
+            
+            # 캐시에 저장
+            self.results_cache[cache_key] = parsed_result
+            
+            return parsed_result
+            
+        except Exception as e:
+            st.error(f"평가 중 오류 발생: {str(e)}")
+            return {
+                "score": 0,
+                "reason": f"평가 실패: {str(e)}",
+                "detailed_scores": [0] * len(self.scoring_config.criteria)
+            }
+    
+    def parse_evaluation_result(self, result_text: str) -> Dict:
+        """평가 결과 파싱 로직"""
+        try:
+            lines = result_text.split('\n')
+            
+            # 점수 추출
+            score_line = next(l for l in lines if '점수:' in l)
+            score = int(''.join(filter(str.isdigit, score_line)))
+            
+            # 이유 추출
+            reason_line = next(l for l in lines if '이유:' in l)
+            reason = reason_line.split('이유:')[1].strip()
+            
+            # 상세 점수 추출
+            detailed_line = next(l for l in lines if '상세점수:' in l)
+            detailed_scores = [
+                int(s.strip()) for s in 
+                detailed_line.split('상세점수:')[1].strip().split(',')
+            ]
+            
+            return {
+                "score": score,
+                "reason": reason,
+                "detailed_scores": detailed_scores
+            }
+        except Exception as e:
+            st.error(f"결과 파싱 중 오류 발생: {str(e)}")
+            return {
+                "score": 0,
+                "reason": f"파싱 실패: {str(e)}",
+                "detailed_scores": [0] * len(self.scoring_config.criteria)
+            }
+
+def generate_copy(prompt: str, model_name: str) -> str:
+    """광고 카피 생성 함수"""
+    try:
+        if model_name == "gpt":
+            response = openai.ChatCompletion.create(
+                model="gpt-4o",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response.choices[0].message.content.strip()
+        elif model_name == "gemini":
+            response = gemini_model.generate_content(prompt)
+            return response.text.strip()
+        else:  # claude
+            response = anthropic.messages.create(
+                model="claude-3-5-haiku-20241022",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response.content[0].text.strip()
+    except Exception as e:
+        return f"생성 실패: {str(e)}"
+
+def visualize_evaluation_results(results: Dict):
+    """결과 시각화 함수"""
+    fig = px.radar(
+        pd.DataFrame({
+            '기준': st.session_state.scoring_config.criteria,
+            '점수': results['detailed_scores']
+        }),
+        r='점수',
+        theta='기준',
+        title="평가 기준별 점수"
+    )
+    return fig
+
+# Streamlit 앱 설정
+st.set_page_config(page_title="CopyStudio Lab", page_icon="🔬", layout="wide")
+
+# 문서 로드
+DOCS = load_docs()
+
+# 초기 평가 설정
+DEFAULT_SCORING_CONFIG = ScoringConfig(
+    prompt="""
+주어진 광고 카피를 다음 기준으로 평가해주세요.
+각 기준별로 0-100점 사이의 점수를 부여하고, 
+최종 점수는 각 기준의 평균으로 계산합니다.
+    """,
+    criteria=[
+        "타겟 적합성",
+        "메시지 전달력",
+        "창의성",
+        "브랜드 적합성"
+    ]
 )
 
-# Custom CSS
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
-    
-    html, body, [class*="css"] {
-        font-family: 'Noto Sans KR', sans-serif;
-    }
-    
-    .stButton button {
-        background-color: #4CACBC;
-        color: white;
-        border-radius: 10px;
-        padding: 0.5rem 1rem;
-        border: none;
-        font-weight: 500;
-    }
-    
-    .prompt-container {
-        border: 2px solid #4CACBC;
-        border-radius: 10px;
-        padding: 20px;
-        margin: 10px 0;
-    }
-    
-    .result-card {
-        background-color: #f8f9fa;
-        border-radius: 10px;
-        padding: 15px;
-        margin: 10px 0;
-    }
-    
-    .model-tag {
-        font-size: 0.8em;
-        padding: 3px 8px;
-        border-radius: 15px;
-        color: white;
-    }
-    
-    .gpt-tag { background-color: #10a37f; }
-    .gemini-tag { background-color: #4285f4; }
-    .claude-tag { background-color: #8e44ad; }
-</style>
-""", unsafe_allow_html=True)
-
-# Initialize session state
+# 세션 상태 초기화
+if 'scoring_config' not in st.session_state:
+    st.session_state.scoring_config = DEFAULT_SCORING_CONFIG
+if 'evaluator' not in st.session_state:
+    st.session_state.evaluator = AdCopyEvaluator(st.session_state.scoring_config)
 if 'history' not in st.session_state:
     st.session_state.history = []
-if 'region_info' not in st.session_state:
-    st.session_state.region_info = ""
-if 'mz_info' not in st.session_state:
-    st.session_state.mz_info = ""
+if 'selected_docs' not in st.session_state:
+    st.session_state.selected_docs = {
+        'region': '',
+        'generation': '',
+        'mbti': []
+    }
 
-# Header
-st.title("🎯 관광지 광고 카피 생성기")
-st.markdown("#### MZ세대를 위한 맞춤형 광고 카피 생성 및 평가 시스템")
+# 메인 UI
+st.title("🔬 광고 카피 생성 연구 플랫폼")
 
-# Sidebar for document uploads
+# 사이드바: 평가 설정
 with st.sidebar:
-    st.header("📄 문서 업로드")
+    st.header("⚙️ 평가 시스템 설정")
     
-    region_file = st.file_uploader("지역 정보 문서 (TXT)", type=['txt'])
-    if region_file:
-        st.session_state.region_info = region_file.read().decode('utf-8')
-        st.success("지역 정보가 업로드되었습니다!")
+    with st.expander("평가 프롬프트 설정", expanded=False):
+        new_prompt = st.text_area(
+            "평가 프롬프트",
+            value=st.session_state.scoring_config.prompt
+        )
+        new_criteria = st.text_area(
+            "평가 기준 (줄바꿈으로 구분)",
+            value="\n".join(st.session_state.scoring_config.criteria)
+        )
         
-    mz_file = st.file_uploader("MZ세대 여행 성향 문서 (TXT)", type=['txt'])
-    if mz_file:
-        st.session_state.mz_info = mz_file.read().decode('utf-8')
-        st.success("MZ세대 정보가 업로드되었습니다!")
+        if st.button("평가 설정 업데이트"):
+            new_config = ScoringConfig(
+                prompt=new_prompt,
+                criteria=[c.strip() for c in new_criteria.split('\n') if c.strip()]
+            )
+            st.session_state.scoring_config = new_config
+            st.session_state.evaluator = AdCopyEvaluator(new_config)
+            st.success("평가 설정이 업데이트되었습니다!")
 
-# Main content
+    # 타겟 설정
+    st.header("🎯 타겟 설정")
+    
+    selected_region = st.selectbox(
+        "지역 선택",
+        options=[""] + list(DOCS["region"].keys()),
+        format_func=lambda x: "지역을 선택하세요" if x == "" else x
+    )
+    
+    selected_generation = st.selectbox(
+        "세대 선택",
+        options=[""] + list(DOCS["generation"].keys()),
+        format_func=lambda x: "세대를 선택하세요" if x == "" else x
+    )
+    
+    selected_mbti_groups = st.multiselect(
+        "MBTI 선택",
+        options=list(DOCS["mbti"].keys())
+    )
+
+# 메인 컨텐츠
 col1, col2 = st.columns([3, 2])
 
 with col1:
-    st.subheader("💡 프롬프트 설정")
+    st.subheader("💡 프롬프트 작성")
     
-    default_prompt = """
-다음 정보를 바탕으로 MZ세대를 위한 관광지 광고 카피를 생성해주세요:
-1. 카피는 젊고 트렌디한 톤앤매너로 작성해주세요
-2. 카피는 한 문장으로 작성해주세요
-3. 이모지를 적절히 활용해주세요
-4. MZ세대의 관심사와 여행 성향을 반영해주세요
+    # 프롬프트 생성
+    base_prompt = f"""
+다음 정보를 바탕으로 광고 카피를 생성해주세요:
+
+[지역 정보]
+{DOCS["region"].get(selected_region, "지역 정보가 없습니다.")}
+
+[세대 특성]
+{DOCS["generation"].get(selected_generation, "세대 정보가 없습니다.")}
 """
+    
+    if selected_mbti_groups:
+        mbti_info = "\n".join([
+            f"[{mbti.upper()} 특성]\n{DOCS['mbti'].get(mbti, '정보 없음')}"
+            for mbti in selected_mbti_groups
+        ])
+        base_prompt += f"\n[MBTI 특성]\n{mbti_info}"
     
     prompt = st.text_area(
-        "프롬프트를 수정해보세요",
-        value=default_prompt,
-        height=200,
-        help="프롬프트를 수정하여 더 나은 광고 카피를 생성해보세요!"
+        "생성 프롬프트",
+        value=base_prompt,
+        height=300
     )
-
-    if st.button("🎨 광고 카피 생성하기", use_container_width=True):
-        with st.spinner("AI 모델이 광고 카피를 생성중입니다..."):
-            # Simulate API calls (replace with actual API calls)
-            results = {
-                'gpt': "✨ 인생샷 건지러 떠나는 힙한 여행, 우리 동네가 기다려요!",
-                'gemini': "🌊 MZ들의 핫플레이스, 우리 동네에서 트렌디한 일상 탈출!",
-                'claude': "🎡 놀면서 배우는 우리 동네 스토리, 당신의 인스타를 채워드립니다"
-            }
-            
-            # Evaluate copies
-            evaluation_prompt = f"""
-다음 광고 카피들을 0-100점 사이로 평가하고 그 이유를 설명해주세요.
-평가 기준:
-1. MZ세대 타겟팅 적절성
-2. 메시지 전달력
-3. 창의성과 참신성
-4. 트렌디함
-
-형식:
-점수: [숫자]
-이유: [설명]
-"""
-            
-            # Simulate evaluations (replace with actual API calls)
-            evaluations = {
-                'gpt': {'score': 85, 'reason': "인생샷이라는 키워드와 힙한이라는 표현이 MZ세대의 관심사를 정확히 타겟팅했습니다."},
-                'gemini': {'score': 88, 'reason': "핫플레이스와 트렌디란 단어 선택이 적절하며, 일상 탈출이라는 컨셉이 매력적입니다."},
-                'claude': {'score': 82, 'reason': "인스타그램 연계 마케팅 접근이 좋으나, 다소 긴 문장 구조가 아쉽습니다."}
-            }
-            
-            # Save to history
-            st.session_state.history.append({
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                'prompt': prompt[:20] + "...",
-                'results': results,
-                'evaluations': evaluations
-            })
+    
+    if st.button("🎨 광고 카피 생성", use_container_width=True):
+        if not selected_region or not selected_generation:
+            st.error("지역과 세대를 선택해주세요!")
+        else:
+            with st.spinner("AI 모델이 광고 카피를 생성중입니다..."):
+                # 각 모델에서 카피 생성
+                results = {
+                    model: generate_copy(prompt, model)
+                    for model in ["gpt", "gemini", "claude"]
+                }
+                
+                # 평가 수행
+                evaluations = {
+                    model: st.session_state.evaluator.evaluate(copy, model)
+                    for model, copy in results.items()
+                }
+                
+                # 결과 저장
+                experiment_data = {
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "prompt": prompt,
+                    "results": results,
+                    "evaluations": evaluations,
+                    "settings": {
+                        "region": selected_region,
+                        "generation": selected_generation,
+                        "mbti": selected_mbti_groups
+                    }
+                }
+                st.session_state.history.append(experiment_data)
 
 with col2:
-    st.subheader("📊 생성 결과 기록")
+    st.subheader("📊 실험 결과")
     
-    for idx, entry in enumerate(reversed(st.session_state.history)):
-        with st.expander(f"📝 {entry['prompt']} ({entry['timestamp']})"):
-            for model, copy in entry['results'].items():
-                eval_data = entry['evaluations'][model]
+    for idx, experiment in enumerate(reversed(st.session_state.history)):
+        with st.expander(f"실험 {len(st.session_state.history)-idx}", expanded=idx==0):
+            st.text(f"시간: {experiment['timestamp']}")
+            
+            for model in ["gpt", "gemini", "claude"]:
+                result = experiment['results'][model]
+                evaluation = experiment['evaluations'][model]
                 
                 st.markdown(f"""
-                <div class="result-card">
-                    <span class="model-tag {model}-tag">{model.upper()}</span>
-                    <p>{copy}</p>
-                    <details>
-                        <summary>평가 점수: {eval_data['score']}</summary>
-                        <p>{eval_data['reason']}</p>
-                    </details>
-                </div>
-                """, unsafe_allow_html=True)
+                **{model.upper()}**
+                ```
+                {result}
+                ```
+                점수: {evaluation['score']}
+                이유: {evaluation['reason']}
+                """)
+                
+                fig = visualize_evaluation_results(evaluation)
+                st.plotly_chart(fig, use_container_width=True)
 
-# Display prompt history with rankings
-st.subheader("🏆 프롬프트 성능 순위")
+# 실험 데이터 다운로드 버튼
 if st.session_state.history:
-    history_df = pd.DataFrame([
-        {
-            '프롬프트': h['prompt'],
-            '평균 점수': sum(h['evaluations'][m]['score'] for m in ['gpt', 'gemini', 'claude']) / 3,
-            '최고 점수': max(h['evaluations'][m]['score'] for m in ['gpt', 'gemini', 'claude']),
-            '생성 시간': h['timestamp']
-        }
-        for h in st.session_state.history
-    ])
-    
-    st.dataframe(
-        history_df.sort_values('평균 점수', ascending=False),
-        use_container_width=True,
-        hide_index=True
+    st.download_button(
+        "📥 실험 데이터 다운로드",
+        data=json.dumps(st.session_state.history, indent=2, ensure_ascii=False),
+        file_name="experiment_results.json",
+        mime="application/json"
     )
+        
