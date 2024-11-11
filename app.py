@@ -125,6 +125,38 @@ st.markdown("""
     .improvement-tip {
         color: #3b82f6;
         font-weight: 500;
+    }/* Expander 스타일링 */
+    .streamlit-expanderHeader {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+    
+    .streamlit-expanderContent {
+        border: 1px solid #e2e8f0;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        padding: 1rem;
+        background-color: white;
+    }
+    
+    /* 문서 에디터 스타일링 */
+    .stTextArea textarea {
+        font-family: 'Pretendard', sans-serif;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+    
+    /* 프롬프트 섹션 구분 */
+    .prompt-section {
+        margin: 1rem 0;
+        padding: 1rem;
+        background-color: white;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -604,55 +636,64 @@ with st.sidebar:
         )
 # Main content
 col1, col2 = st.columns([3, 2])
-
 with col1:
     st.subheader("💡 프롬프트 작성")
     
-    # 프롬프트 생성
-    prompt = create_adaptive_prompt(
-        city_doc=DOCS["region"].get(selected_region, "지역 정보가 없습니다."),
-        target_generation=selected_generation,
-        mbti=selected_mbti,
-        include_mbti=include_mbti
-    )
+    # 프롬프트 에디터 영역
+    st.markdown("""
+    <div class="prompt-tip">
+        💡 프롬프트를 수정하여 더 나은 결과를 만들어보세요.
+        문서 내용은 접어두고 필요할 때 펼쳐볼 수 있습니다!
+    </div>
+    """, unsafe_allow_html=True)
     
-    # 프롬프트 표시 및 편집 가능하게
+    # 기본 프롬프트 구조
+    base_structure = """당신은 숙련된 카피라이터입니다. 
+아래 제공되는 정보를 참고하여, 매력적인 광고 카피를 생성해주세요.
+이 정보는 참고용이며, 카피는 자연스럽고 창의적이어야 합니다."""
+
+    st.markdown("#### 기본 설정")
+    st.markdown(base_structure)
+
+    # 문서 내용을 expander로 표시
+    with st.expander("📄 참고 문서 내용 보기/수정", expanded=False):
+        docs_content = f"""
+### 지역 정보
+{DOCS["region"].get(selected_region, "지역 정보가 없습니다.")}
+
+### 세대 특성
+{DOCS["generation"].get(selected_generation, "세대 정보가 없습니다.")}
+"""
+        if include_mbti and selected_mbti:
+            docs_content += f"""
+### MBTI 특성
+{DOCS["mbti"].get("mbti_all", "MBTI 정보가 없습니다.")}
+"""
+        edited_docs = st.text_area(
+            "문서 내용 수정",
+            value=docs_content,
+            height=300,
+            key="docs_editor"
+        )
+    
+    st.markdown("#### 요구사항")
+    requirements = """
+1. 위 정보는 영감을 얻기 위한 참고 자료입니다.
+2. 도시의 핵심 매력을 포착해 신선한 관점으로 표현해주세요.
+3. 타겟층에 맞는 톤앤매너를 사용하되, 정보의 나열은 피해주세요.
+4. 감성적 공감과 구체적 특징이 조화를 이루도록 해주세요.
+5. 한 문장으로 작성하고, 이모지 1-2개를 포함해주세요.
+"""
+    st.markdown(requirements)
+
+    # 최종 프롬프트 미리보기 및 수정
+    st.markdown("#### 📝 최종 프롬프트")
     edited_prompt = st.text_area(
-        "생성 프롬프트",
-        value=prompt,
-        height=400
+        "프롬프트 직접 수정",
+        value=base_structure + "\n\n" + edited_docs + "\n\n요구사항:\n" + requirements,
+        height=200,
+        key="final_prompt"
     )
-    
-    if st.button("🎨 광고 카피 생성", use_container_width=True):
-        if not selected_region or not selected_generation:
-            st.error("지역과 세대를 선택해주세요!")
-        else:
-            with st.spinner("AI 모델이 광고 카피를 생성중입니다..."):
-                # Generate copies
-                results = {
-                    model: generate_copy(prompt, model)
-                    for model in ["gpt", "gemini", "claude"]
-                }
-                
-                # Evaluate copies
-                evaluations = {
-                    model: st.session_state.evaluator.evaluate(copy, model)
-                    for model, copy in results.items()
-                }
-                
-                # Save results
-                experiment_data = {
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "prompt": prompt,
-                    "results": results,
-                    "evaluations": evaluations,
-                    "settings": {
-                        "region": selected_region,
-                        "generation": selected_generation,
-                        "mbti": selected_mbti
-                    }
-                }
-                st.session_state.history.append(experiment_data)
                 
 with col2:
     st.subheader("실험 결과")
