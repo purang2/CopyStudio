@@ -636,6 +636,7 @@ with st.sidebar:
         )
 # Main content
 col1, col2 = st.columns([3, 2])
+
 with col1:
     st.subheader("💡 프롬프트 작성")
     
@@ -669,6 +670,11 @@ with col1:
 ### MBTI 특성
 {DOCS["mbti"].get("mbti_all", "MBTI 정보가 없습니다.")}
 """
+        if selected_season:
+            docs_content += f"""
+### 계절 특성
+{selected_season}의 특징을 반영합니다."""
+
         edited_docs = st.text_area(
             "문서 내용 수정",
             value=docs_content,
@@ -694,6 +700,36 @@ with col1:
         height=200,
         key="final_prompt"
     )
+
+    # 생성 버튼
+    if st.button("🎨 광고 카피 생성", use_container_width=True):
+        if not selected_region or not selected_generation:
+            st.error("지역과 세대를 선택해주세요!")
+        else:
+            with st.spinner("AI 모델이 광고 카피를 생성중입니다..."):
+                results = {
+                    model: generate_copy(edited_prompt, model)
+                    for model in ["gpt", "gemini", "claude"]
+                }
+                
+                evaluations = {
+                    model: st.session_state.evaluator.evaluate(copy, model)
+                    for model, copy in results.items()
+                }
+                
+                experiment_data = {
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "prompt": edited_prompt,
+                    "results": results,
+                    "evaluations": evaluations,
+                    "settings": {
+                        "region": selected_region,
+                        "generation": selected_generation,
+                        "season": selected_season if selected_season else None,
+                        "mbti": selected_mbti if include_mbti else None
+                    }
+                }
+                st.session_state.history.append(experiment_data)
                 
 with col2:
     st.subheader("실험 결과")
