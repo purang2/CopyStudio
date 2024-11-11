@@ -12,6 +12,7 @@ from dataclasses import dataclass
 
 import plotly.express as px 
 import plotly.graph_objects as go
+from typing import Dict, List, Optional, Union
 
 
 # Page config must be the first Streamlit command
