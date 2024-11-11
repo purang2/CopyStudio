@@ -10,6 +10,15 @@ import plotly.express as px
 from typing import Dict, List, Optional
 from dataclasses import dataclass
 
+
+
+# Page config must be the first Streamlit command
+st.set_page_config(
+    page_title="CopyStudio Lab - 광고 카피 연구소", 
+    page_icon="🔬", 
+    layout="wide"
+)
+
 # Initialize API keys from Streamlit secrets
 openai.api_key = st.secrets["chatgpt"]
 genai.configure(api_key=st.secrets["gemini"])
@@ -26,9 +35,6 @@ gemini_model = genai.GenerativeModel(model_zoo[1])
 
 
 # CSS 
-
-
-# Custom CSS for modern design
 st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -383,9 +389,6 @@ def visualize_evaluation_results(results: Dict):
         title="평가 기준별 점수"
     )
     return fig
-
-# Streamlit app configuration
-st.set_page_config(page_title="CopyStudio Lab", page_icon="🔬", layout="wide")
 
 # Load documents
 DOCS = load_docs()
