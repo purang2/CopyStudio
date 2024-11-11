@@ -195,6 +195,48 @@ MBTI_GROUPS = {
     "탐험가형": ["ISTP", "ISFP", "ESTP", "ESFP"]
 }
 
+def create_adaptive_prompt(
+    city_doc: str, 
+    target_generation: str, 
+    mbti: list = None,
+    include_mbti: bool = False
+) -> str:
+    base_prompt = f"""
+당신은 숙련된 카피라이터입니다. 
+아래 제공되는 도시 정보를 참고하여, 매력적인 광고 카피를 생성해주세요.
+이 정보는 참고용이며, 카피는 자연스럽고 창의적이어야 합니다.
+
+[도시 정보]
+{city_doc}
+
+[카피 작성 가이드라인]
+1. 위 정보는 영감을 얻기 위한 참고 자료입니다.
+2. 도시의 핵심 매력을 포착해 신선한 관점으로 표현해주세요.
+3. 타겟층에 맞는 톤앤매너를 사용하되, 정보의 나열은 피해주세요.
+4. 감성적 공감과 구체적 특징이 조화를 이루도록 해주세요.
+
+[타겟 정보]
+세대: {target_generation}"""
+
+    if include_mbti and mbti:
+        mbti_prompt = f"""
+MBTI: {', '.join(mbti)}
+특별 고려사항: 
+- {', '.join(mbti)} 성향의 여행 선호도를 반영
+- 해당 성향의 관심사와 가치관 고려"""
+        base_prompt += mbti_prompt
+
+    base_prompt += """
+
+[제약사항]
+- 한 문장으로 작성
+- 이모지 1-2개 포함
+- 도시만의 독특한 특징 하나 이상 포함
+- 클리셰나 진부한 표현 지양
+"""
+    return base_prompt
+
+
 # 문서 로드 함수 수정
 def load_docs() -> Dict[str, Dict[str, str]]:
     docs_path = pathlib.Path("docs")
@@ -468,15 +510,19 @@ with st.sidebar:
         format_func=lambda x: "세대를 선택하세요" if x == "" else x
     )
     
-    st.subheader("MBTI 설정")
-    selected_mbti_groups = st.multiselect(
-        "MBTI 그룹 선택",
-        options=MBTI_GROUPS.keys()
-    )
+    # MBTI 선택 UI 수정
+    include_mbti = st.checkbox("MBTI 특성 포함하기", value=False)
+    selected_mbti = None
     
-    selected_mbti = []
-    for group in selected_mbti_groups:
-        selected_mbti.extend(MBTI_GROUPS[group])
+    if include_mbti:
+        selected_mbti_groups = st.multiselect(
+            "MBTI 그룹 선택",
+            options=MBTI_GROUPS.keys()
+        )
+        
+        selected_mbti = []
+        for group in selected_mbti_groups:
+            selected_mbti.extend(MBTI_GROUPS[group])
 
 # Main content
 col1, col2 = st.columns([3, 2])
@@ -484,36 +530,19 @@ col1, col2 = st.columns([3, 2])
 with col1:
     st.subheader("💡 프롬프트 작성")
     
-    # Generate base prompt
-    base_prompt = f"""
-다음 정보를 바탕으로 광고 카피를 생성해주세요:
-
-[지역 정보]
-{DOCS["region"].get(selected_region, "지역 정보가 없습니다.")}
-
-[세대 특성]
-{DOCS["generation"].get(selected_generation, "세대 정보가 없습니다.")}
-"""
+    # 프롬프트 생성
+    prompt = create_adaptive_prompt(
+        city_doc=DOCS["region"].get(selected_region, "지역 정보가 없습니다."),
+        target_generation=selected_generation,
+        mbti=selected_mbti,
+        include_mbti=include_mbti
+    )
     
-    if selected_mbti:
-        mbti_info = "\n".join([
-            f"[{mbti.upper()} 특성]\n{DOCS['mbti'].get(mbti.lower(), '정보 없음')}"
-            for mbti in selected_mbti
-        ])
-        base_prompt += f"\n[MBTI 특성]\n{mbti_info}"
-    
-    base_prompt += """
-요구사항:
-1. 선택된 타겟층의 특성을 반영한 톤앤매너로 작성
-2. 카피는 한 문장으로 작성
-3. 이모지를 적절히 활용
-4. 선택된 지역의 특징을 효과적으로 표현
-"""
-    
-    prompt = st.text_area(
+    # 프롬프트 표시 및 편집 가능하게
+    edited_prompt = st.text_area(
         "생성 프롬프트",
-        value=base_prompt,
-        height=300
+        value=prompt,
+        height=400
     )
     
     if st.button("🎨 광고 카피 생성", use_container_width=True):
