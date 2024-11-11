@@ -301,7 +301,10 @@ class AdCopyEvaluator:
                 result_text = response.choices[0].message.content
             elif model_name == "gemini":
                 try:
-                    response = gemini_model.generate_content(prompt)
+                    response = gemini_model.generate_content(prompt, generation_config={
+                        "temperature": 0.7,
+                        "max_output_tokens": 1000
+                    })
                     return response.text if hasattr(response, 'text') else "Gemini API 응답 오류"
                 except Exception as e:
                     return f"Gemini 평가 실패: {str(e)}"
@@ -382,17 +385,33 @@ def generate_copy(prompt: str, model_name: str) -> str:
             return response.choices[0].message.content.strip()
         elif model_name == "gemini":
             try:
-                response = gemini_model.generate_content(prompt)
-                return response.text if hasattr(response, 'text') else "Gemini API 응답 오류"
+                response = gemini_model.generate_content(
+                    prompt,
+                    generation_config={
+                        "temperature": 0.7,
+                        "max_output_tokens": 1000
+                    }
+                )
+                if not response.text:
+                    return "Gemini API 응답이 비어있습니다."
+                return response.text.strip()
             except Exception as e:
-                return f"Gemini 평가 실패: {str(e)}"
+                return "Gemini API 호출 실패: API 키를 확인해주세요."
+            
         else:  # claude
-            response = anthropic.messages.create(
-                model=model_zoo[2],
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=1000
-            )
-            return response.content[0].text.strip()
+            try:
+                response = anthropic.messages.create(
+                    model=model_zoo[2],
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=1000,
+                    temperature=0.7
+                )
+                return response.content[0].text.strip()
+            except Exception as e:
+                        if "credit balance is too low" in str(e):
+                            return "Claude API 호출 실패: API 크레딧이 부족합니다."
+                        return "Claude API 호출 실패: API 키를 확인해주세요."
+                
     except Exception as e:
         return f"생성 실패: {str(e)}"
         
