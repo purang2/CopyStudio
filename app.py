@@ -665,38 +665,37 @@ with col2:
         model_list = ["gpt", "gemini", "claude"]
         for idx, model_name in enumerate(model_list):
             try:
-                result = latest_experiment['results'].get(model_name, "결과 없음")
-                eval_data = latest_experiment['evaluations'].get(model_name, {
-                    "score": 0,
-                    "reason": "평가 실패",
-                    "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
-                })
-                
-                result_html = f"""
-                <div class="result-card">
-                    <span class="model-tag" style="background-color: {MODEL_COLORS[model_name]}">
-                        {model_name.upper()}
-                    </span>
-                    <div style="margin: 1rem 0;">
-                        {result}
+                with st.container():
+                    result = latest_experiment['results'].get(model_name, "결과 없음")
+                    eval_data = latest_experiment['evaluations'].get(model_name, {
+                        "score": 0,
+                        "reason": "평가 실패",
+                        "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
+                    })
+                    
+                    st.markdown(f"""
+                    <div class="result-card">
+                        <span class="model-tag" style="background-color: {MODEL_COLORS[model_name]}">
+                            {model_name.upper()}
+                        </span>
+                        <div style="margin: 1rem 0;">
+                            {result}
+                        </div>
+                        <div class="score-badge">
+                            점수: {eval_data.get('score', 0)}점
+                        </div>
+                        <div class="prompt-feedback">
+                            {eval_data.get('reason', '평가 이유 없음')}
+                        </div>
                     </div>
-                    <div class="score-badge">
-                        점수: {eval_data.get('score', 0)}점
-                    </div>
-                    <div class="prompt-feedback">
-                        {eval_data.get('reason', '평가 이유 없음')}
-                    </div>
-                </div>
-                """
-                
-                st.markdown(result_html, unsafe_allow_html=True, key=f"result_card_{idx}")
-                
-                if 'detailed_scores' in eval_data:
-                    try:
-                        fig = visualize_evaluation_results(eval_data)
-                        st.plotly_chart(fig, use_container_width=True, key=f"chart_{idx}")
-                    except Exception as e:
-                        st.error(f"차트 생성 중 오류 발생: {str(e)}")
+                    """, unsafe_allow_html=True)
+                    
+                    if 'detailed_scores' in eval_data:
+                        try:
+                            fig = visualize_evaluation_results(eval_data)
+                            st.plotly_chart(fig, use_container_width=True)
+                        except Exception as e:
+                            st.error(f"차트 생성 중 오류 발생: {str(e)}")
             except Exception as e:
                 st.error(f"결과 표시 중 오류 발생 ({model_name}): {str(e)}")
 
