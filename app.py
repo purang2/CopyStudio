@@ -14,15 +14,11 @@ import plotly.express as px
 import plotly.graph_objects as go
 from typing import Dict, List, Optional, Union
 
-from PIL import Image
-
-# 이미지 파일 로드
-favicon = Image.open('123456.svg')
 
 # Page config must be the first Streamlit command
 st.set_page_config(
     page_title="광고문구 생성 카피 AI", 
-    page_icon=favicon, 
+    page_icon="🏙️", 
     layout="wide"
 )
 
