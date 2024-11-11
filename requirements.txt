@@ -1,7 +1,7 @@
 google-generativeai
-streamlit
-python-dotenv
 openai
 anthropic
+streamlit
 pandas
+python-dotenv
 plotly
