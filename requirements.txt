@@ -1,7 +1,8 @@
+streamlit
+pandas
+plotly
+python
+python-dotenv
 google-generativeai
 openai
 anthropic
-streamlit
-pandas
-python-dotenv
-plotly
