@@ -468,31 +468,71 @@ def visualize_evaluation_results(results: Dict):
     )
     return fig
 
-
-
 def analyze_prompt_performance(history: List[dict]) -> dict:
     """프롬프트 성능 분석"""
     if not history:
         return None
     
-    latest = history[-1]
-    prev = history[-2] if len(history) > 1 else None
-    
-    current_avg = sum(e['score'] for e in latest['evaluations'].values()) / 3
-    prev_avg = sum(e['score'] for e in prev['evaluations'].values()) / 3 if prev else None
-    
-    analysis = {
-        "current_score": current_avg,
-        "improvement": current_avg - prev_avg if prev_avg else 0,
-        "top_model": max(latest['evaluations'].items(), key=lambda x: x[1]['score'])[0],
-        "suggestions": []
-    }
-    
-    if analysis["improvement"] <= 0:
-        analysis["suggestions"].append("더 구체적인 지역 특징을 언급해보세요")
-        analysis["suggestions"].append("타겟층의 관심사를 더 반영해보세요")
-    
-    return analysis
+    try:
+        latest = history[-1]
+        prev = history[-2] if len(history) > 1 else None
+        
+        # 평가 결과에서 유효한 점수만 추출
+        valid_scores = [
+            e.get('score', 0)  # 점수가 없으면 0으로 처리
+            for e in latest['evaluations'].values()
+            if isinstance(e, dict)  # dictionary인 경우만 처리
+        ]
+        
+        # 유효한 점수가 있는 경우에만 평균 계산
+        if valid_scores:
+            current_avg = sum(valid_scores) / len(valid_scores)
+        else:
+            current_avg = 0
+        
+        # 이전 결과가 있는 경우 비교
+        if prev:
+            prev_valid_scores = [
+                e.get('score', 0)
+                for e in prev['evaluations'].values()
+                if isinstance(e, dict)
+            ]
+            prev_avg = sum(prev_valid_scores) / len(prev_valid_scores) if prev_valid_scores else 0
+            improvement = current_avg - prev_avg
+        else:
+            improvement = 0
+        
+        # 최고 성능 모델 찾기
+        valid_evaluations = {
+            model: eval_data.get('score', 0)
+            for model, eval_data in latest['evaluations'].items()
+            if isinstance(eval_data, dict)
+        }
+        
+        top_model = max(valid_evaluations.items(), key=lambda x: x[1])[0] if valid_evaluations else "없음"
+        
+        analysis = {
+            "current_score": current_avg,
+            "improvement": improvement,
+            "top_model": top_model,
+            "suggestions": []
+        }
+        
+        # 성능 기반 개선 제안
+        if improvement <= 0:
+            analysis["suggestions"].append("더 구체적인 지역 특징을 언급해보세요")
+            analysis["suggestions"].append("타겟층의 관심사를 더 반영해보세요")
+        
+        return analysis
+        
+    except Exception as e:
+        st.error(f"성능 분석 중 오류 발생: {str(e)}")
+        return {
+            "current_score": 0,
+            "improvement": 0,
+            "top_model": "분석 실패",
+            "suggestions": ["일부 모델에서 오류가 발생했습니다. 프롬프트를 수정하고 다시 시도해보세요."]
+        }
 
 def create_performance_chart(history: List[dict]) -> go.Figure:
     """성능 트렌드 차트 생성"""
