@@ -413,8 +413,6 @@ if 'evaluator' not in st.session_state:
 if 'history' not in st.session_state:
     st.session_state.history = []
 
-# Main UI
-st.title("🔬 광고 카피 생성 연구 플랫폼")
 
 # Sidebar configuration
 with st.sidebar:
