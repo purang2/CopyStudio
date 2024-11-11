@@ -300,8 +300,11 @@ class AdCopyEvaluator:
                 )
                 result_text = response.choices[0].message.content
             elif model_name == "gemini":
-                response = gemini_model.generate_content(evaluation_prompt)
-                result_text = response.text
+                try:
+                    response = gemini_model.generate_content(prompt)
+                    return response.text if hasattr(response, 'text') else "Gemini API 응답 오류"
+                except Exception as e:
+                    return f"Gemini 평가 실패: {str(e)}"
             else:  # claude
                 response = anthropic.messages.create(
                     model=model_zoo[2],
@@ -373,16 +376,21 @@ def generate_copy(prompt: str, model_name: str) -> str:
             #response = openai.ChatCompletion.create(
             response = client.chat.completions.create(
                 model=model_zoo[0],
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=1000
             )
             return response.choices[0].message.content.strip()
         elif model_name == "gemini":
-            response = gemini_model.generate_content(prompt)
-            return response.text.strip()
+            try:
+                response = gemini_model.generate_content(prompt)
+                return response.text if hasattr(response, 'text') else "Gemini API 응답 오류"
+            except Exception as e:
+                return f"Gemini 평가 실패: {str(e)}"
         else:  # claude
             response = anthropic.messages.create(
                 model=model_zoo[2],
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=1000
             )
             return response.content[0].text.strip()
     except Exception as e:
@@ -631,47 +639,66 @@ with col2:
     st.subheader("실험 결과")
     
     if st.session_state.history:
-        latest_experiment = st.session_state.history[-1]  # 변수명 명확하게 수정
+        latest_experiment = st.session_state.history[-1]
         
+        # 성능 분석
         analysis = analyze_prompt_performance(st.session_state.history)
         if analysis:
-            st.markdown(f"""
-            <div class="prompt-feedback">
-                <h4>📈 성능 분석</h4>
-                <p>현재 평균 점수: {analysis['current_score']:.1f}</p>
-                <p>이전 대비: {analysis['improvement']:+.1f}</p>
-                <p>최고 성능 모델: {analysis['top_model'].upper()}</p>
-                
-                <div class="improvement-tip">
-                    💡 개선 포인트:
-                    {'<br>'.join(f'- {s}' for s in analysis['suggestions'])}
+            try:
+                st.markdown(f"""
+                <div class="prompt-feedback">
+                    <h4>📈 성능 분석</h4>
+                    <p>현재 평균 점수: {analysis['current_score']:.1f}</p>
+                    <p>이전 대비: {analysis['improvement']:+.1f}</p>
+                    <p>최고 성능 모델: {analysis['top_model'].upper()}</p>
+                    
+                    <div class="improvement-tip">
+                        💡 개선 포인트:
+                        {'<br>'.join(f'- {s}' for s in analysis['suggestions'])}
+                    </div>
                 </div>
-            </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
+            except Exception as e:
+                st.error(f"성능 분석 표시 중 오류 발생: {str(e)}")
         
         # 결과 카드 표시
-        model_list = ["gpt", "gemini", "claude"]  # 모델 리스트 명시적 정의
+        model_list = ["gpt", "gemini", "claude"]
         for idx, model_name in enumerate(model_list):
-            result = latest_experiment['results'][model_name]
-            eval_data = latest_experiment['evaluations'][model_name]
-            
-            st.markdown(f"""
-            <div class="result-card">
-                <span class="model-tag" style="background-color: {MODEL_COLORS[model_name]}">
-                    {model_name.upper()}
-                </span>
-                <div style="margin: 1rem 0;">
-                    {result}
+            try:
+                result = latest_experiment['results'].get(model_name, "결과 없음")
+                eval_data = latest_experiment['evaluations'].get(model_name, {
+                    "score": 0,
+                    "reason": "평가 실패",
+                    "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
+                })
+                
+                result_html = f"""
+                <div class="result-card">
+                    <span class="model-tag" style="background-color: {MODEL_COLORS[model_name]}">
+                        {model_name.upper()}
+                    </span>
+                    <div style="margin: 1rem 0;">
+                        {result}
+                    </div>
+                    <div class="score-badge">
+                        점수: {eval_data.get('score', 0)}점
+                    </div>
+                    <div class="prompt-feedback">
+                        {eval_data.get('reason', '평가 이유 없음')}
+                    </div>
                 </div>
-                <div class="score-badge">
-                    점수: {eval_data['score']}점
-                </div>
-                <div class="prompt-feedback">
-                    {eval_data['reason']}
-                </div>
-            </div>
-            """, unsafe_allow_html=True, key=f"result_card_{idx}")
-            
-            # 차트 생성 및 표시
-            fig = visualize_evaluation_results(eval_data)
-            st.plotly_chart(fig, use_container_width=True, key=f"chart_{idx}")
+                """
+                
+                st.markdown(result_html, unsafe_allow_html=True, key=f"result_card_{idx}")
+                
+                if 'detailed_scores' in eval_data:
+                    try:
+                        fig = visualize_evaluation_results(eval_data)
+                        st.plotly_chart(fig, use_container_width=True, key=f"chart_{idx}")
+                    except Exception as e:
+                        st.error(f"차트 생성 중 오류 발생: {str(e)}")
+            except Exception as e:
+                st.error(f"결과 표시 중 오류 발생 ({model_name}): {str(e)}")
+
+    else:
+        st.info("광고 카피를 생성하면 여기에 결과가 표시됩니다.")
