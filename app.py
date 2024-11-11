@@ -38,75 +38,50 @@ model_zoo = ['gpt-4o',
 gemini_model = genai.GenerativeModel(model_zoo[1])
 
 
-# CSS 
+# Custom CSS
 st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
-    /* 전체 폰트 및 색상 스타일 */
     [data-testid="stAppViewContainer"] {
         font-family: 'Pretendard', sans-serif;
         background-color: #f8fafc;
     }
 
-    /* 헤더 스타일링 */
-    h1, h2, h3, h4, h5, h6 {
-        font-family: 'Pretendard', sans-serif;
-        font-weight: 700;
-        color: #1e293b;
-    }
-
-    /* 카드 스타일 */
-    .stCard {
-        border-radius: 15px;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+    .prompt-editor {
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
         padding: 1rem;
         background-color: white;
     }
 
-    /* 버튼 스타일링 */
-    .stButton > button {
-        background-color: #3b82f6;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 0.5rem 1rem;
-        font-weight: 600;
-        transition: all 0.2s ease;
-    }
-    .stButton > button:hover {
-        background-color: #2563eb;
-        transform: translateY(-1px);
+    .prompt-editor:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 1px #3b82f6;
     }
 
-    /* 사이드바 스타일링 */
-    [data-testid="stSidebar"] {
-        background-color: white;
-        border-right: 1px solid #e2e8f0;
-        padding: 2rem 1rem;
-    }
-    [data-testid="stSidebar"] .stMarkdown {
-        padding: 0.5rem 0;
+    .prompt-tip {
+        background-color: #f1f5f9;
+        border-left: 4px solid #3b82f6;
+        padding: 1rem;
+        margin: 1rem 0;
+        border-radius: 0 8px 8px 0;
     }
 
-    /* 셀렉트박스 스타일링 */
-    .stSelectbox > div > div {
-        background-color: white;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-        padding: 0.5rem;
-    }
-
-    /* 결과 카드 스타일링 */
     .result-card {
         background-color: white;
-        border-radius: 10px;
+        border-radius: 12px;
         padding: 1.5rem;
         margin: 1rem 0;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        transition: all 0.2s ease;
+    }
+    
+    .result-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
 
-    /* 모델 태그 스타일링 */
     .model-tag {
         display: inline-block;
         padding: 0.25rem 0.75rem;
@@ -114,75 +89,45 @@ st.markdown("""
         font-size: 0.875rem;
         font-weight: 600;
         margin-bottom: 0.5rem;
-    }
-    .gpt-tag { background-color: #10b981; color: white; }
-    .gemini-tag { background-color: #6366f1; color: white; }
-    .claude-tag { background-color: #8b5cf6; color: white; }
-
-    /* 평가 결과 스타일링 */
-    .evaluation-score {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #1e293b;
-    }
-    .evaluation-reason {
-        color: #64748b;
-        font-size: 0.875rem;
-        line-height: 1.5;
-        margin-top: 0.5rem;
-    }
-
-    /* 텍스트 영역 스타일링 */
-    .stTextArea > div > textarea {
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-        padding: 1rem;
-        font-family: 'Pretendard', sans-serif;
-    }
-
-    /* 로딩 스피너 스타일링 */
-    .stSpinner > div {
-        border-color: #3b82f6;
-    }
-
-    /* 탭 스타일링 */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        white-space: pre-wrap;
-        background-color: white;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-        color: #1e293b;
-        font-weight: 500;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #3b82f6;
         color: white;
-        border: none;
     }
 
-    /* 경고/성공 메시지 스타일링 */
-    .stAlert {
+    .score-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 9999px;
+        font-weight: 600;
+        background-color: #f1f5f9;
+        cursor: pointer;
+    }
+    
+    .score-badge:hover {
+        background-color: #e2e8f0;
+    }
+
+    .history-item {
+        border-left: 4px solid #3b82f6;
+        padding: 1rem;
+        margin: 1rem 0;
+        background-color: white;
+        border-radius: 0 8px 8px 0;
+    }
+
+    .prompt-feedback {
+        background-color: #f8fafc;
         border-radius: 8px;
         padding: 1rem;
+        margin-top: 1rem;
     }
-    .stSuccess {
-        background-color: #ecfdf5;
-        color: #065f46;
-    }
-    .stError {
-        background-color: #fef2f2;
-        color: #991b1b;
+
+    .improvement-tip {
+        color: #3b82f6;
+        font-weight: 500;
     }
 </style>
 """, unsafe_allow_html=True)
-
-
-
-
 
 
 
@@ -195,7 +140,7 @@ MBTI_GROUPS = {
     "탐험가형": ["ISTP", "ISFP", "ESTP", "ESFP"]
 }
 
-# MBTI 상수 수정
+# Constants
 MBTI_TYPES = [
     "INTJ", "INTP", "ENTJ", "ENTP",
     "INFJ", "INFP", "ENFJ", "ENFP",
@@ -203,13 +148,40 @@ MBTI_TYPES = [
     "ISTP", "ISFP", "ESTP", "ESFP"
 ]
 
+MODEL_COLORS = {
+    "gpt": "#10a37f",  # OpenAI 그린
+    "gemini": "#4285f4",  # Google 블루
+    "claude": "#8e44ad"  # Claude 퍼플
+}
+
+@dataclass
+class ScoringConfig:
+    """평가 시스템 설정을 관리하는 클래스"""
+    prompt: str
+    criteria: List[str]
+    min_score: int = 0
+    max_score: int = 100
+    
+    def to_dict(self) -> dict:
+        return {
+            "prompt": self.prompt,
+            "criteria": self.criteria,
+            "min_score": self.min_score,
+            "max_score": self.max_score
+        }
+    
+    @classmethod
+    def from_dict(cls, data: dict) -> 'ScoringConfig':
+        return cls(**data)
+
 
 def create_adaptive_prompt(
     city_doc: str, 
     target_generation: str, 
-    mbti: str = None,  # 단일 MBTI 문자열로 변경
+    mbti: str = None,
     include_mbti: bool = False
 ) -> str:
+    """문서 기반 유연한 프롬프트 생성"""
     base_prompt = f"""
 당신은 숙련된 카피라이터입니다. 
 아래 제공되는 도시 정보를 참고하여, 매력적인 광고 카피를 생성해주세요.
@@ -244,9 +216,7 @@ MBTI: {mbti}
 - 클리셰나 진부한 표현 지양
 """
     return base_prompt
-
-
-# 문서 로드 함수 수정
+# Load documents
 def load_docs() -> Dict[str, Dict[str, str]]:
     docs_path = pathlib.Path("docs")
     docs = {
@@ -255,70 +225,31 @@ def load_docs() -> Dict[str, Dict[str, str]]:
         "mbti": {}
     }
     
-    # 지역 문서 로드
+    # Load region docs
     region_path = docs_path / "regions"
     if region_path.exists():
         for file in region_path.glob("*.txt"):
             with open(file, "r", encoding="utf-8") as f:
                 docs["region"][file.stem] = f.read()
     
-    # 세대 문서 로드
+    # Load generation docs
     generation_path = docs_path / "generations"
     if generation_path.exists():
         for file in generation_path.glob("*.txt"):
             with open(file, "r", encoding="utf-8") as f:
                 docs["generation"][file.stem] = f.read()
     
-    # MBTI 문서 로드 (단일 파일)
+    # Load MBTI doc
     mbti_file = docs_path / "mbti" / "mbti_all.txt"
     if mbti_file.exists():
         with open(mbti_file, "r", encoding="utf-8") as f:
             content = f.read()
-            # 각 MBTI 섹션 파싱
-            for group in MBTI_GROUPS.keys():
-                group_start = content.find(f"[{group}]")
-                next_group_start = len(content)
-                for other_group in MBTI_GROUPS.keys():
-                    if other_group != group:
-                        pos = content.find(f"[{other_group}]")
-                        if pos > group_start and pos < next_group_start:
-                            next_group_start = pos
-                
-                group_content = content[group_start:next_group_start].strip()
-                for mbti in MBTI_GROUPS[group]:
-                    mbti_start = group_content.find(mbti)
-                    next_mbti_start = len(group_content)
-                    for other_mbti in MBTI_GROUPS[group]:
-                        if other_mbti != mbti:
-                            pos = group_content.find(other_mbti)
-                            if pos > mbti_start and pos < next_mbti_start:
-                                next_mbti_start = pos
-                    
-                    mbti_content = group_content[mbti_start:next_mbti_start].strip()
-                    docs["mbti"][mbti.lower()] = mbti_content
+            # MBTI 파일 내용을 그대로 저장
+            docs["mbti"]["mbti_all"] = content
     
     return docs
 
 
-@dataclass
-class ScoringConfig:
-    """평가 시스템 설정을 관리하는 클래스"""
-    prompt: str
-    criteria: List[str]
-    min_score: int = 0
-    max_score: int = 100
-    
-    def to_dict(self) -> dict:
-        return {
-            "prompt": self.prompt,
-            "criteria": self.criteria,
-            "min_score": self.min_score,
-            "max_score": self.max_score
-        }
-    
-    @classmethod
-    def from_dict(cls, data: dict) -> 'ScoringConfig':
-        return cls(**data)
 
 class AdCopyEvaluator:
     """광고 카피 평가를 관리하는 클래스"""
@@ -329,12 +260,12 @@ class AdCopyEvaluator:
     def evaluate(self, copy: str, model_name: str) -> Dict:
         """평가 실행 및 결과 파싱"""
         try:
-            # Check cache
+            # 캐시된 결과가 있는지 확인
             cache_key = f"{copy}_{model_name}"
             if cache_key in self.results_cache:
                 return self.results_cache[cache_key]
             
-            # Construct evaluation prompt
+            # 평가 프롬프트 구성
             evaluation_prompt = f"""
 {self.scoring_config.prompt}
 
@@ -381,18 +312,21 @@ class AdCopyEvaluator:
                 "reason": f"평가 실패: {str(e)}",
                 "detailed_scores": [0] * len(self.scoring_config.criteria)
             }
-    
+
     def parse_evaluation_result(self, result_text: str) -> Dict:
-        """평가 결과 파싱"""
+        """평가 결과 파싱 로직"""
         try:
             lines = result_text.split('\n')
             
+            # 점수 추출
             score_line = next(l for l in lines if '점수:' in l)
             score = int(''.join(filter(str.isdigit, score_line)))
             
+            # 이유 추출
             reason_line = next(l for l in lines if '이유:' in l)
             reason = reason_line.split('이유:')[1].strip()
             
+            # 상세 점수 추출
             detailed_line = next(l for l in lines if '상세점수:' in l)
             detailed_scores = [
                 int(s.strip()) for s in 
@@ -433,6 +367,7 @@ def generate_copy(prompt: str, model_name: str) -> str:
             return response.content[0].text.strip()
     except Exception as e:
         return f"생성 실패: {str(e)}"
+        
 def visualize_evaluation_results(results: Dict):
     """결과 시각화 함수"""
     fig = go.Figure(data=go.Scatterpolar(
@@ -454,10 +389,80 @@ def visualize_evaluation_results(results: Dict):
     )
     return fig
 
+
+
+def analyze_prompt_performance(history: List[dict]) -> dict:
+    """프롬프트 성능 분석"""
+    if not history:
+        return None
+    
+    latest = history[-1]
+    prev = history[-2] if len(history) > 1 else None
+    
+    current_avg = sum(e['score'] for e in latest['evaluations'].values()) / 3
+    prev_avg = sum(e['score'] for e in prev['evaluations'].values()) / 3 if prev else None
+    
+    analysis = {
+        "current_score": current_avg,
+        "improvement": current_avg - prev_avg if prev_avg else 0,
+        "top_model": max(latest['evaluations'].items(), key=lambda x: x[1]['score'])[0],
+        "suggestions": []
+    }
+    
+    if analysis["improvement"] <= 0:
+        analysis["suggestions"].append("더 구체적인 지역 특징을 언급해보세요")
+        analysis["suggestions"].append("타겟층의 관심사를 더 반영해보세요")
+    
+    return analysis
+
+def create_performance_chart(history: List[dict]) -> go.Figure:
+    """성능 트렌드 차트 생성"""
+    if not history:
+        return None
+        
+    data = []
+    for entry in history:
+        timestamp = entry['timestamp']
+        for model, eval_data in entry['evaluations'].items():
+            data.append({
+                'timestamp': timestamp,
+                'model': model,
+                'score': eval_data['score']
+            })
+    
+    df = pd.DataFrame(data)
+    
+    fig = go.Figure()
+    for model in ["gpt", "gemini", "claude"]:
+        model_data = df[df['model'] == model]
+        fig.add_trace(go.Scatter(
+            x=model_data['timestamp'],
+            y=model_data['score'],
+            name=model.upper(),
+            line=dict(color=MODEL_COLORS[model])
+        ))
+    
+    fig.update_layout(
+        title='프롬프트 성능 트렌드',
+        xaxis_title="시간",
+        yaxis_title="점수",
+        legend_title="모델"
+    )
+    
+    return fig
+
+
+
 # Load documents
 DOCS = load_docs()
 
-# Initial scoring configuration
+# Initialize session state
+if 'history' not in st.session_state:
+    st.session_state.history = []
+if 'show_tutorial' not in st.session_state:
+    st.session_state.show_tutorial = True
+
+# Initialize scoring config
 DEFAULT_SCORING_CONFIG = ScoringConfig(
     prompt="""
 주어진 광고 카피를 다음 기준으로 평가해주세요.
@@ -465,24 +470,41 @@ DEFAULT_SCORING_CONFIG = ScoringConfig(
 최종 점수는 각 기준의 평균으로 계산합니다.
     """,
     criteria=[
-        "타겟 적합성",
+        "타겟 세대 적합성",
         "메시지 전달력",
         "창의성",
-        "브랜드 적합성"
+        "지역 특성 반영도"
     ]
 )
 
-# Initialize session state
+
+
 if 'scoring_config' not in st.session_state:
     st.session_state.scoring_config = DEFAULT_SCORING_CONFIG
 if 'evaluator' not in st.session_state:
     st.session_state.evaluator = AdCopyEvaluator(st.session_state.scoring_config)
-if 'history' not in st.session_state:
-    st.session_state.history = []
 
 
-# Sidebar configuration
+
+# Tutorial
+if st.session_state.show_tutorial:
+    with st.sidebar:
+        st.info("""
+        👋 처음 오셨나요?
+        
+        1️⃣ 지역과 세대를 선택하세요
+        2️⃣ 계절과 MBTI를 선택할 수 있습니다 (선택사항)
+        3️⃣ 생성된 프롬프트를 검토/수정하세요
+        4️⃣ 광고 카피를 생성하고 결과를 분석하세요
+        
+        🎯 프롬프트를 개선하며 더 좋은 결과를 만들어보세요!
+        """)
+        if st.button("알겠습니다!", use_container_width=True):
+            st.session_state.show_tutorial = False
+
+# Sidebar
 with st.sidebar:
+    # 평가 시스템 설정 부분 추가
     st.header("⚙️ 평가 시스템 설정")
     
     with st.expander("평가 프롬프트 설정", expanded=False):
@@ -504,8 +526,7 @@ with st.sidebar:
             st.session_state.evaluator = AdCopyEvaluator(new_config)
             st.success("평가 설정이 업데이트되었습니다!")
 
-    # Target selection
-    st.header("🎯 타겟 설정")
+    st.title("🎯 타겟 설정")
     
     selected_region = st.selectbox(
         "지역 선택",
@@ -518,17 +539,21 @@ with st.sidebar:
         options=[""] + list(DOCS["generation"].keys()),
         format_func=lambda x: "세대를 선택하세요" if x == "" else x
     )
+
+    # 계절 선택 추가
+    selected_season = st.selectbox(
+        "계절 선택 (선택사항)",
+        options=[""] + list(SEASONS.keys()),
+        format_func=lambda x: "계절을 선택하세요" if x == "" else x
+    )
     
-    
-    # MBTI 선택 UI 수정
-    include_mbti = st.checkbox("MBTI 특성 포함하기", value=False)
+    include_mbti = st.checkbox("MBTI 특성 포함하기")
     selected_mbti = None
-    
     if include_mbti:
         selected_mbti = st.selectbox(
             "MBTI 선택",
             options=MBTI_TYPES,
-            help="MBTI 유형을 선택하면 해당 성향에 맞는 카피가 생성됩니다"
+            help="선택한 MBTI 성향에 맞는 카피가 생성됩니다"
         )
 # Main content
 col1, col2 = st.columns([3, 2])
