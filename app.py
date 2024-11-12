@@ -378,7 +378,7 @@ class AdCopyEvaluator:
             }
 
     def parse_evaluation_result(self, result_text: str) -> Dict:
-    """평가 결과 파싱"""
+        """평가 결과 파싱"""
         try:
             lines = result_text.split('\n')
             
