@@ -341,15 +341,18 @@ class AdCopyEvaluator:
                 result_text = response.choices[0].message.content
             elif model_name == "gemini":
                 try:
-                    response = gemini_model.generate_content(evaluation_prompt)
-                    # 이 부분이 수정되어야 함
-                    return self.parse_evaluation_result(response.text)
-                except Exception as e:
-                    return {
-                        "score": 0,
-                        "reason": f"Gemini 평가 실패: {str(e)}",
-                        "detailed_scores": [0] * len(self.scoring_config.criteria)
+                    response = gemini_model.generate_content(prompt,safety_settings={
+                        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+                        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
                     }
+                    )
+                    #return response
+                    return response.text if hasattr(response, 'text') else "Gemini API 응답 오류"
+                
+                except Exception as e:
+                    return f"Gemini 평가 실패: {str(e)}"
             else:  # claude
                 response = anthropic.messages.create(
                     model=model_zoo[2],
@@ -430,11 +433,29 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
             
         elif model_name == "gemini":
             try:
-                response = gemini_model.generate_content(evaluation_prompt)
-                # response가 직접 텍스트를 반환할 수 있으므로
-                result_text = str(response)  # 강제로 문자열로 변환
+                response = gemini_model.generate_content(
+                    prompt,
+                    safety_settings={
+        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+    }
+                )
+                if not response.text:
+                    return {
+                        "success": False,
+                        "content": "Gemini API 응답이 비어있습니다."
+                    }
+                return {
+                    "success": True,
+                    "content": response.text.strip()
+                }
             except Exception as e:
-                result_text = f"Gemini 평가 실패: {str(e)}"
+                return {
+                    "success": False,
+                    "content": "Gemini API 호출 실패"
+                }
             
         else:  # claude
             try:
