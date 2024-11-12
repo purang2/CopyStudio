@@ -14,6 +14,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from typing import Dict, List, Optional, Union
 
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
+from google.api_core.exceptions import ResourceExhausted
 
 # Page config must be the first Streamlit command
 st.set_page_config(
@@ -339,10 +341,13 @@ class AdCopyEvaluator:
                 result_text = response.choices[0].message.content
             elif model_name == "gemini":
                 try:
-                    response = gemini_model.generate_content(prompt, generation_config={
-                        "temperature": 0.7,
-                        "max_output_tokens": 1000
-                    })
+                    response = gemini_model.generate_content(prompt,safety_settings={
+                        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+                        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                    }
+                    )
                     #return response
                     return response.text if hasattr(response, 'text') else "Gemini API 응답 오류"
                 
@@ -430,10 +435,12 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
             try:
                 response = gemini_model.generate_content(
                     prompt,
-                    generation_config={
-                        "temperature": 0.7,
-                        "max_output_tokens": 1000
-                    }
+                    safety_settings={
+        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+    }
                 )
                 if not response.text:
                     return {
