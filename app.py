@@ -343,7 +343,9 @@ class AdCopyEvaluator:
                         "temperature": 0.7,
                         "max_output_tokens": 1000
                     })
-                    return response.text if hasattr(response, 'text') else "Gemini API 응답 오류"
+                    return response
+                    #return response.text if hasattr(response, 'text') else "Gemini API 응답 오류"
+                
                 except Exception as e:
                     return f"Gemini 평가 실패: {str(e)}"
             else:  # claude
@@ -433,14 +435,14 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
                         "max_output_tokens": 1000
                     }
                 )
-                if not response.text:
+                if not response:
                     return {
                         "success": False,
                         "content": "Gemini API 응답이 비어있습니다."
                     }
                 return {
                     "success": True,
-                    "content": response.text.strip()
+                    "content": response.strip()
                 }
             except Exception as e:
                 return {
