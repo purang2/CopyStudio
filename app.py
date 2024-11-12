@@ -430,29 +430,11 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
             
         elif model_name == "gemini":
             try:
-                response = gemini_model.generate_content(
-                    prompt,
-                    safety_settings={
-        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-    }
-                )
-                if not response.text:
-                    return {
-                        "success": False,
-                        "content": "Gemini API 응답이 비어있습니다."
-                    }
-                return {
-                    "success": True,
-                    "content": response.text.strip()
-                }
+                response = gemini_model.generate_content(evaluation_prompt)
+                # response가 직접 텍스트를 반환할 수 있으므로
+                result_text = str(response)  # 강제로 문자열로 변환
             except Exception as e:
-                return {
-                    "success": False,
-                    "content": "Gemini API 호출 실패"
-                }
+                result_text = f"Gemini 평가 실패: {str(e)}"
             
         else:  # claude
             try:
