@@ -378,15 +378,17 @@ class AdCopyEvaluator:
             }
 
     def parse_evaluation_result(self, result_text: str) -> Dict:
-        """평가 결과 파싱"""
+    """평가 결과 파싱"""
         try:
             lines = result_text.split('\n')
             
             # 점수 추출 개선
             score_line = next(l for l in lines if '점수:' in l)
-            # 숫자만 추출하는 로직 개선
-            score_text = ''.join(c for c in score_line.split('점수:')[1] if c.isdigit() and c != '*')
-            score = int(score_text) if score_text else 0
+            # 숫자와 소수점만 추출하도록 수정
+            score_text = score_line.split('점수:')[1].strip()
+            # 숫자와 소수점만 남기고 제거
+            score_text = ''.join(c for c in score_text if c.isdigit() or c == '.')
+            score = float(score_text) if score_text else 0
             
             # 이유 추출
             reason_line = next(l for l in lines if '이유:' in l)
@@ -399,8 +401,10 @@ class AdCopyEvaluator:
                 detailed_scores = []
                 
                 for s in detailed_scores_text.split(','):
-                    score_text = ''.join(c for c in s if c.isdigit() and c != '*')
-                    detailed_scores.append(int(score_text) if score_text else 0)
+                    s = s.strip()
+                    # 각 점수에도 소수점 처리 적용
+                    score_text = ''.join(c for c in s if c.isdigit() or c == '.')
+                    detailed_scores.append(float(score_text) if score_text else 0)
             except:
                 detailed_scores = [score] * len(self.scoring_config.criteria)
             
