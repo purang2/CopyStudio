@@ -546,10 +546,8 @@ def display_performance_analysis(analysis: dict):
     """
 
 
-
-
 def visualize_evaluation_results(eval_data: Dict):
-    """결과 시각화 함수"""
+    """결과 시각화 함수와 점수 텍스트 표시"""
     if not eval_data:
         return None
 
@@ -579,7 +577,16 @@ def visualize_evaluation_results(eval_data: Dict):
         showlegend=False,
         title="평가 기준별 점수"
     )
-    return fig
+    
+    # 시각화 차트를 먼저 표시
+    st.plotly_chart(fig, use_container_width=True)
+
+    # 차트 아래에 총 점수와 평가 이유를 글자로 표시
+    total_score = eval_data.get('score', 0)
+    reason = eval_data.get('reason', '평가 이유 없음')
+    
+    st.write(f"**총 점수:** {total_score}점")
+    st.write(f"**평가 이유:** {reason}")
 
 def analyze_prompt_performance(history: List[dict]) -> dict:
     """프롬프트 성능 분석"""
