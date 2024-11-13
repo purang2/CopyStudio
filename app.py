@@ -546,7 +546,6 @@ def display_performance_analysis(analysis: dict):
     """
 
 
-
 def visualize_evaluation_results(eval_data: Dict):
     """결과 시각화 함수"""
     if not eval_data:
@@ -559,7 +558,7 @@ def visualize_evaluation_results(eval_data: Dict):
     # 최소 3개 이상의 축이 필요하도록 보정
     if len(criteria) < 3:
         criteria.extend(['추가 기준'] * (3 - len(criteria)))
-        scores.extend([0] * (3 - len(scores))
+        scores.extend([0] * (3 - len(scores)))  # 괄호 추가
 
     # 차트 생성
     fig = go.Figure(data=go.Scatterpolar(
@@ -582,7 +581,6 @@ def visualize_evaluation_results(eval_data: Dict):
 
     # 차트만 표시
     st.plotly_chart(fig, use_container_width=True)
-
 
 def analyze_prompt_performance(history: List[dict]) -> dict:
     """프롬프트 성능 분석"""
