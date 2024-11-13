@@ -455,7 +455,7 @@ class AdCopyEvaluator:
                 "reason": f"파싱 실패: {str(e)}",
                 "detailed_scores": [0] * len(self.scoring_config.criteria)
             }
-     def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
+def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
     """광고 카피 생성"""
     try:
         if model_name == "gpt":
