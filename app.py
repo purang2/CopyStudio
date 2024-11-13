@@ -970,22 +970,33 @@ with col2:
         for idx, model_name in enumerate(model_list):
             try:
                 with st.container():
-                    # gemini 모델의 결과가 문자열일 경우 문자열 그대로 사용
-                    if model_name == "gemini" and isinstance(latest_experiment['results'].get(model_name), str):
-                        result = latest_experiment['results'][model_name]  # gemini 결과는 문자열로 반환
+                    # latest_experiment가 딕셔너리이며, 'results'와 'evaluations'가 딕셔너리인지 확인
+                    if not isinstance(latest_experiment, dict):
+                        st.error("실험 데이터가 올바르지 않습니다.")
+                        result = "결과 없음"
+                        eval_data = {"score": 0, "reason": "평가 실패", "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)}
                     else:
-                        # 다른 모델은 딕셔너리로 처리
-                        result = latest_experiment['results'].get(model_name, "결과 없음")
+                        results_data = latest_experiment.get('results', {})
+                        evaluations_data = latest_experiment.get('evaluations', {})
         
-                    # 'latest_experiment['evaluations']'가 딕셔너리인지 확인 후 처리
-                    eval_data = (latest_experiment.get('evaluations', {}).get(model_name) 
-                                 if isinstance(latest_experiment.get('evaluations'), dict) 
-                                 else {
-                                     "score": 0,
-                                     "reason": "평가 실패",
-                                     "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
-                                 })
+                        # results와 evaluations가 딕셔너리인지 각각 확인 후 처리
+                        if not isinstance(results_data, dict):
+                            result = "결과 없음"
+                        else:
+                            # gemini 모델은 결과가 문자열일 수 있으므로 별도로 처리
+                            if model_name == "gemini" and isinstance(results_data.get(model_name), str):
+                                result = results_data[model_name]
+                            else:
+                                result = results_data.get(model_name, "결과 없음")
         
+                        # evaluations가 딕셔너리인지 확인하고, 그렇지 않으면 기본값 설정
+                        eval_data = evaluations_data.get(model_name) if isinstance(evaluations_data, dict) else {
+                            "score": 0,
+                            "reason": "평가 실패",
+                            "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
+                        }
+        
+                    # 결과 카드 표시
                     st.markdown(f"""
                     <div class="result-card">
                         <span class="model-tag" style="background-color: {MODEL_COLORS[model_name]}">
