@@ -420,6 +420,7 @@ class AdCopyEvaluator:
                 "reason": f"파싱 실패: {str(e)}",
                 "detailed_scores": [0] * len(self.scoring_config.criteria)
             }
+            
 def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
     """광고 카피 생성"""
     try:
@@ -429,7 +430,6 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=1000
             )
-
             return {
                 "success": True,
                 "content": response.choices[0].message.content.strip()
@@ -440,34 +440,31 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
                 response = gemini_model.generate_content(
                     prompt,
                     safety_settings={
-        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-    }
+                        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+                        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                    }
                 )
-                if not response.text:
+                # Gemini 응답 처리 수정
+                if hasattr(response, 'text'):
+                    return {
+                        "success": True,
+                        "content": response.text.strip()
+                    }
+                else:
                     return {
                         "success": False,
-                        "content": "Gemini API 응답이 비어있습니다."
+                        "content": "Gemini API 응답 형식 오류"
                     }
-                return {
-                    "success": True,
-                    "content": response.text.strip()
-                }
             except Exception as e:
                 return {
                     "success": False,
-                    "content": "Gemini API 호출 실패"
+                    "content": f"Gemini API 호출 실패: {str(e)}"
                 }
             
         else:  # claude
             try:
-                if "credit balance is too low" in str(e):
-                    return {
-                        "success": False,
-                        "content": "Claude API 크레딧이 부족하여 사용할 수 없습니다."
-                    }
                 response = anthropic.messages.create(
                     model=model_zoo[2],
                     messages=[
@@ -479,14 +476,20 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
                     max_tokens=1000,
                     temperature=0.7
                 )
-                return {
-                    "success": True,
-                    "content": response.content[0].text.strip()
-                }
+                if response and hasattr(response, 'content') and response.content:
+                    return {
+                        "success": True,
+                        "content": response.content[0].text.strip()
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "content": "Claude API 응답이 비어있습니다."
+                    }
             except Exception as e:
                 return {
                     "success": False,
-                    "content": "Claude API 호출 실패"
+                    "content": f"Claude API 호출 실패: {str(e)}"
                 }
                 
     except Exception as e:
@@ -494,12 +497,48 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
             "success": False,
             "content": f"생성 실패: {str(e)}"
         }
+
+# 성능 분석 결과 표시 부분 수정
+def display_performance_analysis(analysis: dict):
+    """성능 분석 결과를 HTML로 표시"""
+    if not analysis:
+        return ""
         
+    suggestions_html = "<br>".join(f"- {s}" for s in analysis['suggestions']) if analysis['suggestions'] else "- 현재 제안사항이 없습니다."
+    
+    return f"""
+    <div class="prompt-feedback">
+        <h4>📈 성능 분석</h4>
+        <p>현재 평균 점수: {analysis['current_score']:.1f}</p>
+        <p>이전 대비: {analysis['improvement']:+.1f}</p>
+        <p>최고 성능 모델: {analysis['top_model'].upper()}</p>
+        
+        <div class="improvement-tip">
+            💡 개선 포인트:<br>
+            {suggestions_html}
+        </div>
+    </div>
+    """
+
+        
+# 평가 결과 시각화 함수 수정 - 동적 기준 개수 대응
 def visualize_evaluation_results(results: Dict):
     """결과 시각화 함수"""
+    if not results or 'detailed_scores' not in results:
+        return None
+        
+    # 현재 설정된 평가 기준 개수만큼만 사용
+    scores = results['detailed_scores'][:len(st.session_state.scoring_config.criteria)]
+    criteria = st.session_state.scoring_config.criteria[:len(scores)]
+    
+    # 최소 3개 이상의 축이 필요하도록 보정
+    if len(criteria) < 3:
+        criteria.extend(['추가 기준'] * (3 - len(criteria)))
+        scores.extend([0] * (3 - len(scores)))
+    
     fig = go.Figure(data=go.Scatterpolar(
-        r=results['detailed_scores'],
-        theta=st.session_state.scoring_config.criteria,
+        r=scores,
+        theta=criteria,
         fill='toself',
         name='평가 점수'
     ))
@@ -826,24 +865,10 @@ with col2:
     
     if st.session_state.history:
         latest_experiment = st.session_state.history[-1]
-        
-        # 성능 분석
         analysis = analyze_prompt_performance(st.session_state.history)
         if analysis:
             try:
-                st.markdown(f"""
-                <div class="prompt-feedback">
-                    <h4>📈 성능 분석</h4>
-                    <p>현재 평균 점수: {analysis['current_score']:.1f}</p>
-                    <p>이전 대비: {analysis['improvement']:+.1f}</p>
-                    <p>최고 성능 모델: {analysis['top_model'].upper()}</p>
-                    
-                    <div class="improvement-tip">
-                        💡 개선 포인트:
-                        {'<br>'.join(f'- {s}' for s in analysis['suggestions'])}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                st.markdown(display_performance_analysis(analysis), unsafe_allow_html=True)
             except Exception as e:
                 st.error(f"성능 분석 표시 중 오류 발생: {str(e)}")
         
