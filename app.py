@@ -964,13 +964,21 @@ with col2:
         for idx, model_name in enumerate(model_list):
             try:
                 with st.container():
-                    result = latest_experiment['results'].get(model_name, "결과 없음")
-                    eval_data = latest_experiment['evaluations'].get(model_name, {
-                        "score": 0,
-                        "reason": "평가 실패",
-                        "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
-                    })
+                    # 'latest_experiment['results']'가 딕셔너리인지 확인 후 처리
+                    if isinstance(latest_experiment.get('results'), dict):
+                        result = latest_experiment['results'].get(model_name, "결과 없음")
+                    else:
+                        result = "결과 없음"
                     
+                    # 'latest_experiment['evaluations']'가 딕셔너리인지 확인 후 처리
+                    eval_data = (latest_experiment.get('evaluations', {}).get(model_name) 
+                                 if isinstance(latest_experiment.get('evaluations'), dict) 
+                                 else {
+                                     "score": 0,
+                                     "reason": "평가 실패",
+                                     "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
+                                 })
+        
                     st.markdown(f"""
                     <div class="result-card">
                         <span class="model-tag" style="background-color: {MODEL_COLORS[model_name]}">
