@@ -382,15 +382,9 @@ class AdCopyEvaluator:
                 result_text = response.choices[0].message.content
             elif model_name == "gemini":
                 try:
-                    response = gemini_model.generate_content(prompt,safety_settings={
-                        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-                        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-                        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-                        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-                    }
-                    )
+                    response = gemini_model.generate_content(evaluation_prompt)
                     #return response
-                    return response.text if hasattr(response, 'text') else "Gemini API 응답 오류"
+                    return response.text
                 
                 except Exception as e:
                     return f"Gemini 평가 실패: {str(e)}"
