@@ -887,6 +887,7 @@ with col1:
     )
 
     # 생성 버튼
+    # 생성 버튼을 눌렀을 때의 로직 수정
     if st.button("🎨 광고 카피 생성", use_container_width=True):
         if not selected_region or not selected_generation:
             st.error("지역과 세대를 선택해주세요!")
@@ -897,15 +898,19 @@ with col1:
                 
                 for model in ["gpt", "gemini", "claude"]:
                     result = generate_copy(edited_prompt, model)
-                    if result["success"]:
+                    
+                    # result가 문자열인지 먼저 확인하고 문자열일 경우 오류 메시지로 처리
+                    if isinstance(result, dict) and result.get("success"):
+                        # result가 dict일 경우 정상 처리
                         results[model] = result["content"]
                         eval_result = st.session_state.evaluator.evaluate(result["content"], model)
                         evaluations[model] = eval_result
                     else:
-                        results[model] = result["content"]
+                        # result가 문자열일 경우 오류 메시지로 처리
+                        results[model] = result if isinstance(result, str) else "알 수 없는 오류 발생"
                         evaluations[model] = {
                             "score": 0,
-                            "reason": result["content"],
+                            "reason": results[model],  # 오류 메시지를 평가 이유로 설정
                             "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
                         }
                 
