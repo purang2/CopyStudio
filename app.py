@@ -45,15 +45,6 @@ model_zoo = ['gpt-4o',
 # Gemini model configuration
 gemini_model = genai.GenerativeModel(model_zoo[1])
 
-O
-이거 Light/ Dark Mode에서 Dark 모드로 바꾸면 글자나 컴포넌트들이 다 하얘서 안 보여
-
-
-다크 모드 대응을 위해 CSS를 수정해야 합니다. Custom CSS 부분을 다음과 같이 수정하겠습니다:
-
-python
-
-Copy
 # Custom CSS 부분을 수정
 st.markdown("""
 <style>
