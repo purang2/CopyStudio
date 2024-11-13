@@ -478,8 +478,8 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
             
         elif model_name == "gemini":
             try:
-                response = gemini_model.generate_content(
-                    prompt,
+                gemini_response = gemini_model.generate_content(
+                    prompt,  # edited_prompt가 아닌 prompt 사용
                     safety_settings={
                         HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
                         HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
@@ -487,16 +487,18 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
                         HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
                     }
                 )
-                # Gemini 응답 처리 수정
-                if hasattr(response, 'text'):
+                
+                # 응답 체크 및 처리 개선
+                if gemini_response and hasattr(gemini_response, 'text'):
                     return {
                         "success": True,
-                        "content": response.text.strip()
+                        "content": gemini_response.text.strip()
                     }
                 else:
+                    print(f"Gemini 응답 디버깅: {gemini_response}")  # 디버깅용
                     return {
                         "success": False,
-                        "content": "Gemini API 응답 형식 오류"
+                        "content": "Gemini API 응답 형식이 올바르지 않습니다."
                     }
             except Exception as e:
                 return {
