@@ -455,6 +455,7 @@ class AdCopyEvaluator:
                 "reason": f"파싱 실패: {str(e)}",
                 "detailed_scores": [0] * len(self.scoring_config.criteria)
             }
+
 def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
     """광고 카피 생성"""
     try:
@@ -471,11 +472,17 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
 
         elif model_name == "gemini":
             try:
-                response = gemini_model.generate_content(prompt)  # 단순화
-                # response가 dict 또는 response.text에 접근할 수 있는지 확인
+                response = gemini_model.generate_content(prompt)
+                # 결과가 문자열일 경우, 이를 그대로 반환
+                if isinstance(response, str):
+                    return {
+                        "success": True,
+                        "content": response.strip()
+                    }
+                # 결과가 객체인 경우 `text` 필드 추출
                 generated_text = getattr(response, 'text', None) or response.get("text", "").strip()
                 
-                if generated_text:  # 텍스트가 있는지 확인
+                if generated_text:
                     return {
                         "success": True,
                         "content": generated_text
@@ -520,8 +527,7 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
         return {
             "success": False,
             "content": f"생성 실패: {str(e)}"
-        }
-        
+        }      
 # 성능 분석 결과 표시 부분 수정
 def display_performance_analysis(analysis: dict):
     """성능 분석 결과를 HTML로 표시"""
