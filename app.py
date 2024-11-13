@@ -966,20 +966,17 @@ with col2:
                 st.error(f"성능 분석 표시 중 오류 발생: {str(e)}")
         
         # 결과 카드 표시
-        # 결과 카드 표시
         model_list = ["gpt", "gemini", "claude"]
         for idx, model_name in enumerate(model_list):
             try:
                 with st.container():
-                    # 'latest_experiment['results']'가 딕셔너리인지 확인 후 처리
-                    if isinstance(latest_experiment.get('results'), dict):
-                        result = latest_experiment['results'].get(model_name, "결과 없음")
+                    # gemini 모델의 결과가 문자열일 경우 문자열 그대로 사용
+                    if model_name == "gemini" and isinstance(latest_experiment['results'].get(model_name), str):
+                        result = latest_experiment['results'][model_name]  # gemini 결과는 문자열로 반환
                     else:
-                        result = "결과 없음"
-                    
-                    # 'result'가 문자열인지 확인하여 문자열일 경우 그대로 사용
-                    result_content = result if isinstance(result, str) else result.get("content", "결과 없음")
-                    
+                        # 다른 모델은 딕셔너리로 처리
+                        result = latest_experiment['results'].get(model_name, "결과 없음")
+        
                     # 'latest_experiment['evaluations']'가 딕셔너리인지 확인 후 처리
                     eval_data = (latest_experiment.get('evaluations', {}).get(model_name) 
                                  if isinstance(latest_experiment.get('evaluations'), dict) 
@@ -995,7 +992,7 @@ with col2:
                             {model_name.upper()}
                         </span>
                         <div style="margin: 1rem 0;">
-                            {result_content}
+                            {result}
                         </div>
                         <div class="score-badge">
                             점수: {eval_data.get('score', 0)}점
