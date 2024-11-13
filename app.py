@@ -860,15 +860,30 @@ with col1:
                 }
                 st.session_state.history.append(experiment_data)
                 
+# with col2 부분의 성능 분석 표시 코드를 아래와 같이 수정
 with col2:
     st.subheader("실험 결과")
     
     if st.session_state.history:
         latest_experiment = st.session_state.history[-1]
+        
+        # 성능 분석
         analysis = analyze_prompt_performance(st.session_state.history)
         if analysis:
             try:
-                st.markdown(display_performance_analysis(analysis), unsafe_allow_html=True)
+                # HTML 태그가 노출되지 않도록 컨테이너와 마크다운 사용
+                with st.container():
+                    st.markdown("### 📈 성능 분석")
+                    st.write(f"현재 평균 점수: {analysis['current_score']:.1f}")
+                    st.write(f"이전 대비: {analysis['improvement']:+.1f}")
+                    st.write(f"최고 성능 모델: {analysis['top_model'].upper()}")
+                    
+                    # 개선 포인트를 마크다운으로 표시
+                    if analysis['suggestions']:
+                        st.markdown("#### 💡 개선 포인트:")
+                        for suggestion in analysis['suggestions']:
+                            st.markdown(f"- {suggestion}")
+                    
             except Exception as e:
                 st.error(f"성능 분석 표시 중 오류 발생: {str(e)}")
         
