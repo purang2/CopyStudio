@@ -45,44 +45,75 @@ model_zoo = ['gpt-4o',
 # Gemini model configuration
 gemini_model = genai.GenerativeModel(model_zoo[1])
 
+O
+이거 Light/ Dark Mode에서 Dark 모드로 바꾸면 글자나 컴포넌트들이 다 하얘서 안 보여
 
-# Custom CSS
+
+다크 모드 대응을 위해 CSS를 수정해야 합니다. Custom CSS 부분을 다음과 같이 수정하겠습니다:
+
+python
+
+Copy
+# Custom CSS 부분을 수정
 st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
     [data-testid="stAppViewContainer"] {
         font-family: 'Pretendard', sans-serif;
-        background-color: #f8fafc;
+    }
+
+    /* 다크모드 대응을 위한 CSS 변수 활용 */
+    :root {
+        --text-color: #1e293b;
+        --bg-color: #ffffff;
+        --card-bg: #ffffff;
+        --border-color: #e2e8f0;
+        --hover-border: #3b82f6;
+        --prompt-bg: #f1f5f9;
+    }
+
+    /* 다크모드일 때의 색상 */
+    [data-theme="dark"] {
+        --text-color: #e2e8f0;
+        --bg-color: #1e1e1e;
+        --card-bg: #2d2d2d;
+        --border-color: #4a4a4a;
+        --hover-border: #60a5fa;
+        --prompt-bg: #2d2d2d;
     }
 
     .prompt-editor {
-        border: 2px solid #e2e8f0;
+        border: 2px solid var(--border-color);
         border-radius: 10px;
         padding: 1rem;
-        background-color: white;
+        background-color: var(--card-bg);
+        color: var(--text-color);
     }
 
     .prompt-editor:hover {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 1px #3b82f6;
+        border-color: var(--hover-border);
+        box-shadow: 0 0 0 1px var(--hover-border);
     }
 
     .prompt-tip {
-        background-color: #f1f5f9;
-        border-left: 4px solid #3b82f6;
+        background-color: var(--prompt-bg);
+        border-left: 4px solid var(--hover-border);
         padding: 1rem;
         margin: 1rem 0;
         border-radius: 0 8px 8px 0;
+        color: var(--text-color);
     }
 
     .result-card {
-        background-color: white;
+        background-color: var(--card-bg);
         border-radius: 12px;
         padding: 1.5rem;
         margin: 1rem 0;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         transition: all 0.2s ease;
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
     }
     
     .result-card:hover {
@@ -107,48 +138,54 @@ st.markdown("""
         padding: 0.5rem 1rem;
         border-radius: 9999px;
         font-weight: 600;
-        background-color: #f1f5f9;
+        background-color: var(--prompt-bg);
+        color: var(--text-color);
         cursor: pointer;
     }
     
     .score-badge:hover {
-        background-color: #e2e8f0;
+        background-color: var(--border-color);
     }
 
     .history-item {
-        border-left: 4px solid #3b82f6;
+        border-left: 4px solid var(--hover-border);
         padding: 1rem;
         margin: 1rem 0;
-        background-color: white;
+        background-color: var(--card-bg);
         border-radius: 0 8px 8px 0;
+        color: var(--text-color);
     }
 
     .prompt-feedback {
-        background-color: #f8fafc;
+        background-color: var(--prompt-bg);
         border-radius: 8px;
         padding: 1rem;
         margin-top: 1rem;
+        color: var(--text-color);
     }
 
     .improvement-tip {
-        color: #3b82f6;
+        color: var(--hover-border);
         font-weight: 500;
-    }/* Expander 스타일링 */
+    }
+
+    /* Expander 스타일링 */
     .streamlit-expanderHeader {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
+        background-color: var(--prompt-bg);
+        border: 1px solid var(--border-color);
         border-radius: 8px;
         padding: 0.5rem 1rem;
         font-weight: 600;
-        color: #1e293b;
+        color: var(--text-color);
     }
     
     .streamlit-expanderContent {
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--border-color);
         border-top: none;
         border-radius: 0 0 8px 8px;
         padding: 1rem;
-        background-color: white;
+        background-color: var(--card-bg);
+        color: var(--text-color);
     }
     
     /* 문서 에디터 스타일링 */
@@ -156,15 +193,27 @@ st.markdown("""
         font-family: 'Pretendard', sans-serif;
         font-size: 0.9rem;
         line-height: 1.5;
+        color: var(--text-color);
+        background-color: var(--card-bg);
     }
     
     /* 프롬프트 섹션 구분 */
     .prompt-section {
         margin: 1rem 0;
         padding: 1rem;
-        background-color: white;
+        background-color: var(--card-bg);
         border-radius: 8px;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+    }
+
+    /* Plotly 차트 다크모드 대응 */
+    .js-plotly-plot .plotly .modebar {
+        background-color: var(--card-bg) !important;
+    }
+
+    .js-plotly-plot .plotly .modebar-btn path {
+        fill: var(--text-color) !important;
     }
 </style>
 """, unsafe_allow_html=True)
