@@ -546,8 +546,9 @@ def display_performance_analysis(analysis: dict):
     """
 
 
+
 def visualize_evaluation_results(eval_data: Dict):
-    """결과 시각화 함수와 기준별 점수 텍스트 표시"""
+    """결과 시각화 함수"""
     if not eval_data:
         return None
 
@@ -558,7 +559,7 @@ def visualize_evaluation_results(eval_data: Dict):
     # 최소 3개 이상의 축이 필요하도록 보정
     if len(criteria) < 3:
         criteria.extend(['추가 기준'] * (3 - len(criteria)))
-        scores.extend([0] * (3 - len(scores)))
+        scores.extend([0] * (3 - len(scores))
 
     # 차트 생성
     fig = go.Figure(data=go.Scatterpolar(
@@ -579,13 +580,8 @@ def visualize_evaluation_results(eval_data: Dict):
         title="평가 기준별 점수"
     )
 
-    # 차트 표시
+    # 차트만 표시
     st.plotly_chart(fig, use_container_width=True)
-
-    # 기준별 점수를 텍스트로 표시
-    st.markdown("#### 각 기준별 점수")
-    for criterion, score in zip(criteria, scores):
-        st.write(f"**{criterion}**: {score}점")
 
 
 def analyze_prompt_performance(history: List[dict]) -> dict:
