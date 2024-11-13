@@ -478,33 +478,25 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
             
         elif model_name == "gemini":
             try:
-                response = gemini_model.generate_content(
-                    prompt,
-                    safety_settings={
-                        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-                        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-                        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-                        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-                    }
-                )
+                response = gemini_model.generate_content(prompt)  # 단순화
+                generated_text = response.text.strip()  # 바로 text 추출
                 
-                # 응답 형식을 다른 모델들과 동일하게 dictionary로 맞춤
-                if hasattr(response, 'text'):
+                if generated_text:  # 텍스트가 있는지 확인
                     return {
                         "success": True,
-                        "content": response.text.strip()
+                        "content": generated_text
                     }
                 else:
                     return {
                         "success": False,
-                        "content": "Gemini API 응답 형식 오류"
+                        "content": "Gemini가 텍스트를 생성하지 않았습니다."
                     }
                     
             except Exception as e:
-                print(f"Gemini 오류 상세: {str(e)}")  # 디버깅용
+                print(f"Gemini 오류: {str(e)}")  # 디버깅용
                 return {
                     "success": False,
-                    "content": f"Gemini API 호출 실패: {str(e)}"
+                    "content": f"Gemini API 오류: {str(e)}"
                 }
             
         else:  # claude
@@ -520,20 +512,14 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
                     max_tokens=1000,
                     temperature=0.7
                 )
-                if response and hasattr(response, 'content') and response.content:
-                    return {
-                        "success": True,
-                        "content": response.content[0].text.strip()
-                    }
-                else:
-                    return {
-                        "success": False,
-                        "content": "Claude API 응답이 비어있습니다."
-                    }
+                return {
+                    "success": True,
+                    "content": response.content[0].text.strip()
+                }
             except Exception as e:
                 return {
                     "success": False,
-                    "content": f"Claude API 호출 실패: {str(e)}"
+                    "content": f"Claude API 오류: {str(e)}"
                 }
                 
     except Exception as e:
