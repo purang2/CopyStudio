@@ -455,8 +455,7 @@ class AdCopyEvaluator:
                 "reason": f"파싱 실패: {str(e)}",
                 "detailed_scores": [0] * len(self.scoring_config.criteria)
             }
-            
-def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
+     def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
     """광고 카피 생성"""
     try:
         if model_name == "gpt":
@@ -469,11 +468,12 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
                 "success": True,
                 "content": response.choices[0].message.content.strip()
             }
-            
+
         elif model_name == "gemini":
             try:
                 response = gemini_model.generate_content(prompt)  # 단순화
-                generated_text = response.text.strip()  # 바로 text 추출
+                # response가 dict 또는 response.text에 접근할 수 있는지 확인
+                generated_text = getattr(response, 'text', None) or response.get("text", "").strip()
                 
                 if generated_text:  # 텍스트가 있는지 확인
                     return {
@@ -485,14 +485,14 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
                         "success": False,
                         "content": "Gemini가 텍스트를 생성하지 않았습니다."
                     }
-                    
+
             except Exception as e:
                 print(f"Gemini 오류: {str(e)}")  # 디버깅용
                 return {
                     "success": False,
                     "content": f"Gemini API 오류: {str(e)}"
                 }
-            
+
         else:  # claude
             try:
                 response = anthropic.messages.create(
@@ -515,13 +515,13 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
                     "success": False,
                     "content": f"Claude API 오류: {str(e)}"
                 }
-                
+
     except Exception as e:
         return {
             "success": False,
             "content": f"생성 실패: {str(e)}"
         }
-
+        
 # 성능 분석 결과 표시 부분 수정
 def display_performance_analysis(analysis: dict):
     """성능 분석 결과를 HTML로 표시"""
