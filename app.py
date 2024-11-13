@@ -691,42 +691,38 @@ def analyze_prompt_performance(history: List[dict]) -> dict:
             "suggestions": ["분석 중 오류가 발생했습니다."]
         }
 
-def create_performance_chart(history: List[dict]) -> go.Figure:
-    """성능 트렌드 차트 생성"""
-    if not history:
+def visualize_evaluation_results(results: Dict):
+    """결과 시각화 함수"""
+    if not results or 'detailed_scores' not in results:
         return None
         
-    data = []
-    for entry in history:
-        timestamp = entry['timestamp']
-        for model, eval_data in entry['evaluations'].items():
-            data.append({
-                'timestamp': timestamp,
-                'model': model,
-                'score': eval_data['score']
-            })
+    # 현재 설정된 평가 기준 개수만큼만 사용
+    scores = results['detailed_scores'][:len(st.session_state.scoring_config.criteria)]
+    criteria = st.session_state.scoring_config.criteria[:len(scores)]
     
-    df = pd.DataFrame(data)
+    # 최소 3개 이상의 축이 필요하도록 보정
+    if len(criteria) < 3:
+        criteria.extend(['추가 기준'] * (3 - len(criteria)))
+        scores.extend([0] * (3 - len(scores)))
     
-    fig = go.Figure()
-    for model in ["gpt", "gemini", "claude"]:
-        model_data = df[df['model'] == model]
-        fig.add_trace(go.Scatter(
-            x=model_data['timestamp'],
-            y=model_data['score'],
-            name=model.upper(),
-            line=dict(color=MODEL_COLORS[model])
-        ))
-    
-    fig.update_layout(
-        title='프롬프트 성능 트렌드',
-        xaxis_title="시간",
-        yaxis_title="점수",
-        legend_title="모델"
-    )
-    
-    return fig
+    fig = go.Figure(data=go.Scatterpolar(
+        r=scores,
+        theta=criteria,
+        fill='toself',
+        name='평가 점수'
+    ))
 
+    fig.update_layout(
+        polar=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0, 100]
+            )
+        ),
+        showlegend=False,
+        title="평가 기준별 점수"
+    )
+    return fig
 
 
 # Load documents
