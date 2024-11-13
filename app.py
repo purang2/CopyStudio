@@ -970,31 +970,32 @@ with col2:
         for idx, model_name in enumerate(model_list):
             try:
                 with st.container():
-                    # latest_experiment가 딕셔너리이며, 'results'와 'evaluations'가 딕셔너리인지 확인
-                    if not isinstance(latest_experiment, dict):
+                    # `latest_experiment`와 `results`가 모두 딕셔너리인지 확인
+                    if not isinstance(latest_experiment, dict) or not isinstance(latest_experiment.get('results'), dict):
                         st.error("실험 데이터가 올바르지 않습니다.")
                         result = "결과 없음"
-                        eval_data = {"score": 0, "reason": "평가 실패", "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)}
-                    else:
-                        results_data = latest_experiment.get('results', {})
-                        evaluations_data = latest_experiment.get('evaluations', {})
-        
-                        # results와 evaluations가 딕셔너리인지 각각 확인 후 처리
-                        if not isinstance(results_data, dict):
-                            result = "결과 없음"
-                        else:
-                            # gemini 모델은 결과가 문자열일 수 있으므로 별도로 처리
-                            if model_name == "gemini" and isinstance(results_data.get(model_name), str):
-                                result = results_data[model_name]
-                            else:
-                                result = results_data.get(model_name, "결과 없음")
-        
-                        # evaluations가 딕셔너리인지 확인하고, 그렇지 않으면 기본값 설정
-                        eval_data = evaluations_data.get(model_name) if isinstance(evaluations_data, dict) else {
+                        eval_data = {
                             "score": 0,
                             "reason": "평가 실패",
                             "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
                         }
+                    else:
+                        # 모델별 결과 가져오기
+                        if model_name == "gemini":
+                            # `gemini` 모델의 결과는 문자열로 직접 할당
+                            result = latest_experiment['results'].get(model_name, "결과 없음")
+                        else:
+                            # `gpt`와 `claude` 모델은 일반적인 딕셔너리 접근
+                            result = latest_experiment['results'].get(model_name, "결과 없음")
+        
+                        # `evaluations` 데이터가 딕셔너리인지 확인 후 처리
+                        eval_data = (latest_experiment.get('evaluations', {}).get(model_name)
+                                     if isinstance(latest_experiment.get('evaluations'), dict)
+                                     else {
+                                         "score": 0,
+                                         "reason": "평가 실패",
+                                         "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
+                                     })
         
                     # 결과 카드 표시
                     st.markdown(f"""
