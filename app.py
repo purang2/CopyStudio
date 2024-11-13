@@ -887,51 +887,59 @@ with col1:
     )
 
     # 생성 버튼
-    # 생성 버튼을 눌렀을 때의 로직 수정
-    if st.button("🎨 광고 카피 생성", use_container_width=True):
-        if not selected_region or not selected_generation:
-            st.error("지역과 세대를 선택해주세요!")
-        else:
-            with st.spinner("AI 모델이 광고 카피를 생성중입니다..."):
-                results = {}
-                evaluations = {}
-                
-                for model in ["gpt", "gemini", "claude"]:
-                    result = generate_copy(edited_prompt, model)
-                    
-                    # result가 문자열인지 먼저 확인하고 문자열일 경우 오류 메시지로 처리
-                    if isinstance(result, dict) and result.get("success"):
-                        # result가 dict일 경우 정상 처리
-                        results[model] = result["content"]
-                        eval_result = st.session_state.evaluator.evaluate(result["content"], "gpt")  # 평가 시 gpt로 고정
-                        evaluations[model] = eval_result
-                    elif isinstance(result, str):
-                        # gemini/claude가 문자열로 생성한 결과를 gpt로 평가
-                        results[model] = result
-                        eval_result = st.session_state.evaluator.evaluate(result, "gpt")  # 평가 시 gpt로 고정
-                        evaluations[model] = eval_result
-                    else:
-                        # 알 수 없는 오류 발생 시 기본 값 설정
-                        results[model] = "결과 없음"
-                        evaluations[model] = {
-                            "score": 0,
-                            "reason": "평가 실패",
-                            "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
-                        }
-                
-                experiment_data = {
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "prompt": edited_prompt,
-                    "results": results,
-                    "evaluations": evaluations,
-                    "settings": {
-                        "region": selected_region,
-                        "generation": selected_generation,
-                        "season": selected_season if selected_season else None,
-                        "mbti": selected_mbti if include_mbti else None
+    #model_list = ["gpt", "gemini", "claude"]
+    model_list = ["gpt", "gemini"]
+    for idx, model_name in enumerate(model_list):
+        try:
+            with st.container():
+                # `latest_experiment`와 `results`가 모두 딕셔너리인지 확인
+                if not isinstance(latest_experiment, dict) or not isinstance(latest_experiment.get('results'), dict):
+                    st.error("실험 데이터가 올바르지 않습니다.")
+                    result = "결과 없음"
+                    eval_data = {
+                        "score": 0,
+                        "reason": "평가 실패",
+                        "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
                     }
-                }
-                st.session_state.history.append(experiment_data)
+                else:
+                    # `gemini`는 결과가 문자열로 반환되므로 `.get()` 없이 직접 사용
+                    result = latest_experiment['results'].get(model_name, "결과 없음")
+                    
+                    # `evaluations` 데이터가 딕셔너리인지 확인 후 처리
+                    eval_data = (latest_experiment.get('evaluations', {}).get(model_name)
+                                 if isinstance(latest_experiment.get('evaluations'), dict)
+                                 else {
+                                     "score": 0,
+                                     "reason": "평가 실패",
+                                     "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
+                                 })
+    
+                # 결과 카드 표시 - HTML이 제대로 해석되도록 `unsafe_allow_html=True` 옵션 추가
+                st.markdown(f"""
+                <div class="result-card">
+                    <span class="model-tag" style="background-color: {MODEL_COLORS[model_name]}">
+                        {model_name.upper()}
+                    </span>
+                    <div style="margin: 1rem 0;">
+                        {result}
+                    </div>
+                    <div class="score-badge">
+                        점수: {eval_data.get('score', 0)}점
+                    </div>
+                    <div class="prompt-feedback">
+                        {eval_data.get('reason', '평가 이유 없음')}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                if 'detailed_scores' in eval_data:
+                    try:
+                        fig = visualize_evaluation_results(eval_data)
+                        st.plotly_chart(fig, use_container_width=True)
+                    except Exception as e:
+                        st.error(f"차트 생성 중 오류 발생: {str(e)}")
+        except Exception as e:
+            st.error(f"결과 표시 중 오류 발생 ({model_name}): {str(e)}")
                 
 # with col2 부분의 성능 분석 표시 코드를 아래와 같이 수정
 with col2:
