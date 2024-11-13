@@ -545,22 +545,23 @@ def display_performance_analysis(analysis: dict):
     </div>
     """
 
-        
-# 평가 결과 시각화 함수 수정 - 동적 기준 개수 대응
-def visualize_evaluation_results(results: Dict):
+
+
+
+def visualize_evaluation_results(eval_data: Dict):
     """결과 시각화 함수"""
-    if not results or 'detailed_scores' not in results:
+    if not eval_data:
         return None
-        
-    # 현재 설정된 평가 기준 개수만큼만 사용
-    scores = results['detailed_scores'][:len(st.session_state.scoring_config.criteria)]
+
+    # 평가 점수를 기본값으로 처리하여 가져오기
+    scores = eval_data.get('detailed_scores', [0] * len(st.session_state.scoring_config.criteria))
     criteria = st.session_state.scoring_config.criteria[:len(scores)]
-    
+
     # 최소 3개 이상의 축이 필요하도록 보정
     if len(criteria) < 3:
         criteria.extend(['추가 기준'] * (3 - len(criteria)))
         scores.extend([0] * (3 - len(scores)))
-    
+
     fig = go.Figure(data=go.Scatterpolar(
         r=scores,
         theta=criteria,
