@@ -564,13 +564,16 @@ def analyze_prompt_performance(history: List[dict]) -> dict:
         latest = history[-1]
         prev = history[-2] if len(history) > 1 else None
         
-        # 성공한 모델의 점수만 계산
+        # 성공한 모델의 점수와 평가 이유 수집
         valid_scores = []
-        for eval_data in latest['evaluations'].values():
+        evaluation_reasons = []
+        for model, eval_data in latest['evaluations'].items():
             if isinstance(eval_data, dict) and eval_data.get('score', 0) > 0:
                 valid_scores.append(eval_data['score'])
+                if 'reason' in eval_data:
+                    evaluation_reasons.append(eval_data['reason'])
         
-        if not valid_scores:  # 유효한 점수가 없는 경우
+        if not valid_scores:
             return {
                 "current_score": 0,
                 "improvement": 0,
@@ -592,7 +595,7 @@ def analyze_prompt_performance(history: List[dict]) -> dict:
                 prev_avg = sum(prev_valid_scores) / len(prev_valid_scores)
                 improvement = current_avg - prev_avg
         
-        # 최고 성능 모델 찾기 (성공한 모델 중에서만)
+        # 최고/최저 성능 모델 및 점수 찾기
         valid_models = {
             model: data.get('score', 0)
             for model, data in latest['evaluations'].items()
@@ -601,11 +604,56 @@ def analyze_prompt_performance(history: List[dict]) -> dict:
         
         top_model = max(valid_models.items(), key=lambda x: x[1])[0] if valid_models else "없음"
         
+        # 구체적인 개선 제안 생성
+        suggestions = []
+        
+        # 점수 기반 제안
+        if current_avg < 60:
+            suggestions.extend([
+                "프롬프트에 타겟 세대의 특성을 더 구체적으로 명시해보세요",
+                "지역의 독특한 특징을 1-2개 더 강조해보세요",
+                "감성적 표현과 구체적 정보의 균형을 조정해보세요"
+            ])
+        elif current_avg < 80:
+            suggestions.extend([
+                "카피의 톤앤매너를 타겟 세대에 맞게 더 조정해보세요",
+                "지역 특성을 더 창의적으로 표현해보세요"
+            ])
+            
+        # 평가 이유 기반 제안
+        low_score_aspects = []
+        for reason in evaluation_reasons:
+            if "타겟" in reason.lower() and "부족" in reason:
+                low_score_aspects.append("타겟 적합성")
+            if "창의" in reason.lower() and "부족" in reason:
+                low_score_aspects.append("창의성")
+            if "지역" in reason.lower() and "부족" in reason:
+                low_score_aspects.append("지역 특성")
+            if "전달" in reason.lower() and "부족" in reason:
+                low_score_aspects.append("메시지 전달력")
+        
+        if low_score_aspects:
+            if "타겟 적합성" in low_score_aspects:
+                suggestions.append(f"선택한 세대({latest['settings']['generation']})의 관심사와 언어 스타일을 더 반영해보세요")
+            if "창의성" in low_score_aspects:
+                suggestions.append("진부한 표현을 피하고 더 신선한 비유나 표현을 시도해보세요")
+            if "지역 특성" in low_score_aspects:
+                suggestions.append(f"{latest['settings']['region']}만의 독특한 매력을 더 부각해보세요")
+            if "메시지 전달력" in low_score_aspects:
+                suggestions.append("핵심 메시지를 더 간결하고 임팩트 있게 전달해보세요")
+        
+        # 개선도 기반 제안
+        if improvement < 0:
+            suggestions.append("이전 프롬프트에서 잘 작동했던 요소들을 다시 활용해보세요")
+        
+        # 중복 제거
+        suggestions = list(set(suggestions))
+        
         return {
             "current_score": current_avg,
             "improvement": improvement,
             "top_model": top_model,
-            "suggestions": ["프롬프트를 개선해보세요."] if improvement <= 0 else []
+            "suggestions": suggestions[:3]  # 가장 중요한 3개만 표시
         }
         
     except Exception as e:
