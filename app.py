@@ -19,13 +19,13 @@ from google.api_core.exceptions import ResourceExhausted
 
 # Page config must be the first Streamlit command
 st.set_page_config(
-    page_title="카피스튜디오 ㅡ 광고카피 생성AI", 
+    page_title="광고카피 문구 생성 AI", 
     page_icon="📒", 
     layout="wide"
 )
 
 # 앱 제목
-st.title("🐻 카피스튜디오 ㅡ 광고카피 생성AI")
+st.title("🐻 광고카피 문구 생성 AI")
 
 
 
