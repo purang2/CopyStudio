@@ -903,14 +903,19 @@ with col1:
                     if isinstance(result, dict) and result.get("success"):
                         # result가 dict일 경우 정상 처리
                         results[model] = result["content"]
-                        eval_result = st.session_state.evaluator.evaluate(result["content"], model)
+                        eval_result = st.session_state.evaluator.evaluate(result["content"], "gpt")  # 평가 시 gpt로 고정
+                        evaluations[model] = eval_result
+                    elif isinstance(result, str):
+                        # gemini/claude가 문자열로 생성한 결과를 gpt로 평가
+                        results[model] = result
+                        eval_result = st.session_state.evaluator.evaluate(result, "gpt")  # 평가 시 gpt로 고정
                         evaluations[model] = eval_result
                     else:
-                        # result가 문자열일 경우 오류 메시지로 처리
-                        results[model] = result if isinstance(result, str) else "알 수 없는 오류 발생"
+                        # 알 수 없는 오류 발생 시 기본 값 설정
+                        results[model] = "결과 없음"
                         evaluations[model] = {
                             "score": 0,
-                            "reason": results[model],  # 오류 메시지를 평가 이유로 설정
+                            "reason": "평가 실패",
                             "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
                         }
                 
