@@ -368,9 +368,24 @@ class AdCopyEvaluator:
 {chr(10).join(f'- {criterion}' for criterion in self.scoring_config.criteria)}
 
 다음 형식으로 응답해주세요:
-점수: [0-100 사이의 숫자]
-이유: [평가 근거]
-상세점수: [각 기준별 점수를 쉼표로 구분]
+
+종합 점수: [0-100 사이의 정수, 소수점 첫째 자리까지 허용]
+
+상세 평가:
+{chr(10).join(f'- {criterion}: [0-100점, 소수점 첫째 자리까지] - [구체적인 평가 근거]' for criterion in self.scoring_config.criteria)}
+
+장점:
+- [주요 장점 1]
+- [주요 장점 2]
+- [주요 장점 3]
+
+개선점:
+- [개선 필요사항 1]
+- [개선 필요사항 2]
+- [개선 필요사항 3]
+
+전반적인 평가 의견:
+[3-4문장으로 구체적인 평가 의견 작성]
 """
             # API calls by model
             if model_name == "gpt":
