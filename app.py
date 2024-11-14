@@ -361,9 +361,12 @@ class AdCopyEvaluator:
             # 평가 프롬프트 구성
             evaluation_prompt = f"""
 {self.scoring_config.prompt}
+
 평가 대상 카피: {copy}
+
 평가 기준:
 {chr(10).join(f'- {criterion}' for criterion in self.scoring_config.criteria)}
+
 다음 형식으로 응답해주세요:
 점수: [0-100 사이의 숫자]
 이유: [평가 근거]
