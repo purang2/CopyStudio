@@ -300,8 +300,6 @@ def parse_mbti_content(content: str, selected_mbti: str) -> str:
         print(f"MBTI 파싱 에러: {str(e)}")
         return f"MBTI 정보 파싱 중 오류 발생: {str(e)}"
 
-
-# load_docs 함수에서
 def load_docs() -> Dict[str, Dict[str, str]]:
     docs = {
         "region": {},
@@ -326,21 +324,22 @@ def load_docs() -> Dict[str, Dict[str, str]]:
                 with open(file, "r", encoding="utf-8") as f:
                     docs["generation"][file.stem] = f.read()
         
-        # Load MBTI doc
-        mbti_file = docs_path / "mbti" / "mbti_all.txt"
-        if mbti_file.exists():
-            with open(mbti_file, "r", encoding="utf-8") as f:
-                content = f.read()
-                docs["mbti"]["mbti_all"] = content  # 여기서 키 이름을 'mbti_all'로 통일
-        else:
-            print(f"MBTI 파일을 찾을 수 없습니다: {mbti_file}")
+        # Load individual MBTI files
+        mbti_path = docs_path / "mbti"
+        if mbti_path.exists():
+            for mbti in MBTI_TYPES:
+                mbti_file = mbti_path / f"{mbti}.txt"
+                if mbti_file.exists():
+                    with open(mbti_file, "r", encoding="utf-8") as f:
+                        docs["mbti"][mbti] = f.read()
+                else:
+                    print(f"MBTI 파일을 찾을 수 없습니다: {mbti}.txt")
             
     except Exception as e:
         print(f"문서 로딩 에러: {str(e)}")
     
     return docs
 
-# create_adaptive_prompt 함수에서
 def create_adaptive_prompt(
     city_doc: str, 
     target_generation: str, 
@@ -366,21 +365,20 @@ def create_adaptive_prompt(
 
     if include_mbti and mbti and mbti in MBTI_TYPES:
         try:
-            # MBTI 정보 파싱 - 키 이름을 'mbti_all'로 수정
-            mbti_content = DOCS["mbti"].get("mbti_all", "")
+            # 해당 MBTI 파일의 내용 가져오기
+            mbti_content = DOCS["mbti"].get(mbti, "")
             if mbti_content:
-                parsed_mbti = parse_mbti_content(mbti_content, mbti)
                 mbti_prompt = f"""
 
 [MBTI 특성 - {mbti}]
-{parsed_mbti}
+{mbti_content}
 
 특별 고려사항:
 - 위 {mbti} 성향의 여행 선호도를 반영해 카피를 작성해주세요
 - 해당 MBTI의 핵심 가치관과 선호 스타일을 고려해주세요"""
                 base_prompt += mbti_prompt
             else:
-                print("MBTI 콘텐츠를 찾을 수 없습니다.")
+                print(f"{mbti}.txt 파일의 내용을 찾을 수 없습니다.")
         except Exception as e:
             print(f"MBTI 프롬프트 생성 에러: {str(e)}")
 
@@ -393,7 +391,6 @@ def create_adaptive_prompt(
 - 클리셰나 진부한 표현 지양
 """
     return base_prompt
-
 
 
 class AdCopyEvaluator:
