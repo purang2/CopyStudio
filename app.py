@@ -269,79 +269,82 @@ class ScoringConfig:
         return cls(**data)
 
 
-
 def parse_mbti_content(content: str, selected_mbti: str) -> str:
     """특정 MBTI 정보만 추출하는 함수"""
-    # 전체 텍스트를 줄 단위로 분리
-    lines = content.split('\n')
-    
-    # MBTI 섹션을 찾기 위한 변수들
-    mbti_section = []
-    is_target_section = False
-    current_mbti = ""
-    
-    for line in lines:
-        # MBTI 타입 라인 확인 (예: "INTJ (전략가)")
-        if any(mbti in line for mbti in MBTI_TYPES):
-            current_mbti = next((mbti for mbti in MBTI_TYPES if mbti in line), "")
-            is_target_section = (current_mbti == selected_mbti)
-            if is_target_section:
+    try:
+        # 전체 텍스트를 줄 단위로 분리
+        lines = content.split('\n')
+        
+        # MBTI 섹션을 찾기 위한 변수들
+        mbti_section = []
+        is_target_section = False
+        
+        for line in lines:
+            # MBTI 타입 라인 확인 (예: "INTJ (전략가)")
+            if f"{selected_mbti} (" in line:
+                is_target_section = True
                 mbti_section.append(line.strip())
-            continue
-            
-        # 타겟 MBTI 섹션이면서 의미 있는 라인일 경우 추가
-        if is_target_section and line.strip():
-            mbti_section.append(line.strip())
-            
-        # 다음 MBTI 시작 지점 확인
-        if is_target_section and any(mbti in line for mbti in MBTI_TYPES):
-            break
-    
-    return "\n".join(mbti_section)
+                continue
+                
+            # 다음 MBTI 시작이면 섹션 종료
+            if is_target_section and any(mbti in line for mbti in MBTI_TYPES if mbti != selected_mbti):
+                break
+                
+            # 타겟 MBTI 섹션이면서 의미 있는 라인일 경우 추가
+            if is_target_section and line.strip():
+                mbti_section.append(line.strip())
+        
+        return "\n".join(mbti_section) if mbti_section else f"{selected_mbti}에 대한 정보를 찾을 수 없습니다."
+        
+    except Exception as e:
+        print(f"MBTI 파싱 에러: {str(e)}")
+        return f"MBTI 정보 파싱 중 오류 발생: {str(e)}"
 
-# load_docs 함수 수정
 def load_docs() -> Dict[str, Dict[str, str]]:
-    docs_path = pathlib.Path("docs")
     docs = {
         "region": {},
         "generation": {},
         "mbti": {}
     }
     
-    # Load region docs
-    region_path = docs_path / "regions"
-    if region_path.exists():
-        for file in region_path.glob("*.txt"):
-            with open(file, "r", encoding="utf-8") as f:
-                docs["region"][file.stem] = f.read()
-    
-    # Load generation docs
-    generation_path = docs_path / "generations"
-    if generation_path.exists():
-        for file in generation_path.glob("*.txt"):
-            with open(file, "r", encoding="utf-8") as f:
-                docs["generation"][file.stem] = f.read()
-    
-    # Load MBTI doc
-    mbti_file = docs_path / "mbti" / "mbti_all.txt"
-    if mbti_file.exists():
-        with open(mbti_file, "r", encoding="utf-8") as f:
-            content = f.read()
-            # 전체 MBTI 내용 저장
-            docs["mbti"]["full_content"] = content
-            # 개별 MBTI 파싱을 위한 준비
-            for mbti in MBTI_TYPES:
-                docs["mbti"][mbti] = ""  # 초기화
+    try:
+        docs_path = pathlib.Path("docs")
+        
+        # Load region docs
+        region_path = docs_path / "regions"
+        if region_path.exists():
+            for file in region_path.glob("*.txt"):
+                with open(file, "r", encoding="utf-8") as f:
+                    docs["region"][file.stem] = f.read()
+        
+        # Load generation docs
+        generation_path = docs_path / "generations"
+        if generation_path.exists():
+            for file in generation_path.glob("*.txt"):
+                with open(file, "r", encoding="utf-8") as f:
+                    docs["generation"][file.stem] = f.read()
+        
+        # Load MBTI doc
+        mbti_file = docs_path / "mbti" / "mbti_all.txt"
+        if mbti_file.exists():
+            with open(mbti_file, "r", encoding="utf-8") as f:
+                content = f.read()
+                docs["mbti"]["content"] = content  # 키 이름을 'content'로 통일
+        else:
+            print(f"MBTI 파일을 찾을 수 없습니다: {mbti_file}")
+            
+    except Exception as e:
+        print(f"문서 로딩 에러: {str(e)}")
     
     return docs
 
-# create_adaptive_prompt 함수 수정
 def create_adaptive_prompt(
     city_doc: str, 
     target_generation: str, 
     mbti: str = None,
     include_mbti: bool = False
 ) -> str:
+    """문서 기반 유연한 프롬프트 생성"""
     base_prompt = f"""
 당신은 숙련된 카피라이터입니다. 
 아래 제공되는 도시 정보를 참고하여, 매력적인 광고 카피를 생성해주세요.
@@ -359,16 +362,25 @@ def create_adaptive_prompt(
 [타겟 정보]
 세대: {target_generation}"""
 
-    if include_mbti and mbti:
-        # MBTI 정보 파싱
-        mbti_content = DOCS["mbti"]["full_content"]
-        parsed_mbti = parse_mbti_content(mbti_content, mbti)
-        
-        mbti_prompt = f"""
-MBTI: {mbti}
-MBTI 특성:
-{parsed_mbti}"""
-        base_prompt += mbti_prompt
+    if include_mbti and mbti and mbti in MBTI_TYPES:
+        try:
+            # MBTI 정보 파싱
+            mbti_content = DOCS["mbti"].get("content", "")  # 'content' 키로 변경
+            if mbti_content:
+                parsed_mbti = parse_mbti_content(mbti_content, mbti)
+                mbti_prompt = f"""
+
+[MBTI 특성 - {mbti}]
+{parsed_mbti}
+
+특별 고려사항:
+- 위 {mbti} 성향의 여행 선호도를 반영해 카피를 작성해주세요
+- 해당 MBTI의 핵심 가치관과 선호 스타일을 고려해주세요"""
+                base_prompt += mbti_prompt
+            else:
+                print("MBTI 콘텐츠를 찾을 수 없습니다.")
+        except Exception as e:
+            print(f"MBTI 프롬프트 생성 에러: {str(e)}")
 
     base_prompt += """
 
@@ -379,8 +391,6 @@ MBTI 특성:
 - 클리셰나 진부한 표현 지양
 """
     return base_prompt
-
-
 
 
 
