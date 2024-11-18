@@ -269,48 +269,37 @@ class ScoringConfig:
         return cls(**data)
 
 
-def create_adaptive_prompt(
-    city_doc: str, 
-    target_generation: str, 
-    mbti: str = None,
-    include_mbti: bool = False
-) -> str:
-    """문서 기반 유연한 프롬프트 생성"""
-    base_prompt = f"""
-당신은 숙련된 카피라이터입니다. 
-아래 제공되는 도시 정보를 참고하여, 매력적인 광고 카피를 생성해주세요.
-이 정보는 참고용이며, 카피는 자연스럽고 창의적이어야 합니다.
 
-[도시 정보]
-{city_doc}
+def parse_mbti_content(content: str, selected_mbti: str) -> str:
+    """특정 MBTI 정보만 추출하는 함수"""
+    # 전체 텍스트를 줄 단위로 분리
+    lines = content.split('\n')
+    
+    # MBTI 섹션을 찾기 위한 변수들
+    mbti_section = []
+    is_target_section = False
+    current_mbti = ""
+    
+    for line in lines:
+        # MBTI 타입 라인 확인 (예: "INTJ (전략가)")
+        if any(mbti in line for mbti in MBTI_TYPES):
+            current_mbti = next((mbti for mbti in MBTI_TYPES if mbti in line), "")
+            is_target_section = (current_mbti == selected_mbti)
+            if is_target_section:
+                mbti_section.append(line.strip())
+            continue
+            
+        # 타겟 MBTI 섹션이면서 의미 있는 라인일 경우 추가
+        if is_target_section and line.strip():
+            mbti_section.append(line.strip())
+            
+        # 다음 MBTI 시작 지점 확인
+        if is_target_section and any(mbti in line for mbti in MBTI_TYPES):
+            break
+    
+    return "\n".join(mbti_section)
 
-[카피 작성 가이드라인]
-1. 위 정보는 영감을 얻기 위한 참고 자료입니다.
-2. 도시의 핵심 매력을 포착해 신선한 관점으로 표현해주세요.
-3. 타겟층에 맞는 톤앤매너를 사용하되, 정보의 나열은 피해주세요.
-4. 감성적 공감과 구체적 특징이 조화를 이루도록 해주세요.
-
-[타겟 정보]
-세대: {target_generation}"""
-
-    if include_mbti and mbti:
-        mbti_prompt = f"""
-MBTI: {mbti}
-특별 고려사항: 
-- {mbti} 성향의 여행 선호도를 반영
-- 해당 성향의 관심사와 가치관 고려"""
-        base_prompt += mbti_prompt
-
-    base_prompt += """
-
-[제약사항]
-- 한 문장으로 작성
-- 이모지 1-2개 포함
-- 도시만의 독특한 특징 하나 이상 포함
-- 클리셰나 진부한 표현 지양
-"""
-    return base_prompt
-# Load documents
+# load_docs 함수 수정
 def load_docs() -> Dict[str, Dict[str, str]]:
     docs_path = pathlib.Path("docs")
     docs = {
@@ -338,10 +327,60 @@ def load_docs() -> Dict[str, Dict[str, str]]:
     if mbti_file.exists():
         with open(mbti_file, "r", encoding="utf-8") as f:
             content = f.read()
-            # MBTI 파일 내용을 그대로 저장
-            docs["mbti"]["mbti_all"] = content
+            # 전체 MBTI 내용 저장
+            docs["mbti"]["full_content"] = content
+            # 개별 MBTI 파싱을 위한 준비
+            for mbti in MBTI_TYPES:
+                docs["mbti"][mbti] = ""  # 초기화
     
     return docs
+
+# create_adaptive_prompt 함수 수정
+def create_adaptive_prompt(
+    city_doc: str, 
+    target_generation: str, 
+    mbti: str = None,
+    include_mbti: bool = False
+) -> str:
+    base_prompt = f"""
+당신은 숙련된 카피라이터입니다. 
+아래 제공되는 도시 정보를 참고하여, 매력적인 광고 카피를 생성해주세요.
+이 정보는 참고용이며, 카피는 자연스럽고 창의적이어야 합니다.
+
+[도시 정보]
+{city_doc}
+
+[카피 작성 가이드라인]
+1. 위 정보는 영감을 얻기 위한 참고 자료입니다.
+2. 도시의 핵심 매력을 포착해 신선한 관점으로 표현해주세요.
+3. 타겟층에 맞는 톤앤매너를 사용하되, 정보의 나열은 피해주세요.
+4. 감성적 공감과 구체적 특징이 조화를 이루도록 해주세요.
+
+[타겟 정보]
+세대: {target_generation}"""
+
+    if include_mbti and mbti:
+        # MBTI 정보 파싱
+        mbti_content = DOCS["mbti"]["full_content"]
+        parsed_mbti = parse_mbti_content(mbti_content, mbti)
+        
+        mbti_prompt = f"""
+MBTI: {mbti}
+MBTI 특성:
+{parsed_mbti}"""
+        base_prompt += mbti_prompt
+
+    base_prompt += """
+
+[제약사항]
+- 한 문장으로 작성
+- 이모지 1-2개 포함
+- 도시만의 독특한 특징 하나 이상 포함
+- 클리셰나 진부한 표현 지양
+"""
+    return base_prompt
+
+
 
 
 
