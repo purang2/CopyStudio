@@ -18,6 +18,11 @@ from typing import Dict, List, Optional, Union
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from google.api_core.exceptions import ResourceExhausted
 
+
+
+
+# Page config 이전에 전역 변수 초기화
+DOCS = load_docs()
 # Page config must be the first Streamlit command
 st.set_page_config(
     page_title="광고카피 문구 생성 AI", 
@@ -301,9 +306,6 @@ def parse_mbti_content(content: str, selected_mbti: str) -> str:
         return f"MBTI 정보 파싱 중 오류 발생: {str(e)}"
 
 
-
-# 전역 변수 초기화
-DOCS = load_docs()  # 여기서 한 번만 호출
 
 def create_adaptive_prompt(
     city_doc: str, 
