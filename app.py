@@ -300,6 +300,72 @@ def parse_mbti_content(content: str, selected_mbti: str) -> str:
         print(f"MBTI 파싱 에러: {str(e)}")
         return f"MBTI 정보 파싱 중 오류 발생: {str(e)}"
 
+
+
+# 전역 변수 초기화
+DOCS = load_docs()  # 여기서 한 번만 호출
+
+def create_adaptive_prompt(
+    city_doc: str, 
+    target_generation: str, 
+    mbti: str = None,
+    include_mbti: bool = False
+) -> str:
+    """문서 기반 유연한 프롬프트 생성"""
+    global DOCS  # 전역 변수 사용 선언
+    
+    base_prompt = f"""
+당신은 숙련된 카피라이터입니다. 
+아래 제공되는 도시 정보를 참고하여, 매력적인 광고 카피를 생성해주세요.
+이 정보는 참고용이며, 카피는 자연스럽고 창의적이어야 합니다.
+
+[도시 정보]
+{city_doc}
+
+[카피 작성 가이드라인]
+1. 위 정보는 영감을 얻기 위한 참고 자료입니다.
+2. 도시의 핵심 매력을 포착해 신선한 관점으로 표현해주세요.
+3. 타겟층에 맞는 톤앤매너를 사용하되, 정보의 나열은 피해주세요.
+4. 감성적 공감과 구체적 특징이 조화를 이루도록 해주세요.
+
+[타겟 정보]
+세대: {target_generation}"""
+
+    if include_mbti and mbti and mbti in MBTI_TYPES:
+        try:
+            # 디버깅을 위한 출력
+            print(f"MBTI 정보 확인: {DOCS['mbti'].keys()}")
+            print(f"선택된 MBTI: {mbti}")
+            
+            mbti_content = DOCS["mbti"].get(mbti)
+            if mbti_content:
+                mbti_prompt = f"""
+
+[MBTI 특성 - {mbti}]
+{mbti_content}
+
+특별 고려사항:
+- 위 {mbti} 성향의 여행 선호도를 반영해 카피를 작성해주세요
+- 해당 MBTI의 핵심 가치관과 선호 스타일을 고려해주세요"""
+                base_prompt += mbti_prompt
+            else:
+                print(f"{mbti}.txt 파일의 내용을 찾을 수 없습니다.")
+                st.warning(f"MBTI 파일을 찾을 수 없습니다: {mbti}.txt")
+        except Exception as e:
+            print(f"MBTI 프롬프트 생성 에러: {str(e)}")
+            st.error(f"MBTI 정보 처리 중 오류 발생: {str(e)}")
+
+    base_prompt += """
+
+[제약사항]
+- 한 문장으로 작성
+- 이모지 1-2개 포함
+- 도시만의 독특한 특징 하나 이상 포함
+- 클리셰나 진부한 표현 지양
+"""
+    return base_prompt
+
+# 파일 로딩 함수에 디버깅 출력 추가
 def load_docs() -> Dict[str, Dict[str, str]]:
     docs = {
         "region": {},
@@ -329,68 +395,26 @@ def load_docs() -> Dict[str, Dict[str, str]]:
         if mbti_path.exists():
             for mbti in MBTI_TYPES:
                 mbti_file = mbti_path / f"{mbti}.txt"
-                if mbti_file.exists():
-                    with open(mbti_file, "r", encoding="utf-8") as f:
-                        docs["mbti"][mbti] = f.read()
-                else:
-                    print(f"MBTI 파일을 찾을 수 없습니다: {mbti}.txt")
+                try:
+                    if mbti_file.exists():
+                        with open(mbti_file, "r", encoding="utf-8") as f:
+                            docs["mbti"][mbti] = f.read()
+                            print(f"로드된 MBTI 파일: {mbti}.txt")
+                    else:
+                        print(f"MBTI 파일을 찾을 수 없습니다: {mbti}.txt")
+                except Exception as e:
+                    print(f"{mbti} 파일 로딩 중 오류: {str(e)}")
+        else:
+            print(f"MBTI 디렉토리를 찾을 수 없습니다: {mbti_path}")
             
     except Exception as e:
         print(f"문서 로딩 에러: {str(e)}")
+        st.error(f"문서 로딩 중 오류 발생: {str(e)}")
     
+    # 로드된 MBTI 파일 목록 출력
+    print(f"로드된 MBTI 목록: {list(docs['mbti'].keys())}")
     return docs
 
-def create_adaptive_prompt(
-    city_doc: str, 
-    target_generation: str, 
-    mbti: str = None,
-    include_mbti: bool = False
-) -> str:
-    base_prompt = f"""
-당신은 숙련된 카피라이터입니다. 
-아래 제공되는 도시 정보를 참고하여, 매력적인 광고 카피를 생성해주세요.
-이 정보는 참고용이며, 카피는 자연스럽고 창의적이어야 합니다.
-
-[도시 정보]
-{city_doc}
-
-[카피 작성 가이드라인]
-1. 위 정보는 영감을 얻기 위한 참고 자료입니다.
-2. 도시의 핵심 매력을 포착해 신선한 관점으로 표현해주세요.
-3. 타겟층에 맞는 톤앤매너를 사용하되, 정보의 나열은 피해주세요.
-4. 감성적 공감과 구체적 특징이 조화를 이루도록 해주세요.
-
-[타겟 정보]
-세대: {target_generation}"""
-
-    if include_mbti and mbti and mbti in MBTI_TYPES:
-        try:
-            # 해당 MBTI 파일의 내용 가져오기
-            mbti_content = DOCS["mbti"].get(mbti, "")
-            if mbti_content:
-                mbti_prompt = f"""
-
-[MBTI 특성 - {mbti}]
-{mbti_content}
-
-특별 고려사항:
-- 위 {mbti} 성향의 여행 선호도를 반영해 카피를 작성해주세요
-- 해당 MBTI의 핵심 가치관과 선호 스타일을 고려해주세요"""
-                base_prompt += mbti_prompt
-            else:
-                print(f"{mbti}.txt 파일의 내용을 찾을 수 없습니다.")
-        except Exception as e:
-            print(f"MBTI 프롬프트 생성 에러: {str(e)}")
-
-    base_prompt += """
-
-[제약사항]
-- 한 문장으로 작성
-- 이모지 1-2개 포함
-- 도시만의 독특한 특징 하나 이상 포함
-- 클리셰나 진부한 표현 지양
-"""
-    return base_prompt
 
 
 class AdCopyEvaluator:
