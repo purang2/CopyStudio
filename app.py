@@ -933,7 +933,7 @@ with col1:
         if include_mbti and selected_mbti:
             docs_content += f"""
 ### MBTI 특성
-{DOCS["mbti"].get("mbti_all", "MBTI 정보가 없습니다.")}
+{DOCS["mbti"].get(selected_mbti, f"{selected_mbti} 정보를 찾을 수 없습니다.")}
 """
         if selected_season:
             docs_content += f"""
