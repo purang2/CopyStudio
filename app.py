@@ -20,9 +20,6 @@ from google.api_core.exceptions import ResourceExhausted
 
 
 
-
-# Page config 이전에 전역 변수 초기화
-DOCS = load_docs()
 # Page config must be the first Streamlit command
 st.set_page_config(
     page_title="광고카피 문구 생성 AI", 
@@ -274,36 +271,42 @@ class ScoringConfig:
         return cls(**data)
 
 
-def parse_mbti_content(content: str, selected_mbti: str) -> str:
-    """특정 MBTI 정보만 추출하는 함수"""
-    try:
-        # 전체 텍스트를 줄 단위로 분리
-        lines = content.split('\n')
-        
-        # MBTI 섹션을 찾기 위한 변수들
-        mbti_section = []
-        is_target_section = False
-        
-        for line in lines:
-            # MBTI 타입 라인 확인 (예: "INTJ (전략가)")
-            if f"{selected_mbti} (" in line:
-                is_target_section = True
-                mbti_section.append(line.strip())
-                continue
-                
-            # 다음 MBTI 시작이면 섹션 종료
-            if is_target_section and any(mbti in line for mbti in MBTI_TYPES if mbti != selected_mbti):
-                break
-                
-            # 타겟 MBTI 섹션이면서 의미 있는 라인일 경우 추가
-            if is_target_section and line.strip():
-                mbti_section.append(line.strip())
-        
-        return "\n".join(mbti_section) if mbti_section else f"{selected_mbti}에 대한 정보를 찾을 수 없습니다."
-        
-    except Exception as e:
-        print(f"MBTI 파싱 에러: {str(e)}")
-        return f"MBTI 정보 파싱 중 오류 발생: {str(e)}"
+DOCS = load_docs()
+
+
+def load_docs() -> Dict[str, Dict[str, str]]:
+    docs = {
+        "region": {},
+        "generation": {},
+        "mbti": {}
+    }
+    
+    docs_path = pathlib.Path("docs")
+    
+    # Load region docs
+    region_path = docs_path / "regions"
+    if region_path.exists():
+        for file in region_path.glob("*.txt"):
+            with open(file, "r", encoding="utf-8") as f:
+                docs["region"][file.stem] = f.read()
+    
+    # Load generation docs
+    generation_path = docs_path / "generations"
+    if generation_path.exists():
+        for file in generation_path.glob("*.txt"):
+            with open(file, "r", encoding="utf-8") as f:
+                docs["generation"][file.stem] = f.read()
+    
+    # Load MBTI docs
+    mbti_path = docs_path / "mbti"
+    if mbti_path.exists():
+        for mbti in MBTI_TYPES:
+            mbti_file = mbti_path / f"{mbti}.txt"
+            if mbti_file.exists():
+                with open(mbti_file, "r", encoding="utf-8") as f:
+                    docs["mbti"][mbti] = f.read()
+    
+    return docs
 
 
 
@@ -416,6 +419,9 @@ def load_docs() -> Dict[str, Dict[str, str]]:
     # 로드된 MBTI 파일 목록 출력
     print(f"로드된 MBTI 목록: {list(docs['mbti'].keys())}")
     return docs
+
+
+
 
 
 
