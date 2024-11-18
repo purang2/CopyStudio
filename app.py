@@ -308,6 +308,7 @@ def load_docs() -> Dict[str, Dict[str, str]]:
 
 DOCS = load_docs()
 
+
 def create_adaptive_prompt(
     city_doc: str, 
     target_generation: str, 
@@ -315,8 +316,6 @@ def create_adaptive_prompt(
     include_mbti: bool = False
 ) -> str:
     """문서 기반 유연한 프롬프트 생성"""
-    global DOCS  # 전역 변수 사용 선언
-    
     base_prompt = f"""
 당신은 숙련된 카피라이터입니다. 
 아래 제공되는 도시 정보를 참고하여, 매력적인 광고 카피를 생성해주세요.
@@ -336,10 +335,6 @@ def create_adaptive_prompt(
 
     if include_mbti and mbti and mbti in MBTI_TYPES:
         try:
-            # 디버깅을 위한 출력
-            print(f"MBTI 정보 확인: {DOCS['mbti'].keys()}")
-            print(f"선택된 MBTI: {mbti}")
-            
             mbti_content = DOCS["mbti"].get(mbti)
             if mbti_content:
                 mbti_prompt = f"""
@@ -353,10 +348,8 @@ def create_adaptive_prompt(
                 base_prompt += mbti_prompt
             else:
                 print(f"{mbti}.txt 파일의 내용을 찾을 수 없습니다.")
-                st.warning(f"MBTI 파일을 찾을 수 없습니다: {mbti}.txt")
         except Exception as e:
             print(f"MBTI 프롬프트 생성 에러: {str(e)}")
-            st.error(f"MBTI 정보 처리 중 오류 발생: {str(e)}")
 
     base_prompt += """
 
