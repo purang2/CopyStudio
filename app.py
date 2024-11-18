@@ -300,6 +300,8 @@ def parse_mbti_content(content: str, selected_mbti: str) -> str:
         print(f"MBTI 파싱 에러: {str(e)}")
         return f"MBTI 정보 파싱 중 오류 발생: {str(e)}"
 
+
+# load_docs 함수에서
 def load_docs() -> Dict[str, Dict[str, str]]:
     docs = {
         "region": {},
@@ -329,7 +331,7 @@ def load_docs() -> Dict[str, Dict[str, str]]:
         if mbti_file.exists():
             with open(mbti_file, "r", encoding="utf-8") as f:
                 content = f.read()
-                docs["mbti"]["content"] = content  # 키 이름을 'content'로 통일
+                docs["mbti"]["mbti_all"] = content  # 여기서 키 이름을 'mbti_all'로 통일
         else:
             print(f"MBTI 파일을 찾을 수 없습니다: {mbti_file}")
             
@@ -338,13 +340,13 @@ def load_docs() -> Dict[str, Dict[str, str]]:
     
     return docs
 
+# create_adaptive_prompt 함수에서
 def create_adaptive_prompt(
     city_doc: str, 
     target_generation: str, 
     mbti: str = None,
     include_mbti: bool = False
 ) -> str:
-    """문서 기반 유연한 프롬프트 생성"""
     base_prompt = f"""
 당신은 숙련된 카피라이터입니다. 
 아래 제공되는 도시 정보를 참고하여, 매력적인 광고 카피를 생성해주세요.
@@ -364,8 +366,8 @@ def create_adaptive_prompt(
 
     if include_mbti and mbti and mbti in MBTI_TYPES:
         try:
-            # MBTI 정보 파싱
-            mbti_content = DOCS["mbti"].get("content", "")  # 'content' 키로 변경
+            # MBTI 정보 파싱 - 키 이름을 'mbti_all'로 수정
+            mbti_content = DOCS["mbti"].get("mbti_all", "")
             if mbti_content:
                 parsed_mbti = parse_mbti_content(mbti_content, mbti)
                 mbti_prompt = f"""
