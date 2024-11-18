@@ -924,34 +924,27 @@ with col1:
     # 문서 내용을 expander로 표시
     with st.expander("📄 참고 문서 내용 보기/수정", expanded=False):
         docs_content = f"""
-    ### 지역 정보
-    {DOCS["region"].get(selected_region, "지역 정보가 없습니다.")}
-    
-    ### 세대 특성
-    {DOCS["generation"].get(selected_generation, "세대 정보가 없습니다.")}
-    """
+### 지역 정보
+{DOCS["region"].get(selected_region, "지역 정보가 없습니다.")}
+
+### 세대 특성
+{DOCS["generation"].get(selected_generation, "세대 정보가 없습니다.")}
+"""
         if include_mbti and selected_mbti:
             docs_content += f"""
-    ### MBTI 특성
-    {DOCS["mbti"].get(selected_mbti, f"{selected_mbti} 정보를 찾을 수 없습니다.")}
-    """
-    
+### MBTI 특성
+{DOCS["mbti"].get("mbti_all", "MBTI 정보가 없습니다.")}
+"""
         if selected_season:
             docs_content += f"""
-    ### 계절 특성
-    {selected_season}의 특징을 반영합니다."""
-    
-        # 최종 프롬프트 미리보기 및 수정
-        edited_prompt = st.text_area(
-            "프롬프트 직접 수정",
-            value=create_adaptive_prompt(
-                city_doc=DOCS["region"].get(selected_region, ""),
-                target_generation=DOCS["generation"].get(selected_generation, ""),
-                mbti=selected_mbti,
-                include_mbti=include_mbti
-            ),
-            height=200,
-            key="final_prompt"
+### 계절 특성
+{selected_season}의 특징을 반영합니다."""
+
+        edited_docs = st.text_area(
+            "문서 내용 수정",
+            value=docs_content,
+            height=300,
+            key="docs_editor"
         )
     
     st.markdown("#### 요구사항")
@@ -1018,6 +1011,8 @@ with col1:
                     }
                 }
                 st.session_state.history.append(experiment_data)
+
+
                 
 # with col2 부분의 성능 분석 표시 코드를 아래와 같이 수정
 with col2:
