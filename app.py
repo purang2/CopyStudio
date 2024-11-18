@@ -271,9 +271,6 @@ class ScoringConfig:
         return cls(**data)
 
 
-DOCS = load_docs()
-
-
 def load_docs() -> Dict[str, Dict[str, str]]:
     docs = {
         "region": {},
@@ -309,6 +306,7 @@ def load_docs() -> Dict[str, Dict[str, str]]:
     return docs
 
 
+DOCS = load_docs()
 
 def create_adaptive_prompt(
     city_doc: str, 
