@@ -219,14 +219,14 @@ st.markdown("""
 
 
 
-
+# 도시 좌표 데이터
 CITY_COORDINATES = {
     "강릉": {"lat": 37.7519, "lon": 128.8760},
     "경주": {"lat": 35.8562, "lon": 129.2245},
     "광주": {"lat": 35.1595, "lon": 126.8526},
     "대구": {"lat": 35.8714, "lon": 128.6014},
     "대전": {"lat": 36.3504, "lon": 127.3845},
-    "부산 해운대": {"lat": 35.1628, "lon": 129.1639},  # 해운대구 좌표
+    "부산 해운대": {"lat": 35.1628, "lon": 129.1639},
     "속초": {"lat": 38.2070, "lon": 128.5918},
     "수원": {"lat": 37.2636, "lon": 127.0286},
     "여수": {"lat": 34.7604, "lon": 127.6622},
@@ -825,7 +825,7 @@ def create_map_with_ad_copies(copies: dict):
     m = folium.Map(
         location=[center_lat, center_lon],
         zoom_start=7,
-        tiles='CartoDB positron'  # 깔끔한 스타일의 지도
+        tiles='CartoDB positron'
     )
     
     # 각 지역에 마커와 팝업 추가
@@ -850,19 +850,12 @@ def create_map_with_ad_copies(copies: dict):
             </div>
             """
             
-            # 커스텀 아이콘 설정
-            icon = folium.Icon(
-                color='red',
-                icon='info-sign',
-                prefix='fa'
-            )
-            
             # 마커 추가
             folium.Marker(
                 [coords["lat"], coords["lon"]],
                 popup=folium.Popup(popup_html, max_width=320),
-                icon=icon,
-                tooltip=region  # 마우스 오버시 지역명 표시
+                icon=folium.Icon(color='red', icon='info-sign'),
+                tooltip=region
             ).add_to(m)
     
     # 지도 테두리 자동 조정
@@ -873,109 +866,7 @@ def create_map_with_ad_copies(copies: dict):
     return m
 
 
-def add_map_generation_section():
-    st.subheader("🗺️ 다중 지역 광고 카피 생성")
-    
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        selected_regions = st.multiselect(
-            "지역 선택",
-            options=list(CITY_COORDINATES.keys()),
-            default=["부산 해운대", "강릉"],
-            help="여러 지역을 선택하여 한 번에 광고 카피를 생성할 수 있습니다."
-        )
-        
-        selected_generation = st.selectbox(
-            "타겟 세대 선택",
-            options=list(DOCS["generation"].keys()),
-            key="map_generation"
-        )
 
-    with col2:
-        include_mbti = st.checkbox("MBTI 특성 포함", key="map_mbti_check")
-        if include_mbti:
-            selected_mbti = st.selectbox(
-                "MBTI 선택",
-                options=MBTI_TYPES,
-                key="map_mbti"
-            )
-        else:
-            selected_mbti = None
-
-        selected_season = st.selectbox(
-            "계절 선택 (선택사항)",
-            options=[""] + list(SEASONS.keys()),
-            format_func=lambda x: "계절을 선택하세요" if x == "" else x,
-            key="map_season"
-        )
-
-    if st.button("🎨 선택한 지역 광고 카피 생성", use_container_width=True):
-        if not selected_regions or not selected_generation:
-            st.error("지역과 세대를 선택해주세요!")
-        else:
-            with st.spinner("여러 지역의 광고 카피를 생성중입니다..."):
-                # 진행 상황 표시
-                progress_bar = st.progress(0)
-                status_text = st.empty()
-                
-                # 광고 카피 생성
-                copies = {}
-                for idx, region in enumerate(selected_regions):
-                    status_text.text(f"{region} 광고 카피 생성 중...")
-                    result = generate_multi_region_copies(
-                        [region],
-                        selected_generation,
-                        include_mbti,
-                        selected_mbti if include_mbti else None,
-                        selected_season if selected_season else None
-                    )
-                    copies.update(result)
-                    progress = (idx + 1) / len(selected_regions)
-                    progress_bar.progress(progress)
-                
-                status_text.text("지도 생성 중...")
-                
-                # 지도 생성 및 표시
-                m = create_map_with_ad_copies(copies)
-                folium_static(m)
-                
-                # 진행 상황 표시 제거
-                progress_bar.empty()
-                status_text.empty()
-
-                # 생성된 카피 목록 표시
-                st.subheader("📝 생성된 광고 카피 목록")
-                
-                # 2열 레이아웃으로 카드 표시
-                cols = st.columns(2)
-                for idx, (region, copy) in enumerate(copies.items()):
-                    with cols[idx % 2]:
-                        st.markdown(f"""
-                        <div style="
-                            background-color: white;
-                            padding: 15px;
-                            border-radius: 8px;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                            margin-bottom: 10px;
-                        ">
-                            <h4 style="margin: 0 0 8px 0; color: #1a73e8;">{region}</h4>
-                            <p style="margin: 0; font-size: 14px;">{copy}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-
-                # 결과 저장 버튼 추가
-                if st.button("💾 결과 저장", use_container_width=True):
-                    # 결과를 CSV 파일로 저장
-                    df = pd.DataFrame.from_dict(copies, orient='index', columns=['광고_카피'])
-                    df.index.name = '지역'
-                    csv = df.to_csv(index=True).encode('utf-8-sig')
-                    st.download_button(
-                        label="📥 CSV 파일 다운로드",
-                        data=csv,
-                        file_name=f'광고카피_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv',
-                        mime='text/csv'
-                    )
 
 
 # Load documents
@@ -1271,3 +1162,115 @@ with col2:
 
     else:
         st.info("광고 카피를 생성하면 여기에 결과가 표시됩니다.")
+
+
+
+# 지도 섹션 추가
+st.markdown("---")  # 구분선 추가
+st.subheader("🗺️ 지역별 광고 카피 지도")
+
+map_col1, map_col2 = st.columns([1, 1])
+
+with map_col1:
+    selected_regions = st.multiselect(
+        "지역 선택",
+        options=list(CITY_COORDINATES.keys()),
+        default=["부산 해운대", "강릉", "전주"],
+        help="여러 지역을 선택하여 한 번에 광고 카피를 생성할 수 있습니다."
+    )
+    
+    selected_generation = st.selectbox(
+        "타겟 세대 선택",
+        list(DOCS["generation"].keys()),
+        key="map_generation"
+    )
+
+with map_col2:
+    include_mbti = st.checkbox("MBTI 특성 포함", key="map_mbti_check")
+    if include_mbti:
+        selected_mbti = st.selectbox(
+            "MBTI 선택",
+            options=MBTI_TYPES,
+            key="map_mbti"
+        )
+    else:
+        selected_mbti = None
+
+    selected_season = st.selectbox(
+        "계절 선택 (선택사항)",
+        options=[""] + list(SEASONS.keys()),
+        format_func=lambda x: "계절을 선택하세요" if x == "" else x,
+        key="map_season"
+    )
+
+if st.button("🎨 선택한 지역 광고 카피 생성", key="generate_map", use_container_width=True):
+    if not selected_regions:
+        st.error("지역을 선택해주세요!")
+    else:
+        with st.spinner("여러 지역의 광고 카피를 생성중입니다..."):
+            # 진행 상황 표시
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            # 광고 카피 생성
+            copies = {}
+            for idx, region in enumerate(selected_regions):
+                status_text.text(f"{region} 광고 카피 생성 중...")
+                if region in DOCS["region"]:
+                    prompt = create_adaptive_prompt(
+                        DOCS["region"][region],
+                        selected_generation,
+                        selected_mbti if include_mbti else None,
+                        include_mbti
+                    )
+                    result = generate_copy(prompt, "gpt")
+                    if isinstance(result, dict) and result.get("success"):
+                        copies[region] = result["content"]
+                    elif isinstance(result, str):
+                        copies[region] = result
+                    else:
+                        copies[region] = f"{region}의 광고 카피 생성에 실패했습니다"
+                progress = (idx + 1) / len(selected_regions)
+                progress_bar.progress(progress)
+            
+            status_text.text("지도 생성 중...")
+            
+            # 지도 생성 및 표시
+            m = create_map_with_ad_copies(copies)
+            folium_static(m)
+            
+            # 진행 상황 표시 제거
+            progress_bar.empty()
+            status_text.empty()
+
+            # 생성된 카피 목록 표시
+            st.subheader("📝 생성된 광고 카피 목록")
+            
+            # 2열 레이아웃으로 카드 표시
+            cols = st.columns(2)
+            for idx, (region, copy) in enumerate(copies.items()):
+                with cols[idx % 2]:
+                    st.markdown(f"""
+                    <div style="
+                        background-color: white;
+                        padding: 15px;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        margin-bottom: 10px;
+                    ">
+                        <h4 style="margin: 0 0 8px 0; color: #1a73e8;">{region}</h4>
+                        <p style="margin: 0; font-size: 14px;">{copy}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+            # 결과 저장 버튼 추가
+            if st.button("💾 결과 저장", key="save_map_results", use_container_width=True):
+                df = pd.DataFrame.from_dict(copies, orient='index', columns=['광고_카피'])
+                df.index.name = '지역'
+                csv = df.to_csv(index=True).encode('utf-8-sig')
+                st.download_button(
+                    label="📥 CSV 파일 다운로드",
+                    data=csv,
+                    file_name=f'광고카피_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv',
+                    mime='text/csv'
+                )
