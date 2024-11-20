@@ -815,72 +815,171 @@ def visualize_evaluation_results(results: Dict):
     return fig
 
 
-
 def create_map_with_ad_copies(copies: dict):
     """광고 카피가 포함된 지도 생성"""
-    # 한국 중심 좌표 (모든 도시가 잘 보이도록 조정)
+    # 한국 중심 좌표
     center_lat, center_lon = 36.5, 128.0
     
-    # 지도 생성
+    # 지도 생성 - 모던한 스타일 적용
     m = folium.Map(
         location=[center_lat, center_lon],
         zoom_start=7,
-        tiles='CartoDB positron'
+        tiles=None,  # 기본 타일 제거
+        control_scale=True  # 스케일 컨트롤 추가
     )
     
-    # 각 지역에 마커와 팝업 추가
+    # 모던한 다크 스타일 타일 추가
+    folium.TileLayer(
+        tiles='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        attr='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        name='Dark Mode',
+        control=False,
+    ).add_to(m)
+
+    # 밝은 스타일 타일도 추가하고 레이어 컨트롤로 전환 가능하게 설정
+    folium.TileLayer(
+        tiles='https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+        attr='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        name='Light Mode',
+        control=True
+    ).add_to(m)
+
+    # 레이어 컨트롤 추가
+    folium.LayerControl().add_to(m)
+    
     for region, copy in copies.items():
         if region in CITY_COORDINATES:
             coords = CITY_COORDINATES[region]
-            # HTML로 꾸민 팝업 내용 (텍스트 색상을 진한 색으로 수정)
+            
+            # 말풍선 HTML 스타일 업데이트
             popup_html = f"""
             <div style="
+                position: relative;
                 width: 300px;
-                padding: 15px;
+                padding: 18px;
                 font-family: 'Pretendard', sans-serif;
                 line-height: 1.6;
-                background-color: white;
-                border-radius: 8px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                color: #333333;  /* 기본 텍스트 색상 지정 */
+                background-color: rgba(23, 23, 23, 0.95);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border-radius: 16px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+                border: 1px solid rgba(255,255,255,0.1);
             ">
-                <h4 style="
-                    margin: 0 0 10px 0;
-                    color: #1a73e8;
-                    font-size: 16px;
-                    border-bottom: 2px solid #e8f0fe;
-                    padding-bottom: 5px;
+                <div style="
+                    display: inline-block;
+                    background: linear-gradient(135deg, rgba(26,115,232,0.2), rgba(26,115,232,0.1));
+                    color: #4a9eff;
+                    padding: 6px 14px;
+                    border-radius: 20px;
+                    font-size: 14px;
                     font-weight: 600;
+                    margin-bottom: 12px;
+                    border: 1px solid rgba(74,158,255,0.2);
                 ">
                     {region}
-                </h4>
+                </div>
                 <p style="
                     margin: 0;
-                    font-size: 14px;
-                    color: #2d3748;  /* 더 진한 텍스트 색상 */
-                    line-height: 1.6;
+                    font-size: 15px;
+                    color: rgba(255,255,255,0.95);
+                    line-height: 1.7;
                     font-weight: 500;
+                    letter-spacing: -0.2px;
                 ">
                     {copy}
                 </p>
             </div>
             """
             
-            # 마커 추가
-            folium.Marker(
-                [coords["lat"], coords["lon"]],
-                popup=folium.Popup(popup_html, max_width=320),
-                icon=folium.Icon(color='red', icon='info-sign'),
+            # 위치 마커 스타일 업데이트
+            folium.CircleMarker(
+                location=[coords["lat"], coords["lon"]],
+                radius=7,
+                color='#4a9eff',
+                fill=True,
+                fill_color='#4a9eff',
+                fill_opacity=0.9,
+                weight=2,
+                popup=folium.Popup(popup_html, max_width=320, show=True),
                 tooltip=region
             ).add_to(m)
-    
-    # 지도 테두리 자동 조정
+
+            # 글로우 효과를 위한 큰 원 추가
+            folium.CircleMarker(
+                location=[coords["lat"], coords["lon"]],
+                radius=15,
+                color='#4a9eff',
+                fill=True,
+                fill_color='#4a9eff',
+                fill_opacity=0.2,
+                weight=0
+            ).add_to(m)
+
+    # 지도 영역 자동 조정
     locations = [[coords["lat"], coords["lon"]] for coords in CITY_COORDINATES.values()]
     if locations:
         m.fit_bounds(locations)
+
+    # 지도 스타일 업데이트
+    m.get_root().html.add_child(folium.Element("""
+        <style>
+            .leaflet-popup-content-wrapper {
+                background: rgba(23, 23, 23, 0.95) !important;
+                backdrop-filter: blur(10px) !important;
+                -webkit-backdrop-filter: blur(10px) !important;
+                border-radius: 16px !important;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+                border: 1px solid rgba(255,255,255,0.1) !important;
+                padding: 0 !important;
+            }
+            .leaflet-popup-content {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .leaflet-popup-tip {
+                background: rgba(23, 23, 23, 0.95) !important;
+                backdrop-filter: blur(10px) !important;
+                -webkit-backdrop-filter: blur(10px) !important;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+                border: 1px solid rgba(255,255,255,0.1) !important;
+            }
+            .leaflet-popup-close-button {
+                color: #4a9eff !important;
+                font-size: 20px !important;
+                padding: 8px 8px 0 0 !important;
+            }
+            .leaflet-popup {
+                margin-bottom: 20px !important;
+            }
+            .leaflet-control-layers {
+                border-radius: 12px !important;
+                border: 1px solid rgba(255,255,255,0.1) !important;
+                background: rgba(23, 23, 23, 0.95) !important;
+                backdrop-filter: blur(10px) !important;
+                -webkit-backdrop-filter: blur(10px) !important;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+            }
+            .leaflet-control-layers-list {
+                color: white !important;
+            }
+            .leaflet-bar {
+                border-radius: 12px !important;
+                overflow: hidden;
+            }
+            .leaflet-bar a {
+                background: rgba(23, 23, 23, 0.95) !important;
+                color: #4a9eff !important;
+                border: 1px solid rgba(255,255,255,0.1) !important;
+            }
+            .leaflet-control-zoom {
+                border: none !important;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+            }
+        </style>
+    """))
     
     return m
-
 
 
 
@@ -1268,17 +1367,27 @@ if st.button("🎨 선택한 지역 광고 카피 생성", key="generate_map", u
                 with cols[idx % 2]:
                     st.markdown(f"""
                     <div style="
-                        background-color: white;
+                        background-color: rgba(255, 255, 255, 0.1);
                         padding: 15px;
                         border-radius: 8px;
                         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                         margin-bottom: 10px;
+                        border: 1px solid rgba(255, 255, 255, 0.2);
                     ">
-                        <h4 style="margin: 0 0 8px 0; color: #1a73e8;">{region}</h4>
-                        <p style="margin: 0; font-size: 14px;">{copy}</p>
+                        <h4 style="
+                            margin: 0 0 8px 0;
+                            color: #1a73e8;
+                            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+                            padding-bottom: 5px;
+                        ">{region}</h4>
+                        <p style="
+                            margin: 0;
+                            font-size: 14px;
+                            color: rgba(255, 255, 255, 0.9);
+                            line-height: 1.6;
+                        ">{copy}</p>
                     </div>
                     """, unsafe_allow_html=True)
-
             # 결과 저장 버튼 추가
             if st.button("💾 결과 저장", key="save_map_results", use_container_width=True):
                 df = pd.DataFrame.from_dict(copies, orient='index', columns=['광고_카피'])
