@@ -18,6 +18,9 @@ from typing import Dict, List, Optional, Union
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from google.api_core.exceptions import ResourceExhausted
 
+import folium
+from streamlit_folium import folium_static
+
 
 
 # Page config must be the first Streamlit command
