@@ -832,7 +832,7 @@ def create_map_with_ad_copies(copies: dict):
     for region, copy in copies.items():
         if region in CITY_COORDINATES:
             coords = CITY_COORDINATES[region]
-            # HTML로 꾸민 팝업 내용
+            # HTML로 꾸민 팝업 내용 (텍스트 색상을 진한 색으로 수정)
             popup_html = f"""
             <div style="
                 width: 300px;
@@ -842,11 +842,27 @@ def create_map_with_ad_copies(copies: dict):
                 background-color: white;
                 border-radius: 8px;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                color: #333333;  /* 기본 텍스트 색상 지정 */
             ">
-                <h4 style="margin: 0 0 10px 0; color: #1a73e8; font-size: 16px; border-bottom: 2px solid #e8f0fe; padding-bottom: 5px;">
+                <h4 style="
+                    margin: 0 0 10px 0;
+                    color: #1a73e8;
+                    font-size: 16px;
+                    border-bottom: 2px solid #e8f0fe;
+                    padding-bottom: 5px;
+                    font-weight: 600;
+                ">
                     {region}
                 </h4>
-                <p style="margin: 0; font-size: 14px; color: #333;">{copy}</p>
+                <p style="
+                    margin: 0;
+                    font-size: 14px;
+                    color: #2d3748;  /* 더 진한 텍스트 색상 */
+                    line-height: 1.6;
+                    font-weight: 500;
+                ">
+                    {copy}
+                </p>
             </div>
             """
             
