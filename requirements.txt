@@ -4,4 +4,6 @@ openai
 google-generativeai
 anthropic
 plotly
+folium
+streamlit-folium
 python-dotenv
