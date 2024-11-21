@@ -451,10 +451,34 @@ PERSONA_CATEGORIES = {
     "fiction": {"name": "가상인물", "color": "#F5F3FF", "text_color": "#4c1d95"}  # 연한 보라 배경 + 진한 퍼플
 }
 
-
-def get_random_personas(n=10) -> List[str]:
-    """전체 페르소나 중 랜덤하게 n명 선택"""
-    return random.sample(list(PERSONAS.keys()), min(n, len(PERSONAS)))
+def get_balanced_random_personas(n=16) -> List[str]:
+    """카테고리별로 균형잡힌 페르소나 선택"""
+    personas_by_category = {
+        category: [name for name, data in PERSONAS.items() 
+                  if data["category"] == category]
+        for category in PERSONA_CATEGORIES.keys()
+    }
+    
+    n_categories = len(PERSONA_CATEGORIES)
+    base_per_category = n // n_categories
+    remainder = n % n_categories
+    
+    selected_personas = []
+    for category, personas in personas_by_category.items():
+        n_select = base_per_category + (1 if remainder > 0 else 0)
+        remainder -= 1 if remainder > 0 else 0
+        
+        if personas:
+            selected = random.sample(personas, min(n_select, len(personas)))
+            selected_personas.extend(selected)
+    
+    if len(selected_personas) < n:
+        remaining_personas = [p for p in PERSONAS.keys() if p not in selected_personas]
+        additional = random.sample(remaining_personas, min(n - len(selected_personas), len(remaining_personas)))
+        selected_personas.extend(additional)
+    
+    random.shuffle(selected_personas)
+    return selected_personas[:n]
 
 
 @dataclass
@@ -1517,18 +1541,16 @@ with st.container():
             key="map_season"
         )
 
-        if st.button("🎨 10명의 유명인이 바라본 광고카피 생성", use_container_width=True):
+        # 생성 버튼을 눌렀을 때
+        if st.button("🎨 16명의 유명인이 바라본 광고카피 생성", use_container_width=True):
             if not selected_regions or not selected_generation:
                 st.error("지역과 세대를 선택해주세요!")
             else:
-                # 선택된 첫 번째 지역만 사용
-                selected_region = selected_regions[0]
-                
                 with st.spinner("AI 모델이 다양한 관점의 광고 카피를 생성중입니다..."):
                     try:
                         # 랜덤하게 10명의 페르소나 선택
-                        selected_personas = get_random_personas(10)
-                        
+                        selected_region = selected_regions[0]
+                        selected_personas = get_balanced_random_personas(16)  # 여기를 변경
                         # 진행 상황 표시
                         progress_text = st.empty()
                         progress_bar = st.progress(0)
