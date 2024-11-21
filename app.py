@@ -1783,58 +1783,65 @@ with st.container():
                                 folium_static(m)
                             
                             with results_col:
-                                # 결과를 4x4 매트릭스로 나누기
-                                rows = [persona_results.items()]
-                                chunks = list(persona_results.items())
+                                # 16개의 결과를 4x4 매트릭스로 표시하기 위한 HTML 그리드
+                                st.markdown("""
+                                    <style>
+                                        .grid-container {
+                                            display: grid;
+                                            grid-template-columns: repeat(2, 1fr);  /* 2열 그리드 */
+                                            gap: 12px;
+                                            padding: 10px;
+                                            height: 600px;
+                                            overflow-y: auto;
+                                        }
+                                        .card {
+                                            break-inside: avoid;
+                                            page-break-inside: avoid;
+                                        }
+                                    </style>
+                                """, unsafe_allow_html=True)
+                            
+                                # 결과를 2열로 표시
+                                html_content = '<div class="grid-container">'
                                 
-                                # 4x4 그리드로 나누기
-                                for i in range(0, len(chunks), 4):
-                                    row = st.columns(4)  # 4개의 컬럼 생성
-                                    for j in range(4):
-                                        if i + j < len(chunks):
-                                            persona_name, result = chunks[i + j]
-                                            category_color = PERSONA_CATEGORIES[result["category"]]["color"]
-                                            
-                                            with row[j]:
-                                                st.markdown(f"""
-                                                <div style="
-                                                    background: linear-gradient(135deg, {category_color}40, {category_color}20);
-                                                    padding: 15px;
-                                                    border-radius: 12px;
-                                                    border: 1px solid {category_color};
-                                                    height: fit-content;
-                                                    transition: transform 0.2s;
-                                                    cursor: pointer;
-                                                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-                                                    margin-bottom: 15px;
-                                                ">
-                                                    <div style="
-                                                        display: inline-block;
-                                                        padding: 6px 14px;
-                                                        background-color: {category_color};
-                                                        border-radius: 20px;
-                                                        font-size: 14px;
-                                                        font-weight: 600;
-                                                        margin-bottom: 10px;
-                                                        color: {PERSONA_CATEGORIES[result["category"]]["text_color"]};
-                                                        white-space: nowrap;
-                                                        overflow: hidden;
-                                                        text-overflow: ellipsis;
-                                                    ">
-                                                        {persona_name}
-                                                    </div>
-                                                    <p style="
-                                                        font-size: 15px;
-                                                        line-height: 1.6;
-                                                        color: rgba(255, 255, 255, 0.95);
-                                                        margin: 0;
-                                                        overflow-wrap: break-word;
-                                                        min-height: 100px;
-                                                    ">
-                                                        {result['copy']}
-                                                    </p>
-                                                </div>
-                                                """, unsafe_allow_html=True)
+                                for persona_name, result in persona_results.items():
+                                    category_color = PERSONA_CATEGORIES[result["category"]]["color"]
+                                    html_content += f"""
+                                        <div class="card" style="
+                                            background: linear-gradient(135deg, {category_color}40, {category_color}20);
+                                            padding: 15px;
+                                            border-radius: 12px;
+                                            border: 1px solid {category_color};
+                                            transition: transform 0.2s;
+                                            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                                            margin-bottom: 12px;
+                                        ">
+                                            <div style="
+                                                display: inline-block;
+                                                padding: 6px 14px;
+                                                background-color: {category_color};
+                                                border-radius: 20px;
+                                                font-size: 14px;
+                                                font-weight: 600;
+                                                margin-bottom: 10px;
+                                                color: {PERSONA_CATEGORIES[result["category"]]["text_color"]};
+                                            ">
+                                                {persona_name}
+                                            </div>
+                                            <p style="
+                                                font-size: 15px;
+                                                line-height: 1.6;
+                                                color: rgba(255, 255, 255, 0.95);
+                                                margin: 0;
+                                                overflow-wrap: break-word;
+                                            ">
+                                                {result['copy']}
+                                            </p>
+                                        </div>
+                                    """
+                                
+                                html_content += '</div>'
+                                st.markdown(html_content, unsafe_allow_html=True)
                             
                             # 결과 저장 버튼
                             if st.button("💾 결과 저장"):
