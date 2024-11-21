@@ -31,7 +31,7 @@ st.set_page_config(
 st.title("🐾 Copybara - 광고카피 문구 생성 AI")
 
 
-image = Image.open("copybara_logo.png")
+image = Image.open("copybara_logo2.png")
 
 new_width = 640  # 원하는 너비로 조정
 width_percent = (new_width / float(image.size[0]))
