@@ -450,6 +450,8 @@ PERSONA_CATEGORIES = {
     "politics": {"name": "정치인", "color": "#F3F4F6", "text_color": "#1f2937"},  # 연한 회색 배경 + 차콜
     "fiction": {"name": "가상인물", "color": "#F5F3FF", "text_color": "#4c1d95"}  # 연한 보라 배경 + 진한 퍼플
 }
+if 'selected_personas' not in st.session_state:
+    st.session_state.selected_personas = []
 
 def get_balanced_random_personas(n=16) -> List[str]:
     """카테고리별로 균형잡힌 페르소나 선택"""
