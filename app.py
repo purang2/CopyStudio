@@ -1712,155 +1712,126 @@ with st.container():
                             # 지도와 결과를 함께 표시할 컨테이너
                             st.markdown(f"### 🗺️ 다양한 시선으로 바라본 {selected_region}")
                             
-                            # 2개의 컬럼으로 나누기
-                            map_col, results_col = st.columns([0.6, 0.4])
-                            
-                            with map_col:
-                                # 지도 생성 및 표시
-                                copies_for_map = {selected_region: {
-                                    "copies": persona_results,
-                                    "coordinates": CITY_COORDINATES[selected_region]
-                                }}
+                            # 지도 생성
+                            m = folium.Map(
+                                location=[CITY_COORDINATES[selected_region]["lat"], 
+                                        CITY_COORDINATES[selected_region]["lon"]],
+                                zoom_start=14,
+                                tiles='CartoDB dark_matter'
+                            )
+        
+                            # 4x4 그리드 위치 계산을 위한 기준점과 오프셋 설정
+                            base_lat = CITY_COORDINATES[selected_region]["lat"]
+                            base_lon = CITY_COORDINATES[selected_region]["lon"]
+                            lat_offset = 0.004  # 위도 간격
+                            lon_offset = 0.005  # 경도 간격
+                            grid_size = 4
+        
+                            # 마커 추가
+                            for idx, (persona_name, result) in enumerate(persona_results.items()):
+                                category_color = PERSONA_CATEGORIES[result["category"]]["color"]
                                 
-                                m = folium.Map(
-                                    location=[CITY_COORDINATES[selected_region]["lat"], 
-                                             CITY_COORDINATES[selected_region]["lon"]],
-                                    zoom_start=13,
-                                    tiles='CartoDB dark_matter'
-                                )
+                                # 4x4 그리드 위치 계산
+                                row = idx // grid_size  # 0-3 행 위치
+                                col = idx % grid_size   # 0-3 열 위치
                                 
-                                # 위치 마커와 팝업 추가
-                                for persona_name, result in persona_results.items():
-                                    category_color = PERSONA_CATEGORIES[result["category"]]["color"]
-                                    
-                                    popup_html = f"""
+                                # 중심점 기준으로 그리드 위치 계산
+                                marker_lat = base_lat + (lat_offset * (row - (grid_size-1)/2))
+                                marker_lon = base_lon + (lon_offset * (col - (grid_size-1)/2))
+        
+                                popup_html = f"""
+                                <div style="
+                                    width: 300px;
+                                    padding: 15px;
+                                    font-family: 'Pretendard', sans-serif;
+                                    background-color: rgba(255, 255, 255, 0.95);
+                                    border-radius: 8px;
+                                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                ">
                                     <div style="
-                                        width: 300px;
-                                        padding: 15px;
-                                        font-family: 'Pretendard', sans-serif;
-                                        background-color: rgba(255, 255, 255, 0.95);
-                                        border-radius: 8px;
-                                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                        display: inline-block;
+                                        padding: 4px 12px;
+                                        background-color: {category_color};
+                                        border-radius: 15px;
+                                        font-size: 12px;
+                                        font-weight: 600;
+                                        margin-bottom: 8px;
+                                        color: {PERSONA_CATEGORIES[result["category"]]["text_color"]};
                                     ">
-                                        <div style="
-                                            display: inline-block;
-                                            padding: 4px 12px;
-                                            background-color: {category_color};
-                                            border-radius: 15px;
-                                            font-size: 12px;
-                                            font-weight: 600;
-                                            margin-bottom: 8px;
-                                            color: {PERSONA_CATEGORIES[result["category"]]["text_color"]};  /* 페르소나 이름 색상만 변경 */
-                                        ">
-                                            {persona_name}
-                                        </div>
-                                        <p style="
-                                            margin: 8px 0;
-                                            font-size: 14px;
-                                            line-height: 1.6;
-                                            color: #333;  /* 카피 내용은 원래 색상 유지 */
-                                        ">
-                                            {result['copy']}
-                                        </p>
+                                        {persona_name}
                                     </div>
-                                    """
+                                    <p style="
+                                        margin: 8px 0;
+                                        font-size: 14px;
+                                        line-height: 1.6;
+                                        color: #333;
+                                    ">
+                                        {result['copy']}
+                                    </p>
+                                </div>
+                                """
+                                
+                                folium.CircleMarker(
+                                    location=[marker_lat, marker_lon],
+                                    radius=8,
+                                    color=category_color,
+                                    fill=True,
+                                    popup=folium.Popup(popup_html, max_width=320),
+                                    tooltip=persona_name
+                                ).add_to(m)
+        
+                            # 지도 경계 설정
+                            bounds = [
+                                [base_lat - (lat_offset * 2), base_lon - (lon_offset * 2)],  # 남서쪽 경계
+                                [base_lat + (lat_offset * 2), base_lon + (lon_offset * 2)]   # 북동쪽 경계
+                            ]
+                            m.fit_bounds(bounds, padding=(50, 50))
+        
+                            # 지도 표시
+                            folium_static(m)
+                            
+                            
+                            # 결과 저장 부분을 try-except로 감싸고 상태 표시 추가
+                            try:
+                                if persona_results:  # 결과가 있는 경우에만 저장 버튼 표시
+                                    col1, col2 = st.columns([1, 2])
+                                    with col1:
+                                        if st.button("💾 결과 저장하기", use_container_width=True):
+                                            try:
+                                                # DataFrame 생성
+                                                df = pd.DataFrame([
+                                                    {
+                                                        "페르소나": name,
+                                                        "카테고리": data["category"],
+                                                        "광고카피": data.get("copy", ""),  # get으로 안전하게 접근
+                                                        "생성시간": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                                    }
+                                                    for name, data in persona_results.items()
+                                                    if isinstance(data, dict)  # 데이터가 딕셔너리인 경우만 처리
+                                                ])
+                                                
+                                                if not df.empty:
+                                                    # CSV 파일 생성
+                                                    csv = df.to_csv(index=False).encode('utf-8-sig')
+                                                    
+                                                    # 다운로드 버튼 표시
+                                                    with col2:
+                                                        st.download_button(
+                                                            label=f"📥 {selected_region} 광고카피 다운로드",
+                                                            data=csv,
+                                                            file_name=f'{selected_region}_광고카피_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv',
+                                                            mime='text/csv',
+                                                            help="생성된 모든 페르소나의 광고카피가 CSV 파일로 저장됩니다."
+                                                        )
+                                                        st.success("✅ CSV 파일이 준비되었습니다. 다운로드 버튼을 눌러주세요!")
+                                                else:
+                                                    st.warning("저장할 데이터가 없습니다.")
+                                                    
+                                            except Exception as e:
+                                                st.error(f"파일 생성 중 오류가 발생했습니다: {str(e)}")
                                     
-                                    # 각 페르소나별로 약간 다른 위치에 마커 생성
-                                    offset = 0.0005 * (list(persona_results.keys()).index(persona_name) + 1)
-                                    
-                                    folium.CircleMarker(
-                                        location=[
-                                            CITY_COORDINATES[selected_region]["lat"] + offset,
-                                            CITY_COORDINATES[selected_region]["lon"] + offset
-                                        ],
-                                        radius=8,
-                                        color=category_color,
-                                        fill=True,
-                                        popup=folium.Popup(popup_html, max_width=320),
-                                        tooltip=persona_name
-                                    ).add_to(m)
-                                
-                                folium_static(m)
-                            
-                            with results_col:
-                                # 16개의 결과를 4x4 매트릭스로 표시하기 위한 HTML 그리드
-                                st.markdown("""
-                                    <style>
-                                        .grid-container {
-                                            display: grid;
-                                            grid-template-columns: repeat(2, 1fr);  /* 2열 그리드 */
-                                            gap: 12px;
-                                            padding: 10px;
-                                            height: 600px;
-                                            overflow-y: auto;
-                                        }
-                                        .card {
-                                            break-inside: avoid;
-                                            page-break-inside: avoid;
-                                        }
-                                    </style>
-                                """, unsafe_allow_html=True)
-                            
-                                # 결과를 2열로 표시
-                                html_content = '<div class="grid-container">'
-                                
-                                for persona_name, result in persona_results.items():
-                                    category_color = PERSONA_CATEGORIES[result["category"]]["color"]
-                                    html_content += f"""
-                                        <div class="card" style="
-                                            background: linear-gradient(135deg, {category_color}40, {category_color}20);
-                                            padding: 15px;
-                                            border-radius: 12px;
-                                            border: 1px solid {category_color};
-                                            transition: transform 0.2s;
-                                            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-                                            margin-bottom: 12px;
-                                        ">
-                                            <div style="
-                                                display: inline-block;
-                                                padding: 6px 14px;
-                                                background-color: {category_color};
-                                                border-radius: 20px;
-                                                font-size: 14px;
-                                                font-weight: 600;
-                                                margin-bottom: 10px;
-                                                color: {PERSONA_CATEGORIES[result["category"]]["text_color"]};
-                                            ">
-                                                {persona_name}
-                                            </div>
-                                            <p style="
-                                                font-size: 15px;
-                                                line-height: 1.6;
-                                                color: rgba(255, 255, 255, 0.95);
-                                                margin: 0;
-                                                overflow-wrap: break-word;
-                                            ">
-                                                {result['copy']}
-                                            </p>
-                                        </div>
-                                    """
-                                
-                                html_content += '</div>'
-                                st.markdown(html_content, unsafe_allow_html=True)
-                            
-                            # 결과 저장 버튼
-                            if st.button("💾 결과 저장"):
-                                df = pd.DataFrame([
-                                    {
-                                        "페르소나": name,
-                                        "카테고리": data["category"],
-                                        "광고카피": data["copy"]
-                                    }
-                                    for name, data in persona_results.items()
-                                ])
-                                
-                                csv = df.to_csv(index=False).encode('utf-8-sig')
-                                st.download_button(
-                                    label="📥 CSV 파일 다운로드",
-                                    data=csv,
-                                    file_name=f'{selected_region}_광고카피_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv',
-                                    mime='text/csv'
-                                )
+                            except Exception as e:
+                                st.error(f"저장 기능 실행 중 오류가 발생했습니다: {str(e)}")
         
                     except Exception as e:
                         st.error(f"광고 카피 생성 중 오류가 발생했습니다: {str(e)}")
