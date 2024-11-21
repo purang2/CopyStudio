@@ -1555,3 +1555,6 @@ with st.container():
                                     file_name=f'{selected_region}_광고카피_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv',
                                     mime='text/csv'
                                 )
+        
+                    except Exception as e:
+                        st.error(f"광고 카피 생성 중 오류가 발생했습니다: {str(e)}")
