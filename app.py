@@ -1728,7 +1728,6 @@ with st.container():
                             grid_size = 4
         
                             # 마커 추가
-                            # 마커 추가 부분을 수정
                             for idx, (persona_name, result) in enumerate(persona_results.items()):
                                 category_color = PERSONA_CATEGORIES[result["category"]]["color"]
                                 
@@ -1740,70 +1739,58 @@ with st.container():
                                 marker_lat = base_lat + (lat_offset * (row - (grid_size-1)/2))
                                 marker_lon = base_lon + (lon_offset * (col - (grid_size-1)/2))
                             
-                                popup_html = f"""
-                                <div style="
-                                    width: 300px;
-                                    padding: 15px;
-                                    font-family: 'Pretendard', sans-serif;
-                                    background-color: rgba(255, 255, 255, 0.95);
-                                    border-radius: 8px;
-                                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                                ">
+                                # IFrame을 사용하여 항상 보이는 정보창 생성
+                                html_content = f"""
                                     <div style="
-                                        display: inline-block;
-                                        padding: 4px 12px;
-                                        background-color: {category_color};
-                                        border-radius: 15px;
+                                        width: 200px;
+                                        padding: 10px;
+                                        background-color: rgba(255, 255, 255, 0.95);
+                                        border-radius: 8px;
+                                        border: 2px solid {category_color};
+                                        font-family: 'Pretendard', sans-serif;
                                         font-size: 12px;
-                                        font-weight: 600;
-                                        margin-bottom: 8px;
-                                        color: {PERSONA_CATEGORIES[result["category"]]["text_color"]};
+                                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                                     ">
-                                        {persona_name}
+                                        <div style="
+                                            display: inline-block;
+                                            padding: 3px 8px;
+                                            background-color: {category_color};
+                                            border-radius: 12px;
+                                            color: {PERSONA_CATEGORIES[result["category"]]["text_color"]};
+                                            font-weight: bold;
+                                            margin-bottom: 5px;
+                                        ">
+                                            {persona_name}
+                                        </div>
+                                        <p style="
+                                            margin: 5px 0;
+                                            color: #333;
+                                            line-height: 1.4;
+                                            font-size: 11px;
+                                        ">
+                                            {result['copy']}
+                                        </p>
                                     </div>
-                                    <p style="
-                                        margin: 8px 0;
-                                        font-size: 14px;
-                                        line-height: 1.6;
-                                        color: #333;
-                                    ">
-                                        {result['copy']}
-                                    </p>
-                                </div>
                                 """
                                 
-                                # Popup 객체 생성 (auto_close=False로 설정)
-                                popup = folium.Popup(popup_html, max_width=320)
-                                
-                                # 마커 생성 및 팝업 추가
-                                marker = folium.CircleMarker(
-                                    location=[marker_lat, marker_lon],
-                                    radius=8,
-                                    color=category_color,
-                                    fill=True,
-                                    popup=popup,
-                                    tooltip=persona_name
-                                ).add_to(m)
-                                
-                                # 팝업 자동으로 열기 위한 JavaScript 추가
-                                html = f"""
-                                    <script>
-                                        (function() {{
-                                            var marker = document.getElementsByClassName('leaflet-marker-icon')[{idx}];
-                                            if (marker) {{
-                                                marker.click();
-                                            }}
-                                        }})();
-                                    </script>
-                                """
-                                m.get_root().html.add_child(folium.Element(html))
+                                iframe = folium.IFrame(html=html_content, width=220, height=150)
+                                folium.Popup(iframe, max_width=220).add_to(
+                                    folium.CircleMarker(
+                                        location=[marker_lat, marker_lon],
+                                        radius=5,
+                                        color=category_color,
+                                        fill=True,
+                                        popup=None,  # 클릭 팝업 제거
+                                        tooltip=persona_name
+                                    ).add_to(m)
+                                )
                             
-                            # 모든 팝업이 보이도록 지도 줌 레벨과 경계 조정
+                            # 지도 경계를 더 넓게 설정
                             bounds = [
-                                [base_lat - (lat_offset * 2.5), base_lon - (lon_offset * 2.5)],  # 여백 증가
-                                [base_lat + (lat_offset * 2.5), base_lon + (lon_offset * 2.5)]   # 여백 증가
+                                [base_lat - (lat_offset * 3), base_lon - (lon_offset * 3)],  # 여백 더 증가
+                                [base_lat + (lat_offset * 3), base_lon + (lon_offset * 3)]   # 여백 더 증가
                             ]
-                            m.fit_bounds(bounds, padding=(100, 100))  # 패딩 증가
+                            m.fit_bounds(bounds, padding=(150, 150))  # 패딩 더 증가
         
                             # 지도 표시
                             folium_static(m)
