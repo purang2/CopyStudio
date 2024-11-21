@@ -1470,7 +1470,7 @@ with st.container():
                                             font-size: 12px;
                                             font-weight: 600;
                                             margin-bottom: 8px;
-                                            color: {PERSONA_CATEGORIES[result["category"]]["text_color"]};  /* 여기가 수정됨 */
+                                            color: {PERSONA_CATEGORIES[result["category"]]["text_color"]};  /* 페르소나 이름 색상만 변경 */
                                         ">
                                             {persona_name}
                                         </div>
@@ -1478,7 +1478,7 @@ with st.container():
                                             margin: 8px 0;
                                             font-size: 14px;
                                             line-height: 1.6;
-                                            color: #333;
+                                            color: #333;  /* 카피 내용은 원래 색상 유지 */
                                         ">
                                             {result['copy']}
                                         </p>
@@ -1503,7 +1503,6 @@ with st.container():
                                 folium_static(m)
                             
                             with results_col:
-                                # 스크롤 가능한 결과 리스트
                                 st.markdown("""
                                 <div style="height: 600px; overflow-y: auto;">
                                 """, unsafe_allow_html=True)
@@ -1526,21 +1525,19 @@ with st.container():
                                             font-size: 12px;
                                             font-weight: 600;
                                             margin-bottom: 8px;
-                                            color: {PERSONA_CATEGORIES[result["category"]]["text_color"]};  /* 여기가 수정됨 */
+                                            color: {PERSONA_CATEGORIES[result["category"]]["text_color"]};  /* 페르소나 이름 색상만 변경 */
                                         ">
                                             {persona_name}
                                         </div>
                                         <p style="
                                             font-size: 14px;
                                             line-height: 1.6;
-                                            color: #333;
+                                            color: #333;  /* 카피 내용은 원래 색상 유지 */
                                         ">
                                             {result['copy']}
                                         </p>
                                     </div>
                                     """, unsafe_allow_html=True)
-                                
-                                st.markdown("</div>", unsafe_allow_html=True)
                             
                             # 결과 저장 버튼
                             if st.button("💾 결과 저장"):
