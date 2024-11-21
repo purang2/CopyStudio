@@ -1641,16 +1641,33 @@ with st.container():
                                 folium_static(m)
                             
                             with results_col:
+                                st.markdown("""
+                                <div style="
+                                    height: 600px; 
+                                    overflow-y: auto;
+                                    display: grid;
+                                    grid-template-columns: repeat(2, 1fr);  /* 2열 그리드 */
+                                    gap: 10px;  /* 카드 간 간격 */
+                                    padding: 10px;
+                                ">
+                                """, unsafe_allow_html=True)
+                                
                                 for persona_name, result in persona_results.items():
                                     category_color = PERSONA_CATEGORIES[result["category"]]["color"]
                                     st.markdown(f"""
                                     <div style="
                                         background: linear-gradient(135deg, {category_color}40, {category_color}20);
-                                        padding: 15px;
+                                        padding: 12px;
                                         border-radius: 8px;
-                                        margin-bottom: 10px;
                                         border: 1px solid {category_color};
-                                    ">
+                                        height: fit-content;
+                                        transition: transform 0.2s;
+                                        cursor: pointer;
+                                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                    "
+                                    onmouseover="this.style.transform='translateY(-2px)'"
+                                    onmouseout="this.style.transform='translateY(0)'"
+                                    >
                                         <div style="
                                             display: inline-block;
                                             padding: 4px 12px;
@@ -1664,14 +1681,18 @@ with st.container():
                                             {persona_name}
                                         </div>
                                         <p style="
-                                            font-size: 14px;
-                                            line-height: 1.6;
-                                            color: rgba(255, 255, 255, 0.9);  /* 카피 내용은 흰색으로 변경 */
+                                            font-size: 13px;
+                                            line-height: 1.5;
+                                            color: rgba(255, 255, 255, 0.9);
+                                            margin: 0;
+                                            overflow-wrap: break-word;
                                         ">
                                             {result['copy']}
                                         </p>
                                     </div>
                                     """, unsafe_allow_html=True)
+                                
+                                st.markdown("</div>", unsafe_allow_html=True)
                             
                             # 결과 저장 버튼
                             if st.button("💾 결과 저장"):
