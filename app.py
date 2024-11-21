@@ -1546,7 +1546,6 @@ with st.container():
             format_func=lambda x: "계절을 선택하세요" if x == "" else x,
             key="map_season"
         )
-
         # 생성 버튼을 눌렀을 때
         if st.button("🎨 16명의 유명인이 바라본 광고카피 생성", use_container_width=True):
             if not selected_regions or not selected_generation:
