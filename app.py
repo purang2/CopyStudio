@@ -664,65 +664,40 @@ def load_docs() -> Dict[str, Dict[str, str]]:
 
 
 DOCS = load_docs()
-
 def create_adaptive_prompt(
     city_doc: str, 
     target_generation: str,
-    persona_name: str,
-    mbti: str = None,
-    include_mbti: bool = False
+    persona_name: str
 ) -> str:
-    """페르소나 특성을 반영한 프롬프트 생성"""
+    """페르소나의 특색을 자연스럽게 반영한 프롬프트 생성"""
 
     persona_data = PERSONAS.get(persona_name)
     if not persona_data:
         return None
 
-    base_prompt = f"""
-당신은 {persona_name}입니다. 
-{persona_data['description']}
+    # 페르소나의 샘플 문장 중 하나를 랜덤으로 선택하여 스타일을 암시적으로 전달
+    import random
+    sample_sentence = random.choice(persona_data['samples'])
 
-[창의적 탐구 미션]
-해운대에서 당신만의 독특한 내러티브를 창조해주세요. 다음 가이드라인을 참고하세요:
+    base_prompt = f'''
+[배경 정보]
+- 도시 정보: {city_doc}
+- 타겟 세대: {target_generation}
 
-1. 페르소나적 관점:
-   - 당신의 고유한 예술적/철학적 렌즈로 해운대를 바라보세요
-   - 개인적 경험과 도시의 본질을 융합하세요
-
-2. 감정적 깊이:
-   - 해운대에서 느끼는 당신만의 특별한 감정을 표현하세요
-   - 당신의 내면 세계와 도시 풍경의 교차점을 찾아보세요
-
-3. 창의적 표현:
-   - 당신만의 은유와 상징을 활용하세요
-   - 클리셰를 피하고 혁신적인 관점을 제시하세요
-
-4. 참고 스타일 샘플:
-   {persona_data['samples'][0]}
-   {persona_data['samples'][1]}
-   {persona_data['samples'][2]}
-
-[도시 맥락]
-{city_doc}
-
-[타겟 세대 인사이트]
-세대: {target_generation}
-이 세대의 문화적 특성과 어떻게 공명할 수 있을까요?
-
-[최종 미션]
-해운대의 본질을 한 문장으로 카피라이팅하세요.
-- 당신의 고유한 목소리로 표현
-- 이모지 1-2개 선택적 사용 가능
-- 클리셰나 진부한 표현을 피할 것
-
-추가 도전 과제: 
-이 장소가 당신의 대표작에 등장한다면 어떤 모습일까요?
-"""
-
-    if include_mbti and mbti:
-        base_prompt += f"\n\n[MBTI 고려사항]\n당신의 MBTI는 {mbti}입니다. 이 성격 유형의 특성을 고려하여 해운대를 바라보세요."
+[작성 지침]
+- 위 배경 정보를 바탕으로 한 줄의 강력한 광고 카피를 작성해주세요.
+- 카피는 독자의 마음을 울릴 수 있는 짧고 강렬한 문장이어야 합니다.
+- 감정을 불러일으키는 은유와 함축적인 표현을 사용해주세요.
+- 클리셰나 진부한 표현을 피하고, 창의적이고 혁신적인 관점을 제시해주세요.
+- 이모지 1-2개를 포함할 수 있습니다.
+- 아래는 참고할 수 있는 문장입니다:
+  "{sample_sentence}"
+'''
 
     return base_prompt
+
+
+
 
 
 # 파일 로딩 함수에 디버깅 출력 추가
