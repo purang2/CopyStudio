@@ -451,19 +451,6 @@ PERSONA_CATEGORIES = {
     "fiction": {"name": "가상인물", "color": "#F5F3FF", "text_color": "#4c1d95"}  # 연한 보라 배경 + 진한 퍼플
 }
 
-# 베스트/워스트 카피 평가를 위한 프롬프트
-evaluation_prompt = f"""
-다음은 {selected_region}에 대한 16개의 광고 카피입니다. 각 카피의 창의성, 매력도, 지역 특성 반영도를 고려하여 
-가장 뛰어난 카피 1개와 가장 개선이 필요한 카피 1개를 선정해주세요.
-
-{chr(10).join([f"{name}: {result['copy']}" for name, result in persona_results.items()])}
-
-다음 형식으로 답변해주세요:
-BEST: [페르소나 이름]
-BEST_REASON: [선정 이유]
-WORST: [페르소나 이름]
-WORST_REASON: [선정 이유]
-"""
 
 
 
@@ -1663,7 +1650,19 @@ with st.container():
                         progress_text.empty()
                         progress_bar.empty()
                         
-                        with st.spinner("✨ 베스트 카피를 선정하고 있습니다..."):
+                        with st.spinner("✨ 베스트/워스트 카피를 선정하고 있습니다..."):
+                            evaluation_prompt = f"""
+                다음은 {selected_region}에 대한 16개의 광고 카피입니다. 각 카피의 창의성, 매력도, 지역 특성 반영도를 고려하여 
+                가장 뛰어난 카피 1개와 가장 개선이 필요한 카피 1개를 선정해주세요.
+                
+                {chr(10).join([f"{name}: {result['copy']}" for name, result in persona_results.items()])}
+                
+                다음 형식으로 답변해주세요:
+                BEST: [페르소나 이름]
+                BEST_REASON: [선정 이유]
+                WORST: [페르소나 이름]
+                WORST_REASON: [선정 이유]"""
+                
                             result = generate_copy(evaluation_prompt, "gpt")
                             if isinstance(result, dict):
                                 eval_text = result["content"]
