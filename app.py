@@ -9,6 +9,7 @@ import pathlib
 from typing import Dict, List, Optional
 from dataclasses import dataclass
 
+from PIL import Image
 import plotly.express as px 
 import plotly.graph_objects as go
 from typing import Dict, List, Optional, Union
