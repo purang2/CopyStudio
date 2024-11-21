@@ -1469,6 +1469,7 @@ with st.container():
                                             font-size: 12px;
                                             font-weight: 600;
                                             margin-bottom: 8px;
+                                            color: #374151;  /* 어두운 회색으로 고정 */
                                         ">
                                             {persona_name}
                                         </div>
@@ -1476,6 +1477,7 @@ with st.container():
                                             margin: 8px 0;
                                             font-size: 14px;
                                             line-height: 1.6;
+                                            color: #333;
                                         ">
                                             {result['copy']}
                                         </p>
