@@ -19,6 +19,7 @@ from google.api_core.exceptions import ResourceExhausted
 
 import folium
 from streamlit_folium import folium_static
+import random
 
 # Page config must be the first Streamlit command
 st.set_page_config(
@@ -271,6 +272,32 @@ SEASONS = {
 }
 
 
+PERSONAS = {
+    "파블로 네루다": {
+        "description": "감각적이고 관능적인 시적 표현으로 사랑과 자연의 아름다움을 노래하는 문학인. 은유와 상징을 통해 강렬한 이미지를 전달한다.",
+        "sample": "모래 위에 남은 발자국은 파도가 지우지 않는다. 그것은 내 마음 속의 흔적이기 때문이다.",
+        "category": "literature"
+    },
+    "BTS": {
+        "description": "글로벌 감성과 공감 능력을 바탕으로 희망과 열정을 다채로운 스타일로 표현하며, 세대 간 연결고리를 만들어낸다.",
+        "sample": "이 순간, 해운대의 파도는 우리의 노래처럼 힘차고도 부드럽다. 함께 부르면 더 아름다워진다.",
+        "category": "entertainment"
+    },
+    # ... 나머지 페르소나들 추가
+}
+
+PERSONA_CATEGORIES = {
+    "literature": {"name": "문학가", "color": "#FDF2F8"},
+    "entertainment": {"name": "연예인", "color": "#FCE7F3"},
+    "tech": {"name": "기업인", "color": "#EFF6FF"},
+    "politics": {"name": "정치인", "color": "#F3F4F6"},
+    "fiction": {"name": "가상인물", "color": "#F5F3FF"}
+}
+
+def get_random_personas(n=10) -> List[str]:
+    """전체 페르소나 중 랜덤하게 n명 선택"""
+    return random.sample(list(PERSONAS.keys()), min(n, len(PERSONAS)))
+
 
 @dataclass
 class ScoringConfig:
@@ -330,48 +357,40 @@ def load_docs() -> Dict[str, Dict[str, str]]:
 
 DOCS = load_docs()
 
-
 def create_adaptive_prompt(
     city_doc: str, 
-    target_generation: str, 
+    target_generation: str,
+    persona_name: str,
     mbti: str = None,
     include_mbti: bool = False
 ) -> str:
-    """문서 기반 유연한 프롬프트 생성"""
+    """페르소나 특성을 반영한 프롬프트 생성"""
+    
+    persona_data = PERSONAS.get(persona_name)
+    if not persona_data:
+        return None
+        
     base_prompt = f"""
-당신은 숙련된 카피라이터입니다. 
-아래 제공되는 도시 정보를 참고하여, 매력적인 광고 카피를 생성해주세요.
-이 정보는 참고용이며, 카피는 자연스럽고 창의적이어야 합니다.
+당신은 {persona_name}입니다.
+{persona_data['description']}
+
+다음과 같은 스타일로 광고 카피를 작성해주세요:
+- 당신만의 독특한 어조와 표현 방식을 살려주세요
+- 참고 예시: {persona_data['sample']}
 
 [도시 정보]
 {city_doc}
 
-[카피 작성 가이드라인]
-1. 위 정보는 영감을 얻기 위한 참고 자료입니다.
-2. 도시의 핵심 매력을 포착해 신선한 관점으로 표현해주세요.
-3. 타겟층에 맞는 톤앤매너를 사용하되, 정보의 나열은 피해주세요.
-4. 감성적 공감과 구체적 특징이 조화를 이루도록 해주세요.
-
 [타겟 정보]
 세대: {target_generation}"""
 
-    if include_mbti and mbti and mbti in MBTI_TYPES:
-        try:
-            mbti_content = DOCS["mbti"].get(mbti)
-            if mbti_content:
-                mbti_prompt = f"""
+    if include_mbti and mbti:
+        mbti_content = DOCS["mbti"].get(mbti)
+        if mbti_content:
+            base_prompt += f"""
 
 [MBTI 특성 - {mbti}]
-{mbti_content}
-
-특별 고려사항:
-- 위 {mbti} 성향의 여행 선호도를 반영해 카피를 작성해주세요
-- 해당 MBTI의 핵심 가치관과 선호 스타일을 고려해주세요"""
-                base_prompt += mbti_prompt
-            else:
-                print(f"{mbti}.txt 파일의 내용을 찾을 수 없습니다.")
-        except Exception as e:
-            print(f"MBTI 프롬프트 생성 에러: {str(e)}")
+{mbti_content}"""
 
     base_prompt += """
 
@@ -1340,103 +1359,167 @@ with st.container():
             key="map_season"
         )
 
-        if st.button("🎨 광고 카피 생성", key="generate_map", use_container_width=True):
-            if not selected_regions:
-                st.error("지역을 선택해주세요!")
+        if st.button("🎨 10명의 유명인이 바라본 광고카피 생성", use_container_width=True):
+            if not selected_region or not selected_generation:
+                st.error("지역과 세대를 선택해주세요!")
             else:
-                with st.spinner("여러 지역의 광고 카피를 생성중입니다..."):
+                with st.spinner("AI 모델이 다양한 관점의 광고 카피를 생성중입니다..."):
+                    # 랜덤하게 10명의 페르소나 선택
+                    selected_personas = get_random_personas(10)
+                    
                     # 진행 상황 표시
+                    progress_text = st.empty()
                     progress_bar = st.progress(0)
-                    status_text = st.empty()
                     
-                    # 광고 카피 생성
-                    copies = {}
-                    for idx, region in enumerate(selected_regions):
-                        status_text.text(f"{region} 광고 카피 생성 중...")
-                        if region in DOCS["region"]:
-                            prompt = create_adaptive_prompt(
-                                DOCS["region"][region],
-                                selected_generation,
-                                selected_mbti if include_mbti else None,
-                                include_mbti
-                            )
-                            result = generate_copy(prompt, "gpt")
-                            if isinstance(result, dict) and result.get("success"):
-                                copies[region] = result["content"]
-                            elif isinstance(result, str):
-                                copies[region] = result
-                            else:
-                                copies[region] = f"{region}의 광고 카피 생성에 실패했습니다"
-                        progress = (idx + 1) / len(selected_regions)
-                        progress_bar.progress(progress)
+                    persona_results = {}
+                    for idx, persona_name in enumerate(selected_personas):
+                        progress_text.text(f"✍️ {persona_name}의 시선으로 카피 생성 중...")
+                        
+                        prompt = create_adaptive_prompt(
+                            city_doc=DOCS["region"][selected_region],
+                            target_generation=selected_generation,
+                            persona_name=persona_name,
+                            mbti=selected_mbti if include_mbti else None,
+                            include_mbti=include_mbti
+                        )
+                        
+                        result = generate_copy(prompt, "gpt")
+                        persona_results[persona_name] = {
+                            "copy": result["content"] if isinstance(result, dict) else result,
+                            "persona_info": PERSONAS[persona_name],
+                            "category": PERSONAS[persona_name]["category"]
+                        }
+                        
+                        progress_bar.progress((idx + 1) / len(selected_personas))
                     
-                    # 진행 상황 표시 제거
+                    # 진행 표시 제거
+                    progress_text.empty()
                     progress_bar.empty()
-                    status_text.empty()
-
-                    # 세션 스테이트에 결과 저장
-                    st.session_state.map_copies = copies
-
-    with col_map:
-        # 지도 표시 영역
-        if 'map_copies' in st.session_state and st.session_state.map_copies:
-            # CSS로 지도 컨테이너 스타일링
-            st.markdown("""
-                <style>
-                    .stMapContainer {
-                        height: 800px !important;
-                        margin: -1rem -1rem 0 -1rem;
-                    }
-                    .stMapContainer > div {
-                        height: 800px !important;
-                    }
-                    iframe {
-                        height: 800px !important;
-                    }
-                </style>
-            """, unsafe_allow_html=True)
-            
-            # 지도 생성 및 표시
-            m = create_map_with_ad_copies(st.session_state.map_copies)
-            folium_static(m, width=1200, height=800)
-
-# 생성된 카피 목록을 작은 카드로 표시
-if 'map_copies' in st.session_state and st.session_state.map_copies:
-    with st.expander("📝 생성된 광고 카피 목록", expanded=False):
-        cols = st.columns(3)  # 3열 레이아웃으로 변경
-        for idx, (region, copy) in enumerate(st.session_state.map_copies.items()):
-            with cols[idx % 3]:
-                st.markdown(f"""
-                <div style="
-                    background-color: rgba(255, 255, 255, 0.1);
-                    padding: 12px;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    margin-bottom: 8px;
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                ">
-                    <h4 style="
-                        margin: 0 0 6px 0;
-                        color: #1a73e8;
-                        font-size: 14px;
-                    ">{region}</h4>
-                    <p style="
-                        margin: 0;
-                        font-size: 12px;
-                        color: rgba(255, 255, 255, 0.9);
-                        line-height: 1.5;
-                    ">{copy}</p>
-                </div>
-                """, unsafe_allow_html=True)
-
-        # 결과 저장 버튼
-        if st.button("💾 결과 저장", key="save_map_results", use_container_width=True):
-            df = pd.DataFrame.from_dict(st.session_state.map_copies, orient='index', columns=['광고_카피'])
-            df.index.name = '지역'
-            csv = df.to_csv(index=True).encode('utf-8-sig')
-            st.download_button(
-                label="📥 CSV 파일 다운로드",
-                data=csv,
-                file_name=f'광고카피_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv',
-                mime='text/csv'
-            )
+        
+                    # 지도와 결과를 함께 표시할 컨테이너
+                    st.markdown("### 🗺️ 다양한 시선으로 바라본 {selected_region}")
+                    
+                    # 2개의 컬럼으로 나누기
+                    map_col, results_col = st.columns([0.6, 0.4])
+                    
+                    with map_col:
+                        # 지도 생성 및 표시
+                        copies_for_map = {selected_region: {
+                            "copies": persona_results,
+                            "coordinates": CITY_COORDINATES[selected_region]
+                        }}
+                        
+                        m = folium.Map(
+                            location=[CITY_COORDINATES[selected_region]["lat"], 
+                                     CITY_COORDINATES[selected_region]["lon"]],
+                            zoom_start=13,
+                            tiles='CartoDB dark_matter'
+                        )
+                        
+                        # 위치 마커와 팝업 추가
+                        for persona_name, result in persona_results.items():
+                            category_color = PERSONA_CATEGORIES[result["category"]]["color"]
+                            
+                            popup_html = f"""
+                            <div style="
+                                width: 300px;
+                                padding: 15px;
+                                font-family: 'Pretendard', sans-serif;
+                                background-color: rgba(255, 255, 255, 0.95);
+                                border-radius: 8px;
+                                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                            ">
+                                <div style="
+                                    display: inline-block;
+                                    padding: 4px 12px;
+                                    background-color: {category_color};
+                                    border-radius: 15px;
+                                    font-size: 12px;
+                                    font-weight: 600;
+                                    margin-bottom: 8px;
+                                ">
+                                    {persona_name}
+                                </div>
+                                <p style="
+                                    margin: 8px 0;
+                                    font-size: 14px;
+                                    line-height: 1.6;
+                                ">
+                                    {result['copy']}
+                                </p>
+                            </div>
+                            """
+                            
+                            # 각 페르소나별로 약간 다른 위치에 마커 생성
+                            offset = 0.0005 * (list(persona_results.keys()).index(persona_name) + 1)
+                            
+                            folium.CircleMarker(
+                                location=[
+                                    CITY_COORDINATES[selected_region]["lat"] + offset,
+                                    CITY_COORDINATES[selected_region]["lon"] + offset
+                                ],
+                                radius=8,
+                                color=category_color,
+                                fill=True,
+                                popup=folium.Popup(popup_html, max_width=320),
+                                tooltip=persona_name
+                            ).add_to(m)
+                        
+                        folium_static(m)
+                    
+                    with results_col:
+                        # 스크롤 가능한 결과 리스트
+                        st.markdown("""
+                        <div style="height: 600px; overflow-y: auto;">
+                        """, unsafe_allow_html=True)
+                        
+                        for persona_name, result in persona_results.items():
+                            category_color = PERSONA_CATEGORIES[result["category"]]["color"]
+                            st.markdown(f"""
+                            <div style="
+                                background: linear-gradient(135deg, {category_color}40, {category_color}20);
+                                padding: 15px;
+                                border-radius: 8px;
+                                margin-bottom: 10px;
+                                border: 1px solid {category_color};
+                            ">
+                                <div style="
+                                    display: inline-block;
+                                    padding: 4px 12px;
+                                    background-color: {category_color};
+                                    border-radius: 15px;
+                                    font-size: 12px;
+                                    font-weight: 600;
+                                    margin-bottom: 8px;
+                                ">
+                                    {persona_name}
+                                </div>
+                                <p style="
+                                    font-size: 14px;
+                                    line-height: 1.6;
+                                ">
+                                    {result['copy']}
+                                </p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        st.markdown("</div>", unsafe_allow_html=True)
+                    
+                    # 결과 저장 버튼
+                    if st.button("💾 결과 저장"):
+                        df = pd.DataFrame([
+                            {
+                                "페르소나": name,
+                                "카테고리": data["category"],
+                                "광고카피": data["copy"]
+                            }
+                            for name, data in persona_results.items()
+                        ])
+                        
+                        csv = df.to_csv(index=False).encode('utf-8-sig')
+                        st.download_button(
+                            label="📥 CSV 파일 다운로드",
+                            data=csv,
+                            file_name=f'{selected_region}_광고카피_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv',
+                            mime='text/csv'
+                        )
