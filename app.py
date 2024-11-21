@@ -1503,10 +1503,6 @@ with st.container():
                                 folium_static(m)
                             
                             with results_col:
-                                st.markdown("""
-                                <div style="height: 600px; overflow-y: auto;">
-                                """, unsafe_allow_html=True)
-                                
                                 for persona_name, result in persona_results.items():
                                     category_color = PERSONA_CATEGORIES[result["category"]]["color"]
                                     st.markdown(f"""
@@ -1525,14 +1521,14 @@ with st.container():
                                             font-size: 12px;
                                             font-weight: 600;
                                             margin-bottom: 8px;
-                                            color: {PERSONA_CATEGORIES[result["category"]]["text_color"]};  /* 페르소나 이름 색상만 변경 */
+                                            color: {PERSONA_CATEGORIES[result["category"]]["text_color"]};
                                         ">
                                             {persona_name}
                                         </div>
                                         <p style="
                                             font-size: 14px;
                                             line-height: 1.6;
-                                            color: #333;  /* 카피 내용은 원래 색상 유지 */
+                                            color: rgba(255, 255, 255, 0.9);  /* 카피 내용은 흰색으로 변경 */
                                         ">
                                             {result['copy']}
                                         </p>
