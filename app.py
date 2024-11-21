@@ -1739,58 +1739,58 @@ with st.container():
                                 marker_lat = base_lat + (lat_offset * (row - (grid_size-1)/2))
                                 marker_lon = base_lon + (lon_offset * (col - (grid_size-1)/2))
                             
-                                # IFrame을 사용하여 항상 보이는 정보창 생성
-                                html_content = f"""
+                                # 마커 생성
+                                folium.CircleMarker(
+                                    location=[marker_lat, marker_lon],
+                                    radius=6,
+                                    color=category_color,
+                                    fill=True,
+                                    popup=None,
+                                    tooltip=persona_name
+                                ).add_to(m)
+                                
+                                # Divicon을 사용하여 항상 보이는 라벨 추가
+                                html = f"""
                                     <div style="
-                                        width: 200px;
-                                        padding: 10px;
+                                        position: relative;
+                                        left: 10px;
+                                        top: -10px;
                                         background-color: rgba(255, 255, 255, 0.95);
+                                        padding: 8px;
                                         border-radius: 8px;
-                                        border: 2px solid {category_color};
-                                        font-family: 'Pretendard', sans-serif;
-                                        font-size: 12px;
                                         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                        border: 2px solid {category_color};
+                                        min-width: 150px;
+                                        max-width: 200px;
                                     ">
-                                        <div style="
-                                            display: inline-block;
-                                            padding: 3px 8px;
-                                            background-color: {category_color};
-                                            border-radius: 12px;
+                                        <b style="
                                             color: {PERSONA_CATEGORIES[result["category"]]["text_color"]};
-                                            font-weight: bold;
-                                            margin-bottom: 5px;
-                                        ">
-                                            {persona_name}
-                                        </div>
+                                            font-size: 12px;
+                                        ">{persona_name}</b>
                                         <p style="
-                                            margin: 5px 0;
+                                            margin: 4px 0 0 0;
                                             color: #333;
-                                            line-height: 1.4;
                                             font-size: 11px;
-                                        ">
-                                            {result['copy']}
-                                        </p>
+                                            line-height: 1.4;
+                                        ">{result['copy']}</p>
                                     </div>
                                 """
                                 
-                                iframe = folium.IFrame(html=html_content, width=220, height=150)
-                                folium.Popup(iframe, max_width=220).add_to(
-                                    folium.CircleMarker(
-                                        location=[marker_lat, marker_lon],
-                                        radius=5,
-                                        color=category_color,
-                                        fill=True,
-                                        popup=None,  # 클릭 팝업 제거
-                                        tooltip=persona_name
-                                    ).add_to(m)
-                                )
+                                folium.DivIcon(
+                                    html=html,
+                                    icon_size=(150, 100),
+                                    icon_anchor=(0, 0)
+                                ).add_to(folium.Marker(
+                                    [marker_lat, marker_lon],
+                                    icon=folium.DivIcon(html=html)
+                                ).add_to(m))
                             
-                            # 지도 경계를 더 넓게 설정
+                            # 지도 경계 설정
                             bounds = [
-                                [base_lat - (lat_offset * 3), base_lon - (lon_offset * 3)],  # 여백 더 증가
-                                [base_lat + (lat_offset * 3), base_lon + (lon_offset * 3)]   # 여백 더 증가
+                                [base_lat - (lat_offset * 3), base_lon - (lon_offset * 3)],
+                                [base_lat + (lat_offset * 3), base_lon + (lon_offset * 3)]
                             ]
-                            m.fit_bounds(bounds, padding=(150, 150))  # 패딩 더 증가
+                            m.fit_bounds(bounds, padding=(150, 150))
         
                             # 지도 표시
                             folium_static(m)
