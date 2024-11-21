@@ -1728,17 +1728,18 @@ with st.container():
                             grid_size = 4
         
                             # 마커 추가
+                            # 마커 추가 부분을 수정
                             for idx, (persona_name, result) in enumerate(persona_results.items()):
                                 category_color = PERSONA_CATEGORIES[result["category"]]["color"]
                                 
                                 # 4x4 그리드 위치 계산
-                                row = idx // grid_size  # 0-3 행 위치
-                                col = idx % grid_size   # 0-3 열 위치
+                                row = idx // grid_size
+                                col = idx % grid_size
                                 
                                 # 중심점 기준으로 그리드 위치 계산
                                 marker_lat = base_lat + (lat_offset * (row - (grid_size-1)/2))
                                 marker_lon = base_lon + (lon_offset * (col - (grid_size-1)/2))
-        
+                            
                                 popup_html = f"""
                                 <div style="
                                     width: 300px;
@@ -1771,21 +1772,38 @@ with st.container():
                                 </div>
                                 """
                                 
-                                folium.CircleMarker(
+                                # Popup 객체 생성 (auto_close=False로 설정)
+                                popup = folium.Popup(popup_html, max_width=320)
+                                
+                                # 마커 생성 및 팝업 추가
+                                marker = folium.CircleMarker(
                                     location=[marker_lat, marker_lon],
                                     radius=8,
                                     color=category_color,
                                     fill=True,
-                                    popup=folium.Popup(popup_html, max_width=320),
+                                    popup=popup,
                                     tooltip=persona_name
                                 ).add_to(m)
-        
-                            # 지도 경계 설정
+                                
+                                # 팝업 자동으로 열기 위한 JavaScript 추가
+                                html = f"""
+                                    <script>
+                                        (function() {{
+                                            var marker = document.getElementsByClassName('leaflet-marker-icon')[{idx}];
+                                            if (marker) {{
+                                                marker.click();
+                                            }}
+                                        }})();
+                                    </script>
+                                """
+                                m.get_root().html.add_child(folium.Element(html))
+                            
+                            # 모든 팝업이 보이도록 지도 줌 레벨과 경계 조정
                             bounds = [
-                                [base_lat - (lat_offset * 2), base_lon - (lon_offset * 2)],  # 남서쪽 경계
-                                [base_lat + (lat_offset * 2), base_lon + (lon_offset * 2)]   # 북동쪽 경계
+                                [base_lat - (lat_offset * 2.5), base_lon - (lon_offset * 2.5)],  # 여백 증가
+                                [base_lat + (lat_offset * 2.5), base_lon + (lon_offset * 2.5)]   # 여백 증가
                             ]
-                            m.fit_bounds(bounds, padding=(50, 50))
+                            m.fit_bounds(bounds, padding=(100, 100))  # 패딩 증가
         
                             # 지도 표시
                             folium_static(m)
