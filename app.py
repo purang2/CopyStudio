@@ -664,10 +664,14 @@ def load_docs() -> Dict[str, Dict[str, str]]:
 
 
 DOCS = load_docs()
+
+
 def create_adaptive_prompt(
     city_doc: str, 
     target_generation: str,
-    persona_name: str
+    persona_name: str,
+    mbti: str = None,
+    include_mbti: bool = False
 ) -> str:
     """페르소나의 특색을 자연스럽게 반영한 프롬프트 생성"""
 
