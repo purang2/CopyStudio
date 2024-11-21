@@ -306,12 +306,13 @@ PERSONAS = {
 }
 
 PERSONA_CATEGORIES = {
-    "literature": {"name": "문학가", "color": "#FDF2F8"},
-    "entertainment": {"name": "연예인", "color": "#FCE7F3"},
-    "tech": {"name": "기업인", "color": "#EFF6FF"},
-    "politics": {"name": "정치인", "color": "#F3F4F6"},
-    "fiction": {"name": "가상인물", "color": "#F5F3FF"}
+    "literature": {"name": "문학가", "color": "#FDF2F8", "text_color": "#831843"},  # 밝은 핑크 배경 + 더 진한 버건디
+    "entertainment": {"name": "연예인", "color": "#FCE7F3", "text_color": "#701A75"},  # 연한 핑크 배경 + 진한 퍼플
+    "tech": {"name": "기업인", "color": "#EFF6FF", "text_color": "#1e3a8a"},  # 연한 파랑 배경 + 네이비
+    "politics": {"name": "정치인", "color": "#F3F4F6", "text_color": "#1f2937"},  # 연한 회색 배경 + 차콜
+    "fiction": {"name": "가상인물", "color": "#F5F3FF", "text_color": "#4c1d95"}  # 연한 보라 배경 + 진한 퍼플
 }
+
 
 def get_random_personas(n=10) -> List[str]:
     """전체 페르소나 중 랜덤하게 n명 선택"""
@@ -1469,7 +1470,7 @@ with st.container():
                                             font-size: 12px;
                                             font-weight: 600;
                                             margin-bottom: 8px;
-                                            color: #374151;  /* 어두운 회색으로 고정 */
+                                            color: {PERSONA_CATEGORIES[result["category"]]["text_color"]};  /* 여기가 수정됨 */
                                         ">
                                             {persona_name}
                                         </div>
@@ -1525,12 +1526,14 @@ with st.container():
                                             font-size: 12px;
                                             font-weight: 600;
                                             margin-bottom: 8px;
+                                            color: {PERSONA_CATEGORIES[result["category"]]["text_color"]};  /* 여기가 수정됨 */
                                         ">
                                             {persona_name}
                                         </div>
                                         <p style="
                                             font-size: 14px;
                                             line-height: 1.6;
+                                            color: #333;
                                         ">
                                             {result['copy']}
                                         </p>
