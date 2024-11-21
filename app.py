@@ -219,6 +219,25 @@ st.markdown("""
     .js-plotly-plot .plotly .modebar-btn path {
         fill: var(--text-color) !important;
     }
+    .result-card {
+        transition: all 0.3s ease;
+    }
+    
+    .result-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .progress-text {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stExpander {
+        border: none !important;
+        box-shadow: none !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1360,166 +1379,179 @@ with st.container():
         )
 
         if st.button("🎨 10명의 유명인이 바라본 광고카피 생성", use_container_width=True):
-            if not selected_region or not selected_generation:
+            if not selected_regions or not selected_generation:
                 st.error("지역과 세대를 선택해주세요!")
             else:
+                # 선택된 첫 번째 지역만 사용
+                selected_region = selected_regions[0]
+                
                 with st.spinner("AI 모델이 다양한 관점의 광고 카피를 생성중입니다..."):
-                    # 랜덤하게 10명의 페르소나 선택
-                    selected_personas = get_random_personas(10)
-                    
-                    # 진행 상황 표시
-                    progress_text = st.empty()
-                    progress_bar = st.progress(0)
-                    
-                    persona_results = {}
-                    for idx, persona_name in enumerate(selected_personas):
-                        progress_text.text(f"✍️ {persona_name}의 시선으로 카피 생성 중...")
+                    try:
+                        # 랜덤하게 10명의 페르소나 선택
+                        selected_personas = get_random_personas(10)
                         
-                        prompt = create_adaptive_prompt(
-                            city_doc=DOCS["region"][selected_region],
-                            target_generation=selected_generation,
-                            persona_name=persona_name,
-                            mbti=selected_mbti if include_mbti else None,
-                            include_mbti=include_mbti
-                        )
+                        # 진행 상황 표시
+                        progress_text = st.empty()
+                        progress_bar = st.progress(0)
                         
-                        result = generate_copy(prompt, "gpt")
-                        persona_results[persona_name] = {
-                            "copy": result["content"] if isinstance(result, dict) else result,
-                            "persona_info": PERSONAS[persona_name],
-                            "category": PERSONAS[persona_name]["category"]
-                        }
+                        persona_results = {}
+                        for idx, persona_name in enumerate(selected_personas):
+                            progress_text.text(f"✍️ {persona_name}의 시선으로 카피 생성 중...")
+                            
+                            # city_doc 확인
+                            city_doc = DOCS["region"].get(selected_region)
+                            if not city_doc:
+                                st.error(f"선택한 지역({selected_region})의 정보를 찾을 수 없습니다.")
+                                continue
+                            
+                            prompt = create_adaptive_prompt(
+                                city_doc=city_doc,
+                                target_generation=selected_generation,
+                                persona_name=persona_name,
+                                mbti=selected_mbti if include_mbti else None,
+                                include_mbti=include_mbti
+                            )
+                            
+                            if prompt:
+                                result = generate_copy(prompt, "gpt")
+                                persona_results[persona_name] = {
+                                    "copy": result["content"] if isinstance(result, dict) else result,
+                                    "persona_info": PERSONAS[persona_name],
+                                    "category": PERSONAS[persona_name]["category"]
+                                }
+                            
+                            progress_bar.progress((idx + 1) / len(selected_personas))
                         
-                        progress_bar.progress((idx + 1) / len(selected_personas))
-                    
-                    # 진행 표시 제거
-                    progress_text.empty()
-                    progress_bar.empty()
+                        # 진행 표시 제거
+                        progress_text.empty()
+                        progress_bar.empty()
         
-                    # 지도와 결과를 함께 표시할 컨테이너
-                    st.markdown("### 🗺️ 다양한 시선으로 바라본 {selected_region}")
-                    
-                    # 2개의 컬럼으로 나누기
-                    map_col, results_col = st.columns([0.6, 0.4])
-                    
-                    with map_col:
-                        # 지도 생성 및 표시
-                        copies_for_map = {selected_region: {
-                            "copies": persona_results,
-                            "coordinates": CITY_COORDINATES[selected_region]
-                        }}
-                        
-                        m = folium.Map(
-                            location=[CITY_COORDINATES[selected_region]["lat"], 
-                                     CITY_COORDINATES[selected_region]["lon"]],
-                            zoom_start=13,
-                            tiles='CartoDB dark_matter'
-                        )
-                        
-                        # 위치 마커와 팝업 추가
-                        for persona_name, result in persona_results.items():
-                            category_color = PERSONA_CATEGORIES[result["category"]]["color"]
+                        if persona_results:  # 결과가 있는 경우에만 지도와 결과 표시
+                
+                            # 지도와 결과를 함께 표시할 컨테이너
+                            st.markdown(f"### 🗺️ 다양한 시선으로 바라본 {selected_region}")
                             
-                            popup_html = f"""
-                            <div style="
-                                width: 300px;
-                                padding: 15px;
-                                font-family: 'Pretendard', sans-serif;
-                                background-color: rgba(255, 255, 255, 0.95);
-                                border-radius: 8px;
-                                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                            ">
-                                <div style="
-                                    display: inline-block;
-                                    padding: 4px 12px;
-                                    background-color: {category_color};
-                                    border-radius: 15px;
-                                    font-size: 12px;
-                                    font-weight: 600;
-                                    margin-bottom: 8px;
-                                ">
-                                    {persona_name}
-                                </div>
-                                <p style="
-                                    margin: 8px 0;
-                                    font-size: 14px;
-                                    line-height: 1.6;
-                                ">
-                                    {result['copy']}
-                                </p>
-                            </div>
-                            """
+                            # 2개의 컬럼으로 나누기
+                            map_col, results_col = st.columns([0.6, 0.4])
                             
-                            # 각 페르소나별로 약간 다른 위치에 마커 생성
-                            offset = 0.0005 * (list(persona_results.keys()).index(persona_name) + 1)
+                            with map_col:
+                                # 지도 생성 및 표시
+                                copies_for_map = {selected_region: {
+                                    "copies": persona_results,
+                                    "coordinates": CITY_COORDINATES[selected_region]
+                                }}
+                                
+                                m = folium.Map(
+                                    location=[CITY_COORDINATES[selected_region]["lat"], 
+                                             CITY_COORDINATES[selected_region]["lon"]],
+                                    zoom_start=13,
+                                    tiles='CartoDB dark_matter'
+                                )
+                                
+                                # 위치 마커와 팝업 추가
+                                for persona_name, result in persona_results.items():
+                                    category_color = PERSONA_CATEGORIES[result["category"]]["color"]
+                                    
+                                    popup_html = f"""
+                                    <div style="
+                                        width: 300px;
+                                        padding: 15px;
+                                        font-family: 'Pretendard', sans-serif;
+                                        background-color: rgba(255, 255, 255, 0.95);
+                                        border-radius: 8px;
+                                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                    ">
+                                        <div style="
+                                            display: inline-block;
+                                            padding: 4px 12px;
+                                            background-color: {category_color};
+                                            border-radius: 15px;
+                                            font-size: 12px;
+                                            font-weight: 600;
+                                            margin-bottom: 8px;
+                                        ">
+                                            {persona_name}
+                                        </div>
+                                        <p style="
+                                            margin: 8px 0;
+                                            font-size: 14px;
+                                            line-height: 1.6;
+                                        ">
+                                            {result['copy']}
+                                        </p>
+                                    </div>
+                                    """
+                                    
+                                    # 각 페르소나별로 약간 다른 위치에 마커 생성
+                                    offset = 0.0005 * (list(persona_results.keys()).index(persona_name) + 1)
+                                    
+                                    folium.CircleMarker(
+                                        location=[
+                                            CITY_COORDINATES[selected_region]["lat"] + offset,
+                                            CITY_COORDINATES[selected_region]["lon"] + offset
+                                        ],
+                                        radius=8,
+                                        color=category_color,
+                                        fill=True,
+                                        popup=folium.Popup(popup_html, max_width=320),
+                                        tooltip=persona_name
+                                    ).add_to(m)
+                                
+                                folium_static(m)
                             
-                            folium.CircleMarker(
-                                location=[
-                                    CITY_COORDINATES[selected_region]["lat"] + offset,
-                                    CITY_COORDINATES[selected_region]["lon"] + offset
-                                ],
-                                radius=8,
-                                color=category_color,
-                                fill=True,
-                                popup=folium.Popup(popup_html, max_width=320),
-                                tooltip=persona_name
-                            ).add_to(m)
-                        
-                        folium_static(m)
-                    
-                    with results_col:
-                        # 스크롤 가능한 결과 리스트
-                        st.markdown("""
-                        <div style="height: 600px; overflow-y: auto;">
-                        """, unsafe_allow_html=True)
-                        
-                        for persona_name, result in persona_results.items():
-                            category_color = PERSONA_CATEGORIES[result["category"]]["color"]
-                            st.markdown(f"""
-                            <div style="
-                                background: linear-gradient(135deg, {category_color}40, {category_color}20);
-                                padding: 15px;
-                                border-radius: 8px;
-                                margin-bottom: 10px;
-                                border: 1px solid {category_color};
-                            ">
-                                <div style="
-                                    display: inline-block;
-                                    padding: 4px 12px;
-                                    background-color: {category_color};
-                                    border-radius: 15px;
-                                    font-size: 12px;
-                                    font-weight: 600;
-                                    margin-bottom: 8px;
-                                ">
-                                    {persona_name}
-                                </div>
-                                <p style="
-                                    font-size: 14px;
-                                    line-height: 1.6;
-                                ">
-                                    {result['copy']}
-                                </p>
-                            </div>
-                            """, unsafe_allow_html=True)
-                        
-                        st.markdown("</div>", unsafe_allow_html=True)
-                    
-                    # 결과 저장 버튼
-                    if st.button("💾 결과 저장"):
-                        df = pd.DataFrame([
-                            {
-                                "페르소나": name,
-                                "카테고리": data["category"],
-                                "광고카피": data["copy"]
-                            }
-                            for name, data in persona_results.items()
-                        ])
-                        
-                        csv = df.to_csv(index=False).encode('utf-8-sig')
-                        st.download_button(
-                            label="📥 CSV 파일 다운로드",
-                            data=csv,
-                            file_name=f'{selected_region}_광고카피_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv',
-                            mime='text/csv'
-                        )
+                            with results_col:
+                                # 스크롤 가능한 결과 리스트
+                                st.markdown("""
+                                <div style="height: 600px; overflow-y: auto;">
+                                """, unsafe_allow_html=True)
+                                
+                                for persona_name, result in persona_results.items():
+                                    category_color = PERSONA_CATEGORIES[result["category"]]["color"]
+                                    st.markdown(f"""
+                                    <div style="
+                                        background: linear-gradient(135deg, {category_color}40, {category_color}20);
+                                        padding: 15px;
+                                        border-radius: 8px;
+                                        margin-bottom: 10px;
+                                        border: 1px solid {category_color};
+                                    ">
+                                        <div style="
+                                            display: inline-block;
+                                            padding: 4px 12px;
+                                            background-color: {category_color};
+                                            border-radius: 15px;
+                                            font-size: 12px;
+                                            font-weight: 600;
+                                            margin-bottom: 8px;
+                                        ">
+                                            {persona_name}
+                                        </div>
+                                        <p style="
+                                            font-size: 14px;
+                                            line-height: 1.6;
+                                        ">
+                                            {result['copy']}
+                                        </p>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                
+                                st.markdown("</div>", unsafe_allow_html=True)
+                            
+                            # 결과 저장 버튼
+                            if st.button("💾 결과 저장"):
+                                df = pd.DataFrame([
+                                    {
+                                        "페르소나": name,
+                                        "카테고리": data["category"],
+                                        "광고카피": data["copy"]
+                                    }
+                                    for name, data in persona_results.items()
+                                ])
+                                
+                                csv = df.to_csv(index=False).encode('utf-8-sig')
+                                st.download_button(
+                                    label="📥 CSV 파일 다운로드",
+                                    data=csv,
+                                    file_name=f'{selected_region}_광고카피_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv',
+                                    mime='text/csv'
+                                )
