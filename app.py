@@ -450,6 +450,10 @@ PERSONA_CATEGORIES = {
     "politics": {"name": "정치인", "color": "#F3F4F6", "text_color": "#1f2937"},  # 연한 회색 배경 + 차콜
     "fiction": {"name": "가상인물", "color": "#F5F3FF", "text_color": "#4c1d95"}  # 연한 보라 배경 + 진한 퍼플
 }
+
+
+
+
 if 'selected_personas' not in st.session_state:
     st.session_state.selected_personas = []
 
@@ -1552,43 +1556,250 @@ with st.container():
                     try:
                         # 랜덤하게 10명의 페르소나 선택
                         selected_region = selected_regions[0]
-                        selected_personas = get_balanced_random_personas(16)  # 여기를 변경
-                        # 진행 상황 표시
+                        selected_personas = get_balanced_random_personas(16)
+                        
+                        # 결과를 담을 컨테이너를 미리 생성
+                        result_container = st.empty()
                         progress_text = st.empty()
                         progress_bar = st.progress(0)
                         
                         persona_results = {}
-                        for idx, persona_name in enumerate(selected_personas):
-                            progress_text.text(f"✍️ {persona_name}의 시선으로 카피 생성 중...")
-                            
-                            # city_doc 확인
-                            city_doc = DOCS["region"].get(selected_region)
-                            if not city_doc:
-                                st.error(f"선택한 지역({selected_region})의 정보를 찾을 수 없습니다.")
-                                continue
-                            
-                            prompt = create_adaptive_prompt(
-                                city_doc=city_doc,
-                                target_generation=selected_generation,
-                                persona_name=persona_name,
-                                mbti=selected_mbti if include_mbti else None,
-                                include_mbti=include_mbti
-                            )
-                            
-                            if prompt:
-                                result = generate_copy(prompt, "gpt")
-                                persona_results[persona_name] = {
-                                    "copy": result["content"] if isinstance(result, dict) else result,
-                                    "persona_info": PERSONAS[persona_name],
-                                    "category": PERSONAS[persona_name]["category"]
-                                }
-                            
-                            progress_bar.progress((idx + 1) / len(selected_personas))
                         
-                        # 진행 표시 제거
+                        for idx, persona_name in enumerate(selected_personas):
+                            progress_text.text(f"✍️ {persona_name}의 시선으로 카피 생성 중... ({idx+1}/16)")
+                            
+                            city_doc = DOCS["region"].get(selected_region)
+                            if city_doc:
+                                prompt = create_adaptive_prompt(
+                                    city_doc=city_doc,
+                                    target_generation=selected_generation,
+                                    persona_name=persona_name,
+                                    mbti=selected_mbti if include_mbti else None,
+                                    include_mbti=include_mbti
+                                )
+                                
+                                if prompt:
+                                    result = generate_copy(prompt, "gpt")
+                                    persona_results[persona_name] = {
+                                        "copy": result["content"] if isinstance(result, dict) else result,
+                                        "persona_info": PERSONAS[persona_name],
+                                        "category": PERSONAS[persona_name]["category"]
+                                    }
+                                    
+                                    # 현재까지의 결과를 즉시 표시
+                                    result_html = """
+                                    <div style="
+                                        height: 600px; 
+                                        overflow-y: auto;
+                                        display: grid;
+                                        grid-template-columns: repeat(4, 1fr);
+                                        gap: 8px;
+                                        padding: 8px;
+                                    ">
+                                    """
+                                    
+                                    for p_name, result in persona_results.items():
+                                        category_color = PERSONA_CATEGORIES[result["category"]]["color"]
+                                        result_html += f"""
+                                        <div style="
+                                            background: linear-gradient(135deg, {category_color}40, {category_color}20);
+                                            padding: 12px;
+                                            border-radius: 8px;
+                                            border: 1px solid {category_color};
+                                            height: fit-content;
+                                            transition: transform 0.2s;
+                                            cursor: pointer;
+                                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                            animation: fadeIn 0.5s ease;
+                                        "
+                                        onmouseover="this.style.transform='translateY(-2px)'"
+                                        onmouseout="this.style.transform='translateY(0)'"
+                                        >
+                                            <div style="
+                                                display: inline-block;
+                                                padding: 4px 12px;
+                                                background-color: {category_color};
+                                                border-radius: 15px;
+                                                font-size: 12px;
+                                                font-weight: 600;
+                                                margin-bottom: 8px;
+                                                color: {PERSONA_CATEGORIES[result["category"]]["text_color"]};
+                                            ">
+                                                {p_name}
+                                            </div>
+                                            <p style="
+                                                font-size: 13px;
+                                                line-height: 1.5;
+                                                color: rgba(255, 255, 255, 0.9);
+                                                margin: 0;
+                                                overflow-wrap: break-word;
+                                            ">
+                                                {result['copy']}
+                                            </p>
+                                        </div>
+                                        """
+                                    
+                                    result_html += "</div>"
+                                    result_container.markdown(result_html, unsafe_allow_html=True)
+                                    
+                                    # 진행률 업데이트
+                                    progress = (idx + 1) / len(selected_personas)
+                                    progress_bar.progress(progress)
+                        
+                        # 완료 후 진행 표시 제거
                         progress_text.empty()
                         progress_bar.empty()
-        
+                        
+                        with st.spinner("✨ 베스트/워스트 카피를 선정하고 있습니다..."):
+                            evaluation_prompt = f"""
+                다음은 {selected_region}에 대한 16개의 광고 카피입니다. 각 카피의 창의성, 매력도, 지역 특성 반영도를 고려하여 
+                가장 뛰어난 카피 1개와 가장 개선이 필요한 카피 1개를 선정해주세요.
+                
+                {chr(10).join([f"{name}: {result['copy']}" for name, result in persona_results.items()])}
+                
+                다음 형식으로 답변해주세요:
+                BEST: [페르소나 이름]
+                BEST_REASON: [선정 이유]
+                WORST: [페르소나 이름]
+                WORST_REASON: [선정 이유]"""
+                
+                            result = generate_copy(evaluation_prompt, "gpt")
+                            if isinstance(result, dict):
+                                eval_text = result["content"]
+                            else:
+                                eval_text = result
+                            
+                            # 결과 파싱
+                            eval_lines = eval_text.split('\n')
+                            best_persona = next(line.split(': ')[1] for line in eval_lines if line.startswith('BEST:'))
+                            best_reason = next(line.split(': ')[1] for line in eval_lines if line.startswith('BEST_REASON:'))
+                            worst_persona = next(line.split(': ')[1] for line in eval_lines if line.startswith('WORST:'))
+                            worst_reason = next(line.split(': ')[1] for line in eval_lines if line.startswith('WORST_REASON:'))
+                        
+                            # 베스트/워스트 카피 시각화
+                            st.markdown("""
+                            <style>
+                            .best-copy {
+                                border: 2px solid #10B981 !important;
+                                box-shadow: 0 0 15px rgba(16, 185, 129, 0.2) !important;
+                            }
+                            .worst-copy {
+                                border: 2px solid #EF4444 !important;
+                                box-shadow: 0 0 15px rgba(239, 68, 68, 0.2) !important;
+                            }
+                            .evaluation-badge {
+                                position: absolute;
+                                top: -10px;
+                                right: -10px;
+                                padding: 4px 8px;
+                                border-radius: 12px;
+                                font-size: 12px;
+                                font-weight: bold;
+                                color: white;
+                                z-index: 10;
+                            }
+                            .best-badge {
+                                background-color: #10B981;
+                            }
+                            .worst-badge {
+                                background-color: #EF4444;
+                            }
+                            </style>
+                            """, unsafe_allow_html=True)
+                        
+                            col1, col2 = st.columns(2)
+                            
+                            with col1:
+                                category_color = PERSONA_CATEGORIES[persona_results[best_persona]["category"]]["color"]
+                                st.markdown(f"""
+                                <h4>✨ 베스트 카피</h4>
+                                <div style="
+                                    position: relative;
+                                    background: linear-gradient(135deg, {category_color}40, {category_color}20);
+                                    padding: 16px;
+                                    border-radius: 12px;
+                                    margin-bottom: 16px;
+                                    border: 2px solid #10B981;
+                                    box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+                                ">
+                                    <div class="evaluation-badge best-badge">BEST</div>
+                                    <div style="
+                                        display: inline-block;
+                                        padding: 4px 12px;
+                                        background-color: {category_color};
+                                        border-radius: 15px;
+                                        font-size: 12px;
+                                        font-weight: 600;
+                                        margin-bottom: 8px;
+                                        color: {PERSONA_CATEGORIES[persona_results[best_persona]["category"]]["text_color"]};
+                                    ">
+                                        {best_persona}
+                                    </div>
+                                    <p style="
+                                        font-size: 14px;
+                                        line-height: 1.6;
+                                        color: rgba(255, 255, 255, 0.9);
+                                    ">
+                                        {persona_results[best_persona]["copy"]}
+                                    </p>
+                                    <div style="
+                                        margin-top: 12px;
+                                        padding: 8px;
+                                        background: rgba(16, 185, 129, 0.1);
+                                        border-radius: 8px;
+                                        font-size: 13px;
+                                        color: #10B981;
+                                    ">
+                                        💡 {best_reason}
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                            
+                            with col2:
+                                category_color = PERSONA_CATEGORIES[persona_results[worst_persona]["category"]]["color"]
+                                st.markdown(f"""
+                                <h4>💭 개선이 필요한 카피</h4>
+                                <div style="
+                                    position: relative;
+                                    background: linear-gradient(135deg, {category_color}40, {category_color}20);
+                                    padding: 16px;
+                                    border-radius: 12px;
+                                    margin-bottom: 16px;
+                                    border: 2px solid #EF4444;
+                                    box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+                                ">
+                                    <div class="evaluation-badge worst-badge">NEEDS IMPROVEMENT</div>
+                                    <div style="
+                                        display: inline-block;
+                                        padding: 4px 12px;
+                                        background-color: {category_color};
+                                        border-radius: 15px;
+                                        font-size: 12px;
+                                        font-weight: 600;
+                                        margin-bottom: 8px;
+                                        color: {PERSONA_CATEGORIES[persona_results[worst_persona]["category"]]["text_color"]};
+                                    ">
+                                        {worst_persona}
+                                    </div>
+                                    <p style="
+                                        font-size: 14px;
+                                        line-height: 1.6;
+                                        color: rgba(255, 255, 255, 0.9);
+                                    ">
+                                        {persona_results[worst_persona]["copy"]}
+                                    </p>
+                                    <div style="
+                                        margin-top: 12px;
+                                        padding: 8px;
+                                        background: rgba(239, 68, 68, 0.1);
+                                        border-radius: 8px;
+                                        font-size: 13px;
+                                        color: #EF4444;
+                                    ">
+                                        💡 {worst_reason}
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
                         if persona_results:  # 결과가 있는 경우에만 지도와 결과 표시
                 
                             # 지도와 결과를 함께 표시할 컨테이너
