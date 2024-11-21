@@ -540,6 +540,8 @@ def load_docs() -> Dict[str, Dict[str, str]]:
 
 
 DOCS = load_docs()
+
+
 def create_adaptive_prompt(
     city_doc: str, 
     target_generation: str,
@@ -547,63 +549,46 @@ def create_adaptive_prompt(
     mbti: str = None,
     include_mbti: bool = False
 ) -> str:
-    """화자가 주가 되는 페르소나 중심 프롬프트 생성"""
-    
+    """페르소나 특성을 반영한 프롬프트 생성"""
+
     persona_data = PERSONAS.get(persona_name)
     if not persona_data:
         return None
 
-    # 화자가 주도적으로 청자에게 직접 이야기하는 톤으로 구성
-    persona_intro = f"""
-나는 {persona_name}입니다. {persona_data['description']} 
+    # 페르소나 고유의 관점과 스타일 강조
+    base_prompt = f"""
+당신은 {persona_name}입니다.
+{persona_data['description']}
 
-나의 어조와 스타일로, 아래 정보를 바탕으로 광고 카피를 만들어보겠습니다.
-"""
-    
-    # 페르소나의 샘플을 화자의 방식으로 명확히 강조
-    example_section = f"""
-내가 작성한다면 이렇게 표현할 거예요:
-"{persona_data['sample']}"
-"""
+다음 조건을 따라 광고 카피를 작성해주세요:
+1. 당신만의 독특한 어조와 문체를 사용하세요. 하이쿠의 철학적 간결함을 담아내세요.
+2. 청자에게 정보를 전달하기보다는, 당신의 시선에서 느껴지는 경험과 감정을 표현하세요.
+3. 예시는 참고용입니다: {persona_data['sample']}
 
-    # 타겟 정보와 도시 정보를 화자가 청자에게 전달하는 느낌으로 변환
-    context_section = f"""
 [도시 정보]
 {city_doc}
 
 [타겟 정보]
-- 대상 세대: {target_generation}
-"""
-    
-    # MBTI 정보 포함 여부에 따라 추가
+세대: {target_generation}"""
+
     if include_mbti and mbti:
         mbti_content = DOCS["mbti"].get(mbti)
         if mbti_content:
-            context_section += f"""
-[MBTI 특성]
-- {mbti} 유형에 따른 특징:
-{mbti_content}
-"""
-    
-    # 제약사항을 화자의 관점으로 전달
-    constraints_section = f"""
-[내가 지킬 규칙]
-- 광고 카피는 한 문장으로 작성할게요.
-- 이모지 1~2개를 포함해서 감각적으로 보이도록 할게요.
-- 도시만의 독특한 특징을 반드시 포함할 겁니다.
-- 너무 진부하거나 지루한 표현은 피하겠습니다.
-"""
+            base_prompt += f"""
 
-    # 화자가 적극적으로 이야기하는 방식으로 통합
-    prompt = (
-        persona_intro
-        + example_section
-        + context_section
-        + constraints_section
-        + "\n이제 창의적이고 독창적인 광고 카피를 작성해보겠습니다."
-    )
-    
-    return prompt
+[MBTI 특성 - {mbti}]
+{mbti_content}"""
+
+    base_prompt += """
+
+[제약사항]
+- 한 문장으로 작성하되, 자연스럽고 시적이어야 합니다.
+- 청자 대신 당신의 시선으로 표현하세요.
+- 이모지 1-2개를 포함할 수 있습니다.
+- 클리셰나 진부한 표현을 피하세요.
+"""
+    return base_prompt
+
 
 # 파일 로딩 함수에 디버깅 출력 추가
 def load_docs() -> Dict[str, Dict[str, str]]:
