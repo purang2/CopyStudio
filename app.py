@@ -1788,8 +1788,8 @@ with st.container():
                                     height: 600px; 
                                     overflow-y: auto;
                                     display: grid;
-                                    grid-template-columns: repeat(2, 1fr);  /* 2열 그리드 */
-                                    gap: 10px;  /* 카드 간 간격 */
+                                    grid-template-columns: repeat(4, 1fr);  /* 4열 그리드로 변경 */
+                                    gap: 12px;  /* 카드 간 간격 살짝 증가 */
                                     padding: 10px;
                                 ">
                                 """, unsafe_allow_html=True)
@@ -1799,33 +1799,33 @@ with st.container():
                                     st.markdown(f"""
                                     <div style="
                                         background: linear-gradient(135deg, {category_color}40, {category_color}20);
-                                        padding: 12px;
-                                        border-radius: 8px;
+                                        padding: 15px;  /* 패딩 약간 증가 */
+                                        border-radius: 12px;  /* 모서리 둥글기 증가 */
                                         border: 1px solid {category_color};
                                         height: fit-content;
                                         transition: transform 0.2s;
                                         cursor: pointer;
-                                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                        box-shadow: 0 2px 8px rgba(0,0,0,0.15);  /* 그림자 효과 강화 */
                                     "
                                     onmouseover="this.style.transform='translateY(-2px)'"
                                     onmouseout="this.style.transform='translateY(0)'"
                                     >
                                         <div style="
                                             display: inline-block;
-                                            padding: 4px 12px;
+                                            padding: 6px 14px;  /* 패딩 증가 */
                                             background-color: {category_color};
-                                            border-radius: 15px;
-                                            font-size: 12px;
+                                            border-radius: 20px;  /* 더 둥글게 */
+                                            font-size: 14px;  /* 글자 크기 증가 */
                                             font-weight: 600;
-                                            margin-bottom: 8px;
+                                            margin-bottom: 10px;
                                             color: {PERSONA_CATEGORIES[result["category"]]["text_color"]};
                                         ">
                                             {persona_name}
                                         </div>
                                         <p style="
-                                            font-size: 13px;
-                                            line-height: 1.5;
-                                            color: rgba(255, 255, 255, 0.9);
+                                            font-size: 15px;  /* 글자 크기 증가 */
+                                            line-height: 1.6;  /* 줄간격 증가 */
+                                            color: rgba(255, 255, 255, 0.95);  /* 텍스트 명도 증가 */
                                             margin: 0;
                                             overflow-wrap: break-word;
                                         ">
