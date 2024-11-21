@@ -1,6 +1,4 @@
-
 import streamlit as st
-#import openai
 from openai import OpenAI
 import google.generativeai as genai
 from anthropic import Anthropic
@@ -32,6 +30,13 @@ st.set_page_config(
 st.title("🐾 Copybara - 광고카피 문구 생성 AI")
 
 
+image = Image.open("copybara_logo.png")
+
+new_width = 640  # 원하는 너비로 조정
+width_percent = (new_width / float(image.size[0]))
+new_height = int((float(image.size[1]) * float(width_percent)))
+resized_image = image.resize((new_width, new_height), Image.LANCZOS)
+st.image(resized_image)
 
 # Initialize API keys from Streamlit secrets
 #openai.api_key = st.secrets["chatgpt"]
