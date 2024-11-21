@@ -577,7 +577,7 @@ PERSONA_CATEGORIES = {
 if 'selected_personas' not in st.session_state:
     st.session_state.selected_personas = []
 
-def get_balanced_random_personas(n=16) -> List[str]:
+def get_balanced_random_personas(n=9) -> List[str]:
     """카테고리별로 균형잡힌 페르소나 선택"""
     personas_by_category = {
         category: [name for name, data in PERSONAS.items() 
@@ -1658,15 +1658,15 @@ with st.container():
         )
 
         # 생성 버튼을 눌렀을 때
-        if st.button("🎨 16명의 유명인이 바라본 광고카피 생성", use_container_width=True):
+        if st.button("🎨 9명의 멀티 페르소나 여행지 홍보 카피라이팅 생성", use_container_width=True):
             if not selected_regions or not selected_generation:
                 st.error("지역과 세대를 선택해주세요!")
             else:
-                with st.spinner("AI 모델이 다양한 관점의 광고 카피를 생성중입니다..."):
+                with st.spinner("AI 모델이 다양한 관점의 여행지 홍보 카피라이팅을 생성중입니다..."):
                     try:
                         # 랜덤하게 10명의 페르소나 선택
                         selected_region = selected_regions[0]
-                        selected_personas = get_balanced_random_personas(16)  # 여기를 변경
+                        selected_personas = get_balanced_random_personas(9)  # 여기를 변경
                         # 진행 상황 표시
                         progress_text = st.empty()
                         progress_bar = st.progress(0)
