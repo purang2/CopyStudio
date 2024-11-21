@@ -1313,7 +1313,7 @@ with st.container():
         selected_regions = st.multiselect(
             "지역 선택",
             options=list(CITY_COORDINATES.keys()),
-            default=["부산 해운대", "강릉", "전주"],
+            default=["부산 해운대"],
             help="여러 지역을 선택하여 한 번에 광고 카피를 생성할 수 있습니다."
         )
         
