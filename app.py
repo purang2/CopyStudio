@@ -21,17 +21,15 @@ from google.api_core.exceptions import ResourceExhausted
 import folium
 from streamlit_folium import folium_static
 
-
-
 # Page config must be the first Streamlit command
 st.set_page_config(
-    page_title="광고카피 문구 생성 AI", 
-    page_icon="📒", 
+    page_title="광고카피 문구 생성 AI - Copybara", 
+    page_icon="🐾", 
     layout="wide"
 )
 
 # 앱 제목
-st.title("🐻 광고카피 문구 생성 AI")
+st.title("🐾 Copybara - 광고카피 문구 생성 AI")
 
 
 
