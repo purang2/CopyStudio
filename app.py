@@ -774,7 +774,6 @@ def load_docs() -> Dict[str, Dict[str, str]]:
 
 DOCS = load_docs()
 
-
 def create_adaptive_prompt(
     city_doc: str, 
     target_generation: str,
@@ -788,54 +787,29 @@ def create_adaptive_prompt(
     if not persona_data:
         return None
 
-    # 페르소나의 샘플 문장 중 하나를 랜덤으로 선택하여 스타일을 암시적으로 전달
+    # 페르소나의 샘플 문장 중 하나를 랜덤으로 선택
     sample_sentence = random.choice(persona_data['samples'])
 
-    base_prompt = f'''[시스템 설정]
-    당신은 주어진 페르소나의 특성을 이해하고 체계적인 사고 과정을 거쳐 절제된 예술 카피를 만드는 전문가입니다.
-    
-    [배경 정보]
-    - 도시 정보: {city_doc}
-    - 타겟 세대: {target_generation}
-    
-    [1단계: 분석 및 REASONING]
-    다음 순서로 생각을 정리해주세요:
-    1. 페르소나의 핵심 특성과 문체 스타일 파악
-    2. 도시의 핵심 가치와 타겟 세대의 니즈 분석
-    3. 페르소나의 관점에서 도시를 바라보는 독특한 시각 도출
-    4. 가능한 은유와 표현 기법 검토
-    
-    [2단계: 초안 작성]
-    - 1단계의 분석을 바탕으로 3개의 서로 다른 카피 초안을 작성해주세요
-    - 각 초안은 페르소나의 특성이 드러나되, 과도하게 치우치지 않도록 합니다
-    - 참고할 문장: "{sample_sentence}"
-    
-    [3단계: 퇴고 및 최종화]
-    다음 기준으로 초안을 검토하고 최종 카피를 선정해주세요:
-    1. 절제미: 과도한 표현이나 감정 절제
-    2. 독창성: 클리셰와 진부함 회피
-    3. 공감성: 타겟 세대의 공감 가능성
-    4. 함축성: 의미의 깊이와 여운
-    5. 리듬감: 문장의 흐름과 바운스
-    
-    [출력 형식]
-    #REASONING
-    분석 및 추론 과정을 여기에 서술하세요.
-    
-    #DRAFTS
-    1. 첫 번째 초안
-    2. 두 번째 초안
-    3. 세 번째 초안
-    
-    #FINAL
-    최종 선정된 카피 [이모지 1-2개]
-    
-    [제약 사항]
-    - 최종 카피는 한 줄의 강력한 문장으로 제한
-    - 이모지는 1-2개만 사용
-    - 과도한 수식과 과장된 표현 지양
-    - 참신하되 자연스러운 은유 사용
-    '''
+    base_prompt = f'''당신은 {persona_name}입니다.
+{persona_data['description']}
+
+다음 정보를 참고하여 {persona_name}의 시선으로 매력적인 광고 카피를 만들어주세요:
+
+[배경 정보]
+- 도시 정보: {city_doc}
+- 타겟 세대: {target_generation}
+
+[참고할 문장]
+{sample_sentence}
+
+[요구사항]
+- 도시의 핵심 매력을 {persona_name}만의 독특한 시각으로 표현해주세요
+- 타겟층에 맞는 톤앤매너를 사용하되, 정보의 나열은 피해주세요
+- 감성적 공감과 구체적 특징이 조화를 이루도록 해주세요
+- 한 문장으로 작성하고, 이모지 1-2개를 포함해주세요
+
+광고 카피만 작성해주세요. 다른 설명이나 분석 없이 카피 문장 하나만 출력해주세요.
+'''
     
     return base_prompt
 
@@ -1085,97 +1059,6 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
             "success": False,
             "content": f"생성 실패: {str(e)}"
         }
-
-def generate_copy_MULTI(prompt: str, model_name: str) -> Union[str, Dict]:
-    """광고 카피 생성"""
-    try:
-        if model_name == "gpt":
-            response = client.chat.completions.create(
-                model=model_zoo[0],
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=1000
-            )
-            response_text = response.choices[0].message.content.strip()
-            
-            # FINAL 섹션만 추출
-            if "#FINAL" in response_text:
-                final_text = response_text.split("#FINAL")[-1].strip()
-                return {
-                    "success": True,
-                    "content": final_text
-                }
-            else:
-                return {
-                    "success": True,
-                    "content": response_text  # FINAL 태그가 없는 경우 전체 응답 반환
-                }
-            
-        elif model_name == "gemini":
-            try:
-                response = gemini_model.generate_content(prompt)
-                generated_text = response.text.strip()
-                
-                # FINAL 섹션만 추출
-                if "#FINAL" in generated_text:
-                    final_text = generated_text.split("#FINAL")[-1].strip()
-                    return {
-                        "success": True,
-                        "content": final_text
-                    }
-                else:
-                    return {
-                        "success": True,
-                        "content": generated_text
-                    }
-                    
-            except Exception as e:
-                print(f"Gemini 오류: {str(e)}")
-                return {
-                    "success": False,
-                    "content": f"Gemini API 오류: {str(e)}"
-                }
-            
-        else:  # claude
-            try:
-                response = anthropic.messages.create(
-                    model=model_zoo[2],
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": prompt
-                        }
-                    ],
-                    max_tokens=1000,
-                    temperature=0.7
-                )
-                response_text = response.content[0].text.strip()
-                
-                # FINAL 섹션만 추출
-                if "#FINAL" in response_text:
-                    final_text = response_text.split("#FINAL")[-1].strip()
-                    return {
-                        "success": True,
-                        "content": final_text
-                    }
-                else:
-                    return {
-                        "success": True,
-                        "content": response_text
-                    }
-                    
-            except Exception as e:
-                return {
-                    "success": False,
-                    "content": f"Claude API 오류: {str(e)}"
-                }
-                
-    except Exception as e:
-        return {
-            "success": False,
-            "content": f"생성 실패: {str(e)}"
-        }
-
-
 
 
 
@@ -1938,7 +1821,7 @@ with st.container():
                                 )
                                 
                                 if prompt:
-                                    result = generate_copy_MULTI(prompt, "gemini")
+                                    result = generate_copy(prompt, "gemini")
                                     if result.get('success', False):
                                         persona_results[persona_name] = {
                                             "copy": result.get('content', ''),
