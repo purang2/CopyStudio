@@ -1002,10 +1002,10 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
                 model=model_zoo[0],
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=1000,
-                temperature=0.85,  # 창의성과 일관성의 균형
-                top_p=0.9,        # 다양한 표현을 허용하되 너무 벗어나지 않도록
-                presence_penalty=0.3,  # 반복을 줄이고 새로운 표현 권장
-                frequency_penalty=0.3   # 진부한 표현 방지
+                temperature=0.85,
+                top_p=0.9,
+                presence_penalty=0.3,
+                frequency_penalty=0.3
             )
             return {
                 "success": True,
@@ -1013,47 +1013,67 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
             }
             
         elif model_name == "gemini":
+            generation_config = {
+                "temperature": 0.8,
+                "top_p": 0.9,
+                "top_k": 40,
+                "max_output_tokens": 1000
+            }
+            
+            safety_settings = {
+                HarmCategory.HARASSMENT: HarmBlockThreshold.NONE,
+                HarmCategory.HATE_SPEECH: HarmBlockThreshold.NONE,
+                HarmCategory.SEXUALLY_EXPLICIT: HarmBlockThreshold.NONE,
+                HarmCategory.DANGEROUS_CONTENT: HarmBlockThreshold.NONE,
+            }
+            
             try:
-                generation_config = {
-                    "temperature": 0.8,
-                    "top_p": 0.9,
-                    "top_k": 40,
-                    "max_output_tokens": 1000
-                }
-                
-                # 모든 안전 설정을 최소화
-                safety_settings = {
-                    HarmCategory.HARASSMENT: HarmBlockThreshold.NONE,
-                    HarmCategory.HATE_SPEECH: HarmBlockThreshold.NONE,
-                    HarmCategory.SEXUALLY_EXPLICIT: HarmBlockThreshold.NONE,
-                    HarmCategory.DANGEROUS_CONTENT: HarmBlockThreshold.NONE,
-                }
-                
                 response = gemini_model.generate_content(
                     prompt,
                     generation_config=generation_config,
                     safety_settings=safety_settings
                 )
-                
                 return {
                     "success": True,
                     "content": response.text.strip()
                 }
+            except ResourceExhausted:
+                print("Gemini API 할당량 초과, GPT로 대체 실행")
+                backup_response = client.chat.completions.create(
+                    model=model_zoo[0],
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=1000,
+                    temperature=0.85,
+                    top_p=0.9,
+                    presence_penalty=0.3,
+                    frequency_penalty=0.3
+                )
+                return {
+                    "success": True,
+                    "content": backup_response.choices[0].message.content.strip(),
+                    "fallback": "gpt"
+                }
+            except Exception as e:
+                print(f"Gemini 오류: {str(e)}")
+                return {
+                    "success": False,
+                    "content": f"Gemini API 오류: {str(e)}"
+                }
             
-        else:  # claude
+        elif model_name == "claude":
             try:
                 response = anthropic.messages.create(
                     model=model_zoo[2],
                     messages=[
                         {
-                            "role": "user",
+                            "role": "user", 
                             "content": prompt
                         }
                     ],
                     max_tokens=1000,
-                    temperature=0.82,    # 창의성 강화
-                    top_p=0.95,         # 더 다양한 표현 허용
-                    top_k=60            # 어휘 선택의 폭 확장
+                    temperature=0.82,
+                    top_p=0.95,
+                    top_k=60
                 )
                 return {
                     "success": True,
@@ -1070,8 +1090,6 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
             "success": False,
             "content": f"생성 실패: {str(e)}"
         }
-
-
 
 
 
