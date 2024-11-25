@@ -1857,7 +1857,7 @@ with st.container():
         )
 
         # 생성 버튼을 눌렀을 때
-        if st.button("🎨 5명의 멀티 페르소나 여행지 홍보 카피라이팅 생성", use_container_width=True):
+        if st.button("🎨 16명의 멀티 페르소나 여행지 홍보 카피라이팅 생성", use_container_width=True):
             if not selected_regions or not selected_generation:
                 st.error("지역과 세대를 선택해주세요!")
             else:
@@ -1865,7 +1865,7 @@ with st.container():
                     try:
                         # 랜덤하게 10명의 페르소나 선택
                         selected_region = selected_regions[0]
-                        selected_personas = get_balanced_random_personas(5)  # 여기를 변경
+                        selected_personas = get_balanced_random_personas(16)  # 여기를 변경
                         # 진행 상황 표시
                         progress_text = st.empty()
                         progress_bar = st.progress(0)
