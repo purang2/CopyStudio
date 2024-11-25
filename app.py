@@ -789,7 +789,6 @@ def create_adaptive_prompt(
         return None
 
     # 페르소나의 샘플 문장 중 하나를 랜덤으로 선택하여 스타일을 암시적으로 전달
-    import random
     sample_sentence = random.choice(persona_data['samples'])
 
     base_prompt = f'''[시스템 설정]
@@ -821,15 +820,15 @@ def create_adaptive_prompt(
     
     [출력 형식]
     #REASONING
-    {페르소나의 관점에서 본 분석 내용}
+    분석 및 추론 과정을 여기에 서술하세요.
     
     #DRAFTS
-    1. {첫 번째 초안}
-    2. {두 번째 초안}
-    3. {세 번째 초안}
+    1. 첫 번째 초안
+    2. 두 번째 초안
+    3. 세 번째 초안
     
     #FINAL
-    {최종 선정된 카피} {이모지 1-2개}
+    최종 선정된 카피 [이모지 1-2개]
     
     [제약 사항]
     - 최종 카피는 한 줄의 강력한 문장으로 제한
