@@ -1086,6 +1086,99 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
             "content": f"생성 실패: {str(e)}"
         }
 
+def generate_copy_MULTI(prompt: str, model_name: str) -> Union[str, Dict]:
+    """광고 카피 생성"""
+    try:
+        if model_name == "gpt":
+            response = client.chat.completions.create(
+                model=model_zoo[0],
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=1000
+            )
+            response_text = response.choices[0].message.content.strip()
+            
+            # FINAL 섹션만 추출
+            if "#FINAL" in response_text:
+                final_text = response_text.split("#FINAL")[-1].strip()
+                return {
+                    "success": True,
+                    "content": final_text
+                }
+            else:
+                return {
+                    "success": True,
+                    "content": response_text  # FINAL 태그가 없는 경우 전체 응답 반환
+                }
+            
+        elif model_name == "gemini":
+            try:
+                response = gemini_model.generate_content(prompt)
+                generated_text = response.text.strip()
+                
+                # FINAL 섹션만 추출
+                if "#FINAL" in generated_text:
+                    final_text = generated_text.split("#FINAL")[-1].strip()
+                    return {
+                        "success": True,
+                        "content": final_text
+                    }
+                else:
+                    return {
+                        "success": True,
+                        "content": generated_text
+                    }
+                    
+            except Exception as e:
+                print(f"Gemini 오류: {str(e)}")
+                return {
+                    "success": False,
+                    "content": f"Gemini API 오류: {str(e)}"
+                }
+            
+        else:  # claude
+            try:
+                response = anthropic.messages.create(
+                    model=model_zoo[2],
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    max_tokens=1000,
+                    temperature=0.7
+                )
+                response_text = response.content[0].text.strip()
+                
+                # FINAL 섹션만 추출
+                if "#FINAL" in response_text:
+                    final_text = response_text.split("#FINAL")[-1].strip()
+                    return {
+                        "success": True,
+                        "content": final_text
+                    }
+                else:
+                    return {
+                        "success": True,
+                        "content": response_text
+                    }
+                    
+            except Exception as e:
+                return {
+                    "success": False,
+                    "content": f"Claude API 오류: {str(e)}"
+                }
+                
+    except Exception as e:
+        return {
+            "success": False,
+            "content": f"생성 실패: {str(e)}"
+        }
+
+
+
+
+
 # 성능 분석 결과 표시 부분 수정
 def display_performance_analysis(analysis: dict):
     """성능 분석 결과를 HTML로 표시"""
@@ -1845,7 +1938,7 @@ with st.container():
                                 )
                                 
                                 if prompt:
-                                    result = generate_copy(prompt, "gpt")
+                                    result = generate_copy_MULTI(prompt, "gemini")
                                     if result.get('success', False):
                                         persona_results[persona_name] = {
                                             "copy": result.get('content', ''),
