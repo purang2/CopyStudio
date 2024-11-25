@@ -775,6 +775,77 @@ def load_docs() -> Dict[str, Dict[str, str]]:
 DOCS = load_docs()
 
 
+def execute_prompt(prompt: str) -> str:
+    """
+    Placeholder function to execute a prompt.
+    Replace with your model integration logic.
+    """
+    print(f"Executing prompt:\n{prompt}\n")
+    # Placeholder for testing
+    return f"Result for prompt: {prompt[:50]}..."
+
+def stage_1_persona_analysis(persona_name: str, persona_data: dict) -> str:
+    """
+    Generate the Stage 1 prompt for persona analysis.
+    """
+    return f'''
+[1단계: 페르소나 문체 분석]
+- 페르소나: {persona_name}
+- 특징: {persona_data['description']}
+- 문체: {persona_data.get('tone', '기본 톤')}
+- 샘플 문장: "{persona_data['samples'][0]}"
+
+{persona_name}의 문체적 특징을 요약하고, 이 문체를 기반으로 광고 카피 스타일을 정의하세요.
+'''
+
+def stage_2_target_connection(persona_name: str, persona_analysis_result: str, target_generation: str) -> str:
+    """
+    Generate the Stage 2 prompt for connecting to the target generation.
+    """
+    return f"""
+[2단계: 타겟 세대와의 연결]
+- 타겟 세대: {target_generation}
+- 페르소나 분석 결과: {persona_analysis_result}
+
+타겟 세대({target_generation})가 공감할 수 있는 감정을 정의하고, 이 감정을 강조할 키워드 3개를 도출하세요.
+"""
+
+def stage_3_context_transformation(persona_name: str, target_connection_result: str, city_doc: str) -> str:
+    """
+    Generate the Stage 3 prompt for context transformation.
+    """
+    return f"""
+[3단계: 맥락에 맞춘 컨텍스트 변환]
+- 주제: 부산 해운대 홍보
+- 타겟 연결 결과: {target_connection_result}
+- 도시 정보: {city_doc}
+
+{persona_name}의 문체와 타겟 연결 결과를 바탕으로, 부산 해운대 홍보 문구의 초안을 작성하세요.
+"""
+
+def stage_4_copywriting(context_transformation_result: str) -> str:
+    """
+    Generate the Stage 4 prompt for copywriting.
+    """
+    return f"""
+[4단계: 카피 작성]
+- 컨텍스트 변환 결과: {context_transformation_result}
+
+위 결과를 활용하여 광고 카피 문장을 3개 작성하세요.
+- 각 문장은 1-2개의 이모지를 포함해야 합니다.
+"""
+
+def stage_5_optimization(copywriting_result: str) -> str:
+    """
+    Generate the Stage 5 prompt for optimization.
+    """
+    return f"""
+[5단계: 최적화]
+- 생성된 카피: {copywriting_result}
+
+위 카피 중 가장 효과적인 문장을 선정하고, 최적화된 문장을 작성하세요.
+"""
+
 def create_adaptive_prompt(
     city_doc: str, 
     target_generation: str,
@@ -783,31 +854,57 @@ def create_adaptive_prompt(
     include_mbti: bool = False
 ) -> str:
     """페르소나의 특색을 자연스럽게 반영한 프롬프트 생성"""
-
+    
+    # Load persona data
     persona_data = PERSONAS.get(persona_name)
     if not persona_data:
-        return None
+        raise ValueError(f"Persona {persona_name} not found in PERSONAS.")
 
-    # 페르소나의 샘플 문장 중 하나를 랜덤으로 선택하여 스타일을 암시적으로 전달
-    import random
+    # Randomly select a sample sentence
     sample_sentence = random.choice(persona_data['samples'])
+    
+    # Stage 1: Persona Analysis
+    stage_1_prompt = stage_1_persona_analysis(persona_name, persona_data)
+    persona_analysis_result = execute_prompt(stage_1_prompt)
 
-    base_prompt = f'''
-[배경 정보]
+    # Stage 2: Target Connection
+    stage_2_prompt = stage_2_target_connection(persona_name, persona_analysis_result, target_generation)
+    target_connection_result = execute_prompt(stage_2_prompt)
+
+    # Stage 3: Context Transformation
+    stage_3_prompt = stage_3_context_transformation(persona_name, target_connection_result, city_doc)
+    context_transformation_result = execute_prompt(stage_3_prompt)
+
+    # Stage 4: Copywriting
+    stage_4_prompt = stage_4_copywriting(context_transformation_result)
+    copywriting_result = execute_prompt(stage_4_prompt)
+
+    # Stage 5: Optimization
+    stage_5_prompt = stage_5_optimization(copywriting_result)
+    optimized_copy = execute_prompt(stage_5_prompt)
+
+    # Optionally include MBTI information
+    mbti_section = f"\n- MBTI: {mbti}" if include_mbti and mbti else ""
+
+    # Final prompt with MBTI if applicable
+    final_prompt = f"""
+[최종 프롬프트]
 - 도시 정보: {city_doc}
 - 타겟 세대: {target_generation}
+- 페르소나: {persona_name}
+{mbti_section}
 
-[작성 지침]
-- 위 배경 정보를 바탕으로 한 줄의 강력한 광고 카피를 작성해주세요.
-- 카피는 독자의 마음을 울릴 수 있는 짧고 강렬한 문장이어야 합니다.
-- 감정을 불러일으키는 은유와 함축적인 표현을 사용해주세요.
-- 클리셰나 진부한 표현을 피하고, 창의적이고 혁신적인 관점을 제시해주세요.
-- 이모지 1-2개를 포함할 수 있습니다.
-- 아래는 참고할 수 있는 문장입니다:
-  "{sample_sentence}"
-'''
+최적화된 카피:
+{optimized_copy}
+"""
 
-    return base_prompt
+    return final_prompt
+
+
+
+
+
+
 
 def get_safe_persona_info(data: dict, field: str, default: any = '') -> any:
     """페르소나 데이터에서 안전하게 정보를 추출"""
