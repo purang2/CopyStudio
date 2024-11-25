@@ -837,15 +837,14 @@ def stage_4_copywriting(context_transformation_result: str) -> str:
 
 def stage_5_optimization(copywriting_result: str) -> str:
     """
-    Generate the Stage 5 prompt for optimization.
+    Generate the Stage 5 prompt for optimization, ensuring a single, powerful copy.
     """
     return f"""
 [5단계: 최적화]
 - 생성된 카피: {copywriting_result}
 
-위 카피 중 가장 효과적인 문장을 선정하고, 최적화된 문장을 작성하세요.
+위 카피 중 가장 강렬하고 짧은 문장을 선정하고, 15자 이내의 최적화된 한 줄 광고 카피를 작성하세요.
 """
-
 def create_adaptive_prompt(
     city_doc: str, 
     target_generation: str,
@@ -853,7 +852,7 @@ def create_adaptive_prompt(
     mbti: str = None,
     include_mbti: bool = False
 ) -> str:
-    """페르소나의 특색을 자연스럽게 반영한 프롬프트 생성"""
+    """페르소나의 특색을 자연스럽게 반영한 한 줄 광고 카피 생성"""
     
     # Load persona data
     persona_data = PERSONAS.get(persona_name)
@@ -883,22 +882,8 @@ def create_adaptive_prompt(
     stage_5_prompt = stage_5_optimization(copywriting_result)
     optimized_copy = execute_prompt(stage_5_prompt)
 
-    # Optionally include MBTI information
-    mbti_section = f"\n- MBTI: {mbti}" if include_mbti and mbti else ""
-
-    # Final prompt with MBTI if applicable
-    final_prompt = f"""
-[최종 프롬프트]
-- 도시 정보: {city_doc}
-- 타겟 세대: {target_generation}
-- 페르소나: {persona_name}
-{mbti_section}
-
-최적화된 카피:
-{optimized_copy}
-"""
-
-    return final_prompt
+    # Return final optimized one-liner copy
+    return optimized_copy.strip()
 
 
 
