@@ -773,33 +773,7 @@ def load_docs() -> Dict[str, Dict[str, str]]:
 
 
 DOCS = load_docs()
-def execute_prompt(prompt: str) -> str:
-    """
-    프롬프트를 처리하여 결과를 반환합니다.
-    실제 모델 호출 대신 기본 테스트 값을 반환합니다.
-    """
-    print(f"Executing prompt:\n{prompt[:100]}...\n")  # 프롬프트 일부 출력
-    # 테스트용 반환값
-    return "테스트 결과: 프롬프트 실행 성공"
 
-def summarize_text(text: str, max_length: int = 500) -> str:
-    """
-    긴 텍스트를 지정된 최대 길이로 요약합니다.
-    - max_length: 요약된 텍스트의 최대 문자 수
-    """
-    if len(text) <= max_length:
-        return text  # 이미 충분히 짧으면 그대로 반환
-
-    # 요약 프롬프트 생성
-    summary_prompt = f"""
-다음 텍스트를 최대 {max_length}자 이내로 요약하세요. 핵심 정보만 포함해야 합니다.
-
-{text[:1000]}  # 요약을 위해 텍스트 일부만 포함
-"""
-    summary_result = execute_prompt(summary_prompt)
-    if not summary_result or "죄송합니다" in summary_result:
-        return text[:max_length]  # 실패 시 첫 max_length만 반환
-    return summary_result.strip()
 
 def create_adaptive_prompt(
     city_doc: str, 
@@ -808,89 +782,64 @@ def create_adaptive_prompt(
     mbti: str = None,
     include_mbti: bool = False
 ) -> str:
-    """
-    긴 city_doc을 요약하고 페르소나의 고유성을 반영한 한 줄 광고 카피 생성.
-    """
+    """페르소나의 특색을 자연스럽게 반영한 프롬프트 생성"""
 
-    # Load persona data
     persona_data = PERSONAS.get(persona_name)
     if not persona_data:
-        raise ValueError(f"{persona_name} 페르소나가 PERSONAS에 없습니다.")
+        return None
 
-    # 샘플 문장 랜덤 선택
+    # 페르소나의 샘플 문장 중 하나를 랜덤으로 선택하여 스타일을 암시적으로 전달
+    import random
     sample_sentence = random.choice(persona_data['samples'])
 
-    # city_doc 요약
-    summarized_city_doc = summarize_text(city_doc, max_length=500)
+    base_prompt = f'''[시스템 설정]
+    당신은 주어진 페르소나의 특성을 이해하고 체계적인 사고 과정을 거쳐 절제된 예술 카피를 만드는 전문가입니다.
+    
+    [배경 정보]
+    - 도시 정보: {city_doc}
+    - 타겟 세대: {target_generation}
+    
+    [1단계: 분석 및 REASONING]
+    다음 순서로 생각을 정리해주세요:
+    1. 페르소나의 핵심 특성과 문체 스타일 파악
+    2. 도시의 핵심 가치와 타겟 세대의 니즈 분석
+    3. 페르소나의 관점에서 도시를 바라보는 독특한 시각 도출
+    4. 가능한 은유와 표현 기법 검토
+    
+    [2단계: 초안 작성]
+    - 1단계의 분석을 바탕으로 3개의 서로 다른 카피 초안을 작성해주세요
+    - 각 초안은 페르소나의 특성이 드러나되, 과도하게 치우치지 않도록 합니다
+    - 참고할 문장: "{sample_sentence}"
+    
+    [3단계: 퇴고 및 최종화]
+    다음 기준으로 초안을 검토하고 최종 카피를 선정해주세요:
+    1. 절제미: 과도한 표현이나 감정 절제
+    2. 독창성: 클리셰와 진부함 회피
+    3. 공감성: 타겟 세대의 공감 가능성
+    4. 함축성: 의미의 깊이와 여운
+    5. 리듬감: 문장의 흐름과 바운스
+    
+    [출력 형식]
+    #REASONING
+    {페르소나의 관점에서 본 분석 내용}
+    
+    #DRAFTS
+    1. {첫 번째 초안}
+    2. {두 번째 초안}
+    3. {세 번째 초안}
+    
+    #FINAL
+    {최종 선정된 카피} {이모지 1-2개}
+    
+    [제약 사항]
+    - 최종 카피는 한 줄의 강력한 문장으로 제한
+    - 이모지는 1-2개만 사용
+    - 과도한 수식과 과장된 표현 지양
+    - 참신하되 자연스러운 은유 사용
+    '''
+    
+    return base_prompt
 
-    # 기본 대체 문구
-    fallback_copy = f"{summarized_city_doc.split(' ')[0]}: 특별한 순간을 만나보세요. ✨"
-
-    # Stage 1: Persona Analysis
-    stage_1_prompt = f"""
-[1단계: 페르소나 문체 분석]
-- 페르소나 이름: {persona_name}
-- 페르소나 설명: {persona_data['description']}
-- 문체: {persona_data.get('tone', '기본 톤')}
-- 예시 문장: "{sample_sentence}"
-
-위 정보를 기반으로, {persona_name}의 문체적 특징을 요약하고 광고 카피 스타일을 정의하세요.
-"""
-    persona_analysis_result = execute_prompt(stage_1_prompt)
-    if not persona_analysis_result or "죄송합니다" in persona_analysis_result:
-        persona_analysis_result = f"{persona_name}의 고유 문체."
-
-    # Stage 2: Target Connection
-    stage_2_prompt = f"""
-[2단계: 타겟 세대와의 연결]
-- 타겟 세대: {target_generation}
-- 페르소나 문체 분석 결과: {persona_analysis_result}
-
-{target_generation} 세대가 공감할 수 있는 감정을 도출하고, 이를 강조할 키워드 3개를 작성하세요.
-"""
-    target_connection_result = execute_prompt(stage_2_prompt)
-    if not target_connection_result or "죄송합니다" in target_connection_result:
-        target_connection_result = "감정, 열정, 상상력."
-
-    # Stage 3: Context Transformation
-    stage_3_prompt = f"""
-[3단계: 컨텍스트 변환]
-- 주제: 부산 해운대 홍보
-- 타겟 세대 연결 결과: {target_connection_result}
-- 도시 정보 (요약): {summarized_city_doc}
-
-{persona_name}의 문체와 타겟 연결 결과를 반영하여, 해운대의 매력을 강조하는 광고 문구 초안을 작성하세요.
-"""
-    context_transformation_result = execute_prompt(stage_3_prompt)
-    if not context_transformation_result or "죄송합니다" in context_transformation_result:
-        context_transformation_result = "상상력을 자극하는 해운대 홍보 문구."
-
-    # Stage 4: Copywriting
-    stage_4_prompt = f"""
-[4단계: 카피 작성]
-- 컨텍스트 변환 결과: {context_transformation_result}
-
-위 결과를 바탕으로 한 줄 광고 카피를 3개 작성하세요.
-- 각 문장은 15자 이내로 간결하고 강렬해야 하며, 감정을 자극하는 단어와 이모지를 포함해야 합니다.
-- {persona_name}의 고유 문체와 상징성을 반영하세요.
-"""
-    copywriting_result = execute_prompt(stage_4_prompt)
-    if not copywriting_result or "죄송합니다" in copywriting_result:
-        copywriting_result = f"{persona_name}의 매력을 담은 해운대. ✨"
-
-    # Stage 5: Optimization
-    stage_5_prompt = f"""
-[5단계: 최적화]
-- 생성된 카피: {copywriting_result}
-
-위 카피 중 가장 강렬하고 짧은 문장을 선정하고, 최적화된 한 줄 광고 카피를 작성하세요.
-"""
-    optimized_copy = execute_prompt(stage_5_prompt).strip()
-    if not optimized_copy or "죄송합니다" in optimized_copy:
-        optimized_copy = fallback_copy
-
-    # 최종 한 줄 광고 카피 반환
-    return optimized_copy
 
 
 def get_safe_persona_info(data: dict, field: str, default: any = '') -> any:
