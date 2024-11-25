@@ -993,15 +993,18 @@ class AdCopyEvaluator:
                 "reason": f"파싱 실패: {str(e)}",
                 "detailed_scores": [0] * len(self.scoring_config.criteria)
             }
-            
-def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
+            def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
     """광고 카피 생성"""
     try:
         if model_name == "gpt":
             response = client.chat.completions.create(
                 model=model_zoo[0],
                 messages=[{"role": "user", "content": prompt}],
-                max_tokens=1000
+                max_tokens=1000,
+                temperature=0.85,  # 창의성과 일관성의 균형
+                top_p=0.9,        # 다양한 표현을 허용하되 너무 벗어나지 않도록
+                presence_penalty=0.3,  # 반복을 줄이고 새로운 표현 권장
+                frequency_penalty=0.3   # 진부한 표현 방지
             )
             return {
                 "success": True,
@@ -1010,25 +1013,30 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
             
         elif model_name == "gemini":
             try:
-                response = gemini_model.generate_content(prompt)  # 단순화
-                generated_text = response.text.strip()  # 바로 text 추출
+                generation_config = {
+                    "temperature": 0.8,
+                    "top_p": 0.9,
+                    "top_k": 40,
+                    "max_output_tokens": 1000
+                }
                 
-                if generated_text:  # 텍스트가 있는지 확인
-                    return {
-                        "success": True,
-                        "content": generated_text
-                    }
-                else:
-                    return {
-                        "success": False,
-                        "content": "Gemini가 텍스트를 생성하지 않았습니다."
-                    }
-                    
-            except Exception as e:
-                print(f"Gemini 오류: {str(e)}")  # 디버깅용
+                # 모든 안전 설정을 최소화
+                safety_settings = {
+                    HarmCategory.HARASSMENT: HarmBlockThreshold.NONE,
+                    HarmCategory.HATE_SPEECH: HarmBlockThreshold.NONE,
+                    HarmCategory.SEXUALLY_EXPLICIT: HarmBlockThreshold.NONE,
+                    HarmCategory.DANGEROUS_CONTENT: HarmBlockThreshold.NONE,
+                }
+                
+                response = gemini_model.generate_content(
+                    prompt,
+                    generation_config=generation_config,
+                    safety_settings=safety_settings
+                )
+                
                 return {
-                    "success": False,
-                    "content": f"Gemini API 오류: {str(e)}"
+                    "success": True,
+                    "content": response.text.strip()
                 }
             
         else:  # claude
@@ -1042,7 +1050,9 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
                         }
                     ],
                     max_tokens=1000,
-                    temperature=0.7
+                    temperature=0.82,    # 창의성 강화
+                    top_p=0.95,         # 더 다양한 표현 허용
+                    top_k=60            # 어휘 선택의 폭 확장
                 )
                 return {
                     "success": True,
@@ -1059,8 +1069,6 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
             "success": False,
             "content": f"생성 실패: {str(e)}"
         }
-
-
 
 # 성능 분석 결과 표시 부분 수정
 def display_performance_analysis(analysis: dict):
