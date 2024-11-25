@@ -994,7 +994,6 @@ class AdCopyEvaluator:
                 "detailed_scores": [0] * len(self.scoring_config.criteria)
             }
 
-
 def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
     """광고 카피 생성"""
     try:
@@ -1071,6 +1070,11 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
             "success": False,
             "content": f"생성 실패: {str(e)}"
         }
+
+
+
+
+
 
 # 성능 분석 결과 표시 부분 수정
 def display_performance_analysis(analysis: dict):
