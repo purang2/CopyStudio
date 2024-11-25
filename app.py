@@ -52,7 +52,7 @@ client = OpenAI(api_key=st.secrets["chatgpt"])  # API 키 입력
 #'gemini-1.5-pro-exp-0827'
 #'gemini-1.5-pro-002'
 model_zoo = ['gpt-4o',
-             'gemini-1.5-flash-002',
+             'gemini-1.5-pro-002',
              'claude-3-5-haiku-20241022']
 
 # Gemini model configuration
