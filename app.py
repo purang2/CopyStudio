@@ -773,25 +773,33 @@ def load_docs() -> Dict[str, Dict[str, str]]:
 
 
 DOCS = load_docs()
-
+def execute_prompt(prompt: str) -> str:
+    """
+    프롬프트를 처리하여 결과를 반환합니다.
+    실제 모델 호출 대신 기본 테스트 값을 반환합니다.
+    """
+    print(f"Executing prompt:\n{prompt[:100]}...\n")  # 프롬프트 일부 출력
+    # 테스트용 반환값
+    return "테스트 결과: 프롬프트 실행 성공"
 
 def summarize_text(text: str, max_length: int = 500) -> str:
     """
     긴 텍스트를 지정된 최대 길이로 요약합니다.
     - max_length: 요약된 텍스트의 최대 문자 수
     """
+    if len(text) <= max_length:
+        return text  # 이미 충분히 짧으면 그대로 반환
+
     # 요약 프롬프트 생성
     summary_prompt = f"""
 다음 텍스트를 최대 {max_length}자 이내로 요약하세요. 핵심 정보만 포함해야 합니다.
 
-{text}
+{text[:1000]}  # 요약을 위해 텍스트 일부만 포함
 """
     summary_result = execute_prompt(summary_prompt)
     if not summary_result or "죄송합니다" in summary_result:
         return text[:max_length]  # 실패 시 첫 max_length만 반환
     return summary_result.strip()
-
-
 
 def create_adaptive_prompt(
     city_doc: str, 
@@ -883,9 +891,6 @@ def create_adaptive_prompt(
 
     # 최종 한 줄 광고 카피 반환
     return optimized_copy
-
-
-
 
 
 def get_safe_persona_info(data: dict, field: str, default: any = '') -> any:
