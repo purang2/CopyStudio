@@ -52,7 +52,7 @@ client = OpenAI(api_key=st.secrets["chatgpt"])  # API 키 입력
 #'gemini-1.5-pro-exp-0827'
 #'gemini-1.5-pro-002'
 model_zoo = ['gpt-4o',
-             'gemini-1.5-pro-002',
+             'gemini-1.5-flash-002',
              'claude-3-5-haiku-20241022']
 
 # Gemini model configuration
@@ -774,6 +774,7 @@ def load_docs() -> Dict[str, Dict[str, str]]:
 
 DOCS = load_docs()
 
+
 def create_adaptive_prompt(
     city_doc: str, 
     target_generation: str,
@@ -787,33 +788,26 @@ def create_adaptive_prompt(
     if not persona_data:
         return None
 
-    # 페르소나의 샘플 문장 중 하나를 랜덤으로 선택
+    # 페르소나의 샘플 문장 중 하나를 랜덤으로 선택하여 스타일을 암시적으로 전달
+    import random
     sample_sentence = random.choice(persona_data['samples'])
 
-    base_prompt = f'''당신은 {persona_name}입니다.
-{persona_data['description']}
-
-다음 정보를 참고하여 {persona_name}의 시선으로 매력적인 광고 카피를 만들어주세요:
-
+    base_prompt = f'''
 [배경 정보]
 - 도시 정보: {city_doc}
 - 타겟 세대: {target_generation}
 
-[참고할 문장]
-{sample_sentence}
-
-[요구사항]
-- 도시의 핵심 매력을 {persona_name}만의 독특한 시각으로 표현해주세요
-- 타겟층에 맞는 톤앤매너를 사용하되, 정보의 나열은 피해주세요
-- 감성적 공감과 구체적 특징이 조화를 이루도록 해주세요
-- 한 문장으로 작성하고, 이모지 1-2개를 포함해주세요
-
-광고 카피만 작성해주세요. 다른 설명이나 분석 없이 카피 문장 하나만 출력해주세요.
+[작성 지침]
+- 위 배경 정보를 바탕으로 한 줄의 강력한 광고 카피를 작성해주세요.
+- 카피는 독자의 마음을 울릴 수 있는 짧고 강렬한 문장이어야 합니다.
+- 감정을 불러일으키는 은유와 함축적인 표현을 사용해주세요.
+- 클리셰나 진부한 표현을 피하고, 창의적이고 혁신적인 관점을 제시해주세요.
+- 이모지 1-2개를 포함할 수 있습니다.
+- 아래는 참고할 수 있는 문장입니다:
+  "{sample_sentence}"
 '''
-    
+
     return base_prompt
-
-
 
 def get_safe_persona_info(data: dict, field: str, default: any = '') -> any:
     """페르소나 데이터에서 안전하게 정보를 추출"""
@@ -993,7 +987,7 @@ class AdCopyEvaluator:
                 "reason": f"파싱 실패: {str(e)}",
                 "detailed_scores": [0] * len(self.scoring_config.criteria)
             }
-
+            
 def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
     """광고 카피 생성"""
     try:
@@ -1001,11 +995,7 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
             response = client.chat.completions.create(
                 model=model_zoo[0],
                 messages=[{"role": "user", "content": prompt}],
-                max_tokens=1000,
-                temperature=0.85,
-                top_p=0.9,
-                presence_penalty=0.3,
-                frequency_penalty=0.3
+                max_tokens=1000
             )
             return {
                 "success": True,
@@ -1013,67 +1003,40 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
             }
             
         elif model_name == "gemini":
-            generation_config = {
-                "temperature": 0.8,
-                "top_p": 0.9,
-                "top_k": 40,
-                "max_output_tokens": 1000
-            }
-            
-            safety_settings = {
-                HarmCategory.HARASSMENT: HarmBlockThreshold.NONE,
-                HarmCategory.HATE_SPEECH: HarmBlockThreshold.NONE,
-                HarmCategory.SEXUALLY_EXPLICIT: HarmBlockThreshold.NONE,
-                HarmCategory.DANGEROUS_CONTENT: HarmBlockThreshold.NONE,
-            }
-            
             try:
-                response = gemini_model.generate_content(
-                    prompt,
-                    generation_config=generation_config,
-                    safety_settings=safety_settings
-                )
-                return {
-                    "success": True,
-                    "content": response.text.strip()
-                }
-            except ResourceExhausted:
-                print("Gemini API 할당량 초과, GPT로 대체 실행")
-                backup_response = client.chat.completions.create(
-                    model=model_zoo[0],
-                    messages=[{"role": "user", "content": prompt}],
-                    max_tokens=1000,
-                    temperature=0.85,
-                    top_p=0.9,
-                    presence_penalty=0.3,
-                    frequency_penalty=0.3
-                )
-                return {
-                    "success": True,
-                    "content": backup_response.choices[0].message.content.strip(),
-                    "fallback": "gpt"
-                }
+                response = gemini_model.generate_content(prompt)  # 단순화
+                generated_text = response.text.strip()  # 바로 text 추출
+                
+                if generated_text:  # 텍스트가 있는지 확인
+                    return {
+                        "success": True,
+                        "content": generated_text
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "content": "Gemini가 텍스트를 생성하지 않았습니다."
+                    }
+                    
             except Exception as e:
-                print(f"Gemini 오류: {str(e)}")
+                print(f"Gemini 오류: {str(e)}")  # 디버깅용
                 return {
                     "success": False,
                     "content": f"Gemini API 오류: {str(e)}"
                 }
             
-        elif model_name == "claude":
+        else:  # claude
             try:
                 response = anthropic.messages.create(
                     model=model_zoo[2],
                     messages=[
                         {
-                            "role": "user", 
+                            "role": "user",
                             "content": prompt
                         }
                     ],
                     max_tokens=1000,
-                    temperature=0.82,
-                    top_p=0.95,
-                    top_k=60
+                    temperature=0.7
                 )
                 return {
                     "success": True,
@@ -1090,9 +1053,6 @@ def generate_copy(prompt: str, model_name: str) -> Union[str, Dict]:
             "success": False,
             "content": f"생성 실패: {str(e)}"
         }
-
-
-
 
 # 성능 분석 결과 표시 부분 수정
 def display_performance_analysis(analysis: dict):
@@ -1853,7 +1813,7 @@ with st.container():
                                 )
                                 
                                 if prompt:
-                                    result = generate_copy(prompt, "gemini")
+                                    result = generate_copy(prompt, "gpt")
                                     if result.get('success', False):
                                         persona_results[persona_name] = {
                                             "copy": result.get('content', ''),
