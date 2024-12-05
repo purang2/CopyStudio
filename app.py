@@ -112,19 +112,12 @@ st.markdown("""
     }
 
     .result-card {
-        background-color: var(--card-bg);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin: 1rem 0;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        transition: all 0.2s ease;
-        color: var(--text-color);
-        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
     }
     
     .result-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
     .model-tag {
