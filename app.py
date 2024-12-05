@@ -20,6 +20,8 @@ from google.api_core.exceptions import ResourceExhausted
 import folium
 from streamlit_folium import folium_static
 import random
+import re 
+
 
 # Page config must be the first Streamlit command
 st.set_page_config(
@@ -1716,21 +1718,27 @@ with col2:
                                      "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
                                  })
         
+                    # 정규식으로 카피와 설명 추출
+                    match = re.search(r"\*\*카피\*\*:\s*(.*?)\s*설명:\s*(.*)", result, re.DOTALL)
+                    copy_text = match.group(1).strip() if match else "카피 없음"
+                    description_text = match.group(2).strip() if match else "설명 없음"
+                    
+                    # HTML 렌더링
                     st.markdown(f"""
-                    <div class="result-card">
-                        <span class="model-tag" style="background-color: {MODEL_COLORS[model_name]}">
+                    <div class="result-card" style="border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; background-color: #f9f9f9;">
+                        <span class="model-tag" style="background-color: {MODEL_COLORS.get(model_name, '#6c757d')}; color: #fff; padding: 0.3rem 0.6rem; font-weight: bold; border-radius: 5px;">
                             {model_name.upper()}
                         </span>
                         <div style="margin-top: 1rem; font-size: 1.2rem; font-weight: bold;">
-                            <b>카피:</b> {result.split('설명:')[0].strip()}
+                            <b>카피:</b> {copy_text}
                         </div>
-                        <div style="margin-top: 0.5rem; font-size: 1rem;">
-                            <b>설명:</b> {result.split('설명:')[1].strip() if '설명:' in result else '설명 없음'}
+                        <div style="margin-top: 0.5rem; font-size: 1rem; color: #333;">
+                            <b>설명:</b> {description_text}
                         </div>
-                        <div class="score-badge">
+                        <div class="score-badge" style="margin-top: 1rem; font-size: 1.2rem; font-weight: bold;">
                             점수: {eval_data.get('score', 0)}점
                         </div>
-                        <div class="prompt-feedback">
+                        <div class="prompt-feedback" style="margin-top: 0.5rem; font-size: 1rem; color: #555;">
                             {eval_data.get('reason', '평가 이유 없음')}
                         </div>
                     </div>
