@@ -1715,35 +1715,65 @@ with col2:
                                      "reason": "평가 실패",
                                      "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
                                  })
-        
+                    
+                    # 스타일 적용: 결과를 HTML로 포맷팅
                     st.markdown(f"""
+                    <style>
+                        .result-card {{
+                            border: 1px solid #ddd;
+                            padding: 1rem;
+                            margin-bottom: 1rem;
+                            border-radius: 8px;
+                            background-color: #f9f9f9;
+                        }}
+                        .model-tag {{
+                            display: inline-block;
+                            padding: 0.3rem 0.6rem;
+                            font-size: 1rem;
+                            font-weight: bold;
+                            color: #fff;
+                            border-radius: 5px;
+                        }}
+                        .score-badge {{
+                            margin-top: 1rem;
+                            font-size: 1.2rem;
+                            font-weight: bold;
+                        }}
+                        .prompt-feedback {{
+                            margin-top: 1rem;
+                            font-size: 1rem;
+                            color: #555;
+                        }}
+                    </style>
+        
                     <div class="result-card">
-                        <span class="model-tag" style="background-color: {MODEL_COLORS[model_name]}">
+                        <span class="model-tag" style="background-color: {MODEL_COLORS.get(model_name, '#6c757d')}">
                             {model_name.upper()}
                         </span>
-                        <div style="margin: 1rem 0;">
-                            {result}
+                        <div style="margin-top: 1rem; font-size: 1.2rem; font-weight: bold;">
+                            <b>카피:</b> {result}
+                        </div>
+                        <div style="margin-top: 0.5rem; font-size: 1rem;">
+                            <b>설명:</b> {eval_data.get('reason', '평가 이유 없음')}
                         </div>
                         <div class="score-badge">
                             점수: {eval_data.get('score', 0)}점
                         </div>
-                        <div class="prompt-feedback">
-                            {eval_data.get('reason', '평가 이유 없음')}
-                        </div>
                     </div>
                     """, unsafe_allow_html=True)
                     
+                    # 상세 점수 차트 표시
                     if 'detailed_scores' in eval_data:
                         try:
                             fig = visualize_evaluation_results(eval_data)
-                            st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, use_container_width=True, key=f"{model_name}_chart")
                         except Exception as e:
                             st.error(f"차트 생성 중 오류 발생: {str(e)}")
             except Exception as e:
                 st.error(f"결과 표시 중 오류 발생 ({model_name}): {str(e)}")
-
-    else:
-        st.info("광고 카피를 생성하면 여기에 결과가 표시됩니다.")
+        
+        else:
+            st.info("광고 카피를 생성하면 여기에 결과가 표시됩니다.")
 
 # 지도 섹션 추가
 st.markdown("---")  # 구분선
