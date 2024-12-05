@@ -1749,11 +1749,8 @@ with col2:
                                      "reason": "평가 실패",
                                      "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
                                  })
-        
+                    
                     # 정규식으로 카피와 설명 추출
-                                                            
-                                        
-                    # 설명 텍스트 추출 함수
                     def extract_copy_and_description(result_text):
                         """
                         Extract '카피' and '설명' from the given text.
@@ -1777,10 +1774,13 @@ with col2:
                                 return "카피 없음", description_text
                         else:
                             return "카피 없음", "설명 없음"
-                    
+        
                     # Extracting text from result
                     copy_text, description_text = extract_copy_and_description(result)
-                    
+        
+                    # **여기에 feedback_text 정의 추가**
+                    feedback_text = eval_data.get('reason', "평가 이유 없음")  # 기본값 설정
+        
                     # HTML 렌더링
                     st.markdown(f"""
                     <div class="result-card">
@@ -1797,7 +1797,7 @@ with col2:
                             점수: {eval_data.get('score', 0)}점
                         </div>
                         <div class="feedback">
-                            {feedback_text}
+                            {feedback_text}  <!-- 평가 이유 출력 -->
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
