@@ -1719,9 +1719,22 @@ with col2:
                                  })
         
                     # 정규식으로 카피와 설명 추출
-                    match = re.search(r"\*\*카피\*\*:\s*(.*?)\s*설명:\s*(.*)", result, re.DOTALL)
-                    copy_text = match.group(1).strip() if match else "카피 없음"
-                    description_text = match.group(2).strip() if match else "설명 없음"
+                                        
+                    # 'result'에서 카피와 설명 추출
+                    def extract_copy_and_description(result_text):
+                        # 정규식으로 "카피"와 "설명" 추출
+                        match = re.search(r"\*\*카피\*\*:\s*(.*?)\s*설명:\s*(.*)", result_text, re.DOTALL)
+                        if match:
+                            copy_text = match.group(1).strip()
+                            description_text = match.group(2).strip()
+                        else:
+                            # '카피' 또는 '설명'이 누락된 경우
+                            copy_text = "카피 없음"
+                            description_text = "설명 없음"
+                        return copy_text, description_text
+                    
+                    # 'result'에서 카피와 설명 분리
+                    copy_text, description_text = extract_copy_and_description(result)
                     
                     # HTML 렌더링
                     st.markdown(f"""
