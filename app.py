@@ -1721,8 +1721,11 @@ with col2:
                         <span class="model-tag" style="background-color: {MODEL_COLORS[model_name]}">
                             {model_name.upper()}
                         </span>
-                        <div style="margin: 1rem 0;">
-                            {result}
+                        <div style="margin-top: 1rem; font-size: 1.2rem; font-weight: bold;">
+                            <b>카피:</b> {result.split('설명:')[0].strip()}
+                        </div>
+                        <div style="margin-top: 0.5rem; font-size: 1rem;">
+                            <b>설명:</b> {result.split('설명:')[1].strip() if '설명:' in result else '설명 없음'}
                         </div>
                         <div class="score-badge">
                             점수: {eval_data.get('score', 0)}점
