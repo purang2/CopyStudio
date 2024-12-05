@@ -1736,7 +1736,6 @@ with col2:
                 st.error(f"성능 분석 표시 중 오류 발생: {str(e)}")
         
         # 결과 카드 표시
-        # 결과 카드 표시
         model_list = ["gpt", "gemini", "claude"]
         for idx, model_name in enumerate(model_list):
             try:
@@ -1779,7 +1778,8 @@ with col2:
                         try:
                             fig = visualize_evaluation_results(eval_data)
                             if fig:
-                                st.plotly_chart(fig, use_container_width=True)
+                                # Key 추가로 중복 문제 해결
+                                st.plotly_chart(fig, use_container_width=True, key=f"{model_name}_chart")
                         except Exception as e:
                             st.error(f"차트 생성 중 오류 발생: {str(e)}")
             except Exception as e:
