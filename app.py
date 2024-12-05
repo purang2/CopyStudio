@@ -1784,6 +1784,9 @@ with col2:
                     # HTML 렌더링
                     st.markdown(f"""
                     <div class="result-card">
+                        <div class="model-tag" style="background-color: {MODEL_COLORS.get(model_name, '#6c757d')}">
+                            {model_name.upper()}
+                        </div>
                         <div class="copy-text">
                             {copy_text}
                         </div>
@@ -1794,7 +1797,7 @@ with col2:
                             점수: {eval_data.get('score', 0)}점
                         </div>
                         <div class="feedback">
-                            {eval_data.get('reason', '') if description_text != "설명 없음" else ''}
+                            {feedback_text}
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
