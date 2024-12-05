@@ -222,12 +222,17 @@ st.markdown("""
         fill: var(--text-color) !important;
     }
     .result-card {
-        transition: all 0.3s ease;
+        background-color: #000; /* 카드 배경을 검정색으로 변경 */
+        color: #fff; /* 텍스트를 흰색으로 변경 */
+        border-radius: 20px; /* 모서리를 둥글게 */
+        padding: 2rem; /* 패딩 조정 */
+        text-align: center; /* 텍스트 가운데 정렬 */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* 그림자 효과 */
     }
     
     .result-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-5px);
+        box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3); /* 호버 시 더 강한 그림자 */
     }
     
     .progress-text {
@@ -239,6 +244,40 @@ st.markdown("""
     .stExpander {
         border: none !important;
         box-shadow: none !important;
+    }
+    
+    .copy-text {
+        font-size: 1.8rem; /* 카피 텍스트 크기 */
+        font-weight: 700; /* 카피 텍스트 굵기 */
+        line-height: 1.6; /* 줄 간격 조정 */
+        margin-bottom: 1rem; /* 아래 여백 */
+    }
+    
+    .description-text {
+        font-size: 1.2rem; /* 설명 텍스트 크기 */
+        font-weight: 400; /* 설명 텍스트 굵기 */
+        line-height: 1.8; /* 줄 간격 */
+        color: #bbb; /* 설명 텍스트는 밝은 회색 */
+        margin-top: 1rem; /* 위 여백 */
+    }
+    
+    .score-badge {
+        margin-top: 2rem; /* 점수 배지 위 여백 */
+        font-size: 1.5rem; /* 점수 배지 폰트 크기 */
+        font-weight: bold; /* 점수 강조 */
+        background-color: #333; /* 점수 배지 배경색 */
+        color: #fff; /* 점수 배지 텍스트 색 */
+        padding: 0.5rem 1rem; /* 배지 패딩 */
+        border-radius: 9999px; /* Pill 형태 */
+        display: inline-block; /* 인라인 블록 배치 */
+    }
+    
+    .feedback {
+        margin-top: 2rem; /* 피드백 위 여백 */
+        font-size: 1rem; /* 피드백 텍스트 크기 */
+        line-height: 1.5; /* 피드백 줄 간격 */
+        color: #bbb; /* 피드백 텍스트 색상 */
+        font-style: italic; /* 기울임 효과 */
     }
 </style>
 """, unsafe_allow_html=True)
@@ -1719,14 +1758,14 @@ with col2:
                                  })
         
                     # 정규식으로 카피와 설명 추출
+                                                            
                                         
-                    # 'result'에서 카피와 설명 추출
+                    # 설명 텍스트 추출 함수
                     def extract_copy_and_description(result_text):
                         """
                         Extract '카피' and '설명' from the given text.
-                        If the format is unexpected, provide detailed feedback for debugging.
+                        If the format is unexpected, provide fallback values.
                         """
-                        # Check if both "카피" and "설명" exist
                         if "**카피**:" in result_text and "설명:" in result_text:
                             match = re.search(r"\*\*카피\*\*:\s*(.*?)\s*설명:\s*(.*)", result_text, re.DOTALL)
                             if match:
@@ -1734,41 +1773,35 @@ with col2:
                                 description_text = match.group(2).strip()
                                 return copy_text, description_text
                         elif "**카피**:" in result_text:
-                            # Only '카피' exists
                             match = re.search(r"\*\*카피\*\*:\s*(.*)", result_text, re.DOTALL)
                             if match:
                                 copy_text = match.group(1).strip()
                                 return copy_text, "설명 없음"
                         elif "설명:" in result_text:
-                            # Only '설명' exists
                             match = re.search(r"설명:\s*(.*)", result_text, re.DOTALL)
                             if match:
                                 description_text = match.group(1).strip()
                                 return "카피 없음", description_text
                         else:
-                            # Neither '카피' nor '설명' exists
                             return "카피 없음", "설명 없음"
                     
-                    # Extracting text
+                    # Extracting text from result
                     copy_text, description_text = extract_copy_and_description(result)
                     
-                    # Render HTML
+                    # HTML 렌더링
                     st.markdown(f"""
-                    <div class="result-card" style="border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; background-color: #f9f9f9;">
-                        <span class="model-tag" style="background-color: {MODEL_COLORS.get(model_name, '#6c757d')}; color: #fff; padding: 0.3rem 0.6rem; font-weight: bold; border-radius: 5px;">
-                            {model_name.upper()}
-                        </span>
-                        <div style="margin-top: 1rem; font-size: 1.2rem; font-weight: bold;">
-                            <b>카피:</b> {copy_text}
+                    <div class="result-card">
+                        <div class="copy-text">
+                            {copy_text}
                         </div>
-                        <div style="margin-top: 0.5rem; font-size: 1rem; color: #333;">
-                            <b>설명:</b> {description_text}
+                        <div class="description-text">
+                            {description_text}
                         </div>
-                        <div class="score-badge" style="margin-top: 1rem; font-size: 1.2rem; font-weight: bold;">
+                        <div class="score-badge">
                             점수: {eval_data.get('score', 0)}점
                         </div>
-                        <div class="prompt-feedback" style="margin-top: 0.5rem; font-size: 1rem; color: #555;">
-                            {eval_data.get('reason', '평가 이유 없음')}
+                        <div class="feedback">
+                            {eval_data.get('reason', '') if description_text != "설명 없음" else ''}
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
