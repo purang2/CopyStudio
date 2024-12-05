@@ -1087,35 +1087,31 @@ def visualize_evaluation_results(eval_data: Dict):
 
     # 최소 3개 이상의 축이 필요하도록 보정
     if len(criteria) < 3:
-        criteria.extend(['추가 기준'] * (3 - len(criteria)))  # 부족한 기준 채우기
-        scores.extend([0] * (3 - len(scores)))  # 점수도 0으로 채움
+        criteria.extend(['추가 기준'] * (3 - len(criteria)))
+        scores.extend([0] * (3 - len(scores)))  # 괄호 추가
 
     # 차트 생성
-    try:
-        fig = go.Figure(data=go.Scatterpolar(
-            r=scores + [scores[0]],  # Radar 차트는 닫혀야 하므로 첫 점수 반복
-            theta=criteria + [criteria[0]],  # 첫 기준도 반복
-            fill='toself',
-            name='평가 점수'
-        ))
+    fig = go.Figure(data=go.Scatterpolar(
+        r=scores,
+        theta=criteria,
+        fill='toself',
+        name='평가 점수'
+    ))
 
-        fig.update_layout(
-            polar=dict(
-                radialaxis=dict(
-                    visible=True,
-                    range=[0, 100]  # 0~100 범위 고정
-                )
-            ),
-            showlegend=False,
-            title="평가 기준별 점수"
-        )
+    fig.update_layout(
+        polar=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0, 100]
+            )
+        ),
+        showlegend=False,
+        title="평가 기준별 점수"
+    )
 
-        # 차트 표시
-        st.plotly_chart(fig, use_container_width=True)
-        return fig
-    except Exception as e:
-        st.error(f"차트 생성 중 오류 발생: {str(e)}")
-        return None
+    # 차트만 표시
+    st.plotly_chart(fig, use_container_width=True)
+
 
 def analyze_prompt_performance(history: List[dict]) -> dict:
     """프롬프트 성능 분석"""
@@ -1745,7 +1741,7 @@ with col2:
                         result = latest_experiment['results'].get(model_name, "결과 없음")
                     else:
                         result = "결과 없음"
-        
+                    
                     # 'latest_experiment['evaluations']'가 딕셔너리인지 확인 후 처리
                     eval_data = (latest_experiment.get('evaluations', {}).get(model_name) 
                                  if isinstance(latest_experiment.get('evaluations'), dict) 
@@ -1755,38 +1751,34 @@ with col2:
                                      "detailed_scores": [0] * len(st.session_state.scoring_config.criteria)
                                  })
         
-                    # 결과 카드 HTML 렌더링
                     st.markdown(f"""
-                    <div class="result-card" style="border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem;">
-                        <span class="model-tag" style="background-color: {MODEL_COLORS.get(model_name, '#ddd')}; color: #fff; padding: 0.2rem 0.5rem; border-radius: 5px;">
+                    <div class="result-card">
+                        <span class="model-tag" style="background-color: {MODEL_COLORS[model_name]}">
                             {model_name.upper()}
                         </span>
-                        <div style="margin: 1rem 0; font-weight: bold;">
+                        <div style="margin: 1rem 0;">
                             {result}
                         </div>
-                        <div class="score-badge" style="background-color: #f0f0f0; padding: 0.5rem; border-radius: 5px;">
-                            <b>점수:</b> {eval_data.get('score', 0)}점
+                        <div class="score-badge">
+                            점수: {eval_data.get('score', 0)}점
                         </div>
-                        <div class="prompt-feedback" style="margin-top: 1rem;">
-                            <b>평가 이유:</b> {eval_data.get('reason', '평가 이유 없음')}
+                        <div class="prompt-feedback">
+                            {eval_data.get('reason', '평가 이유 없음')}
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
-        
-                    # 상세 점수 차트 표시
+                    
                     if 'detailed_scores' in eval_data:
                         try:
                             fig = visualize_evaluation_results(eval_data)
-                            if fig:
-                                # Key 추가로 중복 문제 해결
-                                st.plotly_chart(fig, use_container_width=True, key=f"{model_name}_chart")
+                            st.plotly_chart(fig, use_container_width=True)
                         except Exception as e:
                             st.error(f"차트 생성 중 오류 발생: {str(e)}")
             except Exception as e:
                 st.error(f"결과 표시 중 오류 발생 ({model_name}): {str(e)}")
-        
-        else:
-            st.info("광고 카피를 생성하면 여기에 결과가 표시됩니다.")
+
+    else:
+        st.info("광고 카피를 생성하면 여기에 결과가 표시됩니다.")
 
 # 지도 섹션 추가
 st.markdown("---")  # 구분선
