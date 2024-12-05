@@ -1776,15 +1776,11 @@ with col2:
                             return "카피 없음", "설명 없음"
         
                     # Extracting text from result
-                    # Extracting text from result
                     copy_text, description_text = extract_copy_and_description(result)
-                    
-                    # 설명 텍스트 렌더링 조건 추가
-                    if description_text == "설명 없음":
-                        description_html = "<div class='description-text'>설명 없음</div>"
-                    else:
-                        description_html = f"<div class='description-text'>{description_text}</div>"
-                    
+        
+                    # **여기에 feedback_text 정의 추가**
+                    feedback_text = eval_data.get('reason', "평가 이유 없음")  # 기본값 설정
+        
                     # HTML 렌더링
                     st.markdown(f"""
                     <div class="result-card">
@@ -1794,7 +1790,9 @@ with col2:
                         <div class="copy-text">
                             {copy_text}
                         </div>
-                        {description_html}  <!-- 조건적으로 설명 텍스트 출력 -->
+                        <div class="description-text">
+                            {description_text}
+                        </div>
                         <div class="score-badge">
                             점수: {eval_data.get('score', 0)}점
                         </div>
