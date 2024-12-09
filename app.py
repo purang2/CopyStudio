@@ -313,7 +313,7 @@ MBTI_TYPES = [
 MODEL_COLORS = {
     "gpt": "#10a37f",  # OpenAI 그린
     "gemini": "#4285f4",  # Google 블루
-    "claude": "#252525"  # Claude 베이지
+    "claude": "#b99778"  # Claude 베이지
 }
 
 # SVG 로고를 base64로 인코딩
