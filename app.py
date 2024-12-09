@@ -1921,7 +1921,10 @@ with col1:
                             # 초안 결과
                             st.markdown("##### 1️⃣ 초안")
                             if model_name in results:
-                                copy_text, description_text = extract_copy_and_description(results[model_name])
+                                result_content = results[model_name]
+                                if isinstance(result_content, dict) and 'content' in result_content:
+                                    result_content = result_content['content']
+                                copy_text, description_text = extract_copy_and_description(result_content)
                                 st.markdown(get_result_card_html(
                                     model_name, copy_text, description_text, evaluations[model_name]
                                 ), unsafe_allow_html=True)
@@ -1929,21 +1932,27 @@ with col1:
                             # 퇴고 결과
                             st.markdown("##### 2️⃣ 퇴고")
                             if model_name in revisions:
-                                copy_text, description_text = extract_copy_and_description(revisions[model_name])
+                                revision_content = revisions[model_name]
+                                if isinstance(revision_content, dict) and 'content' in revision_content:
+                                    revision_content = revision_content['content']
+                                copy_text, description_text = extract_copy_and_description(revision_content)
                                 improvement = revision_evaluations[model_name]['score'] - evaluations[model_name]['score']
                                 st.markdown(get_revision_card_html(
                                     model_name, copy_text, description_text, 
                                     revision_evaluations[model_name], improvement
                                 ), unsafe_allow_html=True)
-    
-                                # 레이더 차트
-                                fig = visualize_evaluation_results(current_eval, f"{model_name}-{idx}")
+                
+                            # 레이더 차트
+                            if model_name in revision_evaluations:
+                                fig = visualize_evaluation_results(revision_evaluations[model_name], 
+                                                                f"{model_name}-{idx}")
                                 if fig is not None:
                                     unique_key = f"chart_{model_name}_{idx}_{datetime.now().strftime('%H%M%S')}"
                                     st.plotly_chart(fig, use_container_width=True, key=unique_key)
-    
+                                    
                         except Exception as e:
                             st.error(f"{model_name.upper()} 처리 중 오류 발생: {str(e)}")
+                            print(f"Error details for {model_name}: {str(e)}")  # 디버깅용
     
                 # 전체 실험 데이터 저장
                 experiment_data = {
