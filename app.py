@@ -1255,8 +1255,7 @@ def analyze_prompt_performance(history: List[dict]) -> dict:
             "top_model": "분석 실패",
             "suggestions": ["분석 중 오류가 발생했습니다."]
         }
-
-def visualize_evaluation_results(results: Dict):
+def visualize_evaluation_results(results: Dict, key: str):
     """결과 시각화 함수"""
     if not results or 'detailed_scores' not in results:
         return None
@@ -1744,7 +1743,7 @@ with col2:
                         result = latest_experiment['results'].get(model_name, "결과 없음")
                     else:
                         result = "결과 없음"
-                    
+                        
                     # 'latest_experiment['evaluations']'가 딕셔너리인지 확인 후 처리
                     eval_data = (latest_experiment.get('evaluations', {}).get(model_name) 
                                  if isinstance(latest_experiment.get('evaluations'), dict) 
@@ -1778,13 +1777,13 @@ with col2:
                                 return "카피 없음", description_text
                         else:
                             return "카피 없음", "설명 없음"
-        
+            
                     # Extracting text from result
                     copy_text, description_text = extract_copy_and_description(result)
-        
+            
                     # **여기에 feedback_text 정의 추가**
                     feedback_text = eval_data.get('reason', "평가 이유 없음")  # 기본값 설정
-        
+            
                     # HTML 렌더링
                     st.markdown(f"""
                     <div class="result-card">
@@ -1808,8 +1807,9 @@ with col2:
                     
                     if 'detailed_scores' in eval_data:
                         try:
-                            fig = visualize_evaluation_results(eval_data)
-                            st.plotly_chart(fig, use_container_width=True)
+                            # key를 각 모델 이름으로 고유하게 설정
+                            fig = visualize_evaluation_results(eval_data, key=model_name)
+                            st.plotly_chart(fig, use_container_width=True, key=f"chart-{model_name}")
                         except Exception as e:
                             st.error(f"차트 생성 중 오류 발생: {str(e)}")
             except Exception as e:
