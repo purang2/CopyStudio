@@ -1318,38 +1318,112 @@ def analyze_prompt_performance(history: List[dict]) -> dict:
             "top_model": "분석 실패",
             "suggestions": ["분석 중 오류가 발생했습니다."]
         }
-def visualize_evaluation_results(results: Dict, key: str):
-    """결과 시각화 함수"""
-    if not results or 'detailed_scores' not in results:
-        return None
-        
-    # 현재 설정된 평가 기준 개수만큼만 사용
-    scores = results['detailed_scores'][:len(st.session_state.scoring_config.criteria)]
-    criteria = st.session_state.scoring_config.criteria[:len(scores)]
-    
-    # 최소 3개 이상의 축이 필요하도록 보정
-    if len(criteria) < 3:
-        criteria.extend(['추가 기준'] * (3 - len(criteria)))
-        scores.extend([0] * (3 - len(scores)))
-    
-    fig = go.Figure(data=go.Scatterpolar(
-        r=scores,
-        theta=criteria,
-        fill='toself',
-        name='평가 점수'
-    ))
 
-    fig.update_layout(
-        polar=dict(
-            radialaxis=dict(
-                visible=True,
-                range=[0, 100]
+
+def extract_copy_and_description(result_text):
+    """카피와 설명을 추출하는 함수"""
+    if isinstance(result_text, str):
+        if "**카피**:" in result_text and "**설명**:" in result_text:
+            match = re.search(r"\*\*카피\*\*:\s*(.*?)\s*\*\*설명\*\*:\s*(.*)", result_text, re.DOTALL)
+            if match:
+                copy_text = match.group(1).strip()
+                description_text = match.group(2).strip()
+                return copy_text, description_text
+        elif "**카피**:" in result_text:
+            match = re.search(r"\*\*카피\*\*:\s*(.*)", result_text, re.DOTALL)
+            if match:
+                copy_text = match.group(1).strip()
+                return copy_text, "설명 없음"
+        elif "**설명**:" in result_text:
+            match = re.search(r"\*\*설명\*\*:\s*(.*)", result_text, re.DOTALL)
+            if match:
+                description_text = match.group(1).strip()
+                return "카피 없음", description_text
+    return "카피 없음", "설명 없음"
+
+def visualize_evaluation_results(eval_data: Dict, unique_key: str):
+    """결과 시각화 함수"""
+    try:
+        if not eval_data or 'detailed_scores' not in eval_data:
+            return None
+            
+        scores = eval_data.get('detailed_scores', [])
+        criteria = st.session_state.scoring_config.criteria
+        
+        min_length = min(len(scores), len(criteria))
+        scores = scores[:min_length]
+        criteria = criteria[:min_length]
+        
+        while len(criteria) < 3:
+            criteria.append(f'기준 {len(criteria)+1}')
+            scores.append(0)
+            
+        try:
+            fig = go.Figure(data=go.Scatterpolar(
+                r=scores,
+                theta=criteria,
+                fill='toself',
+                name='평가 점수'
+            ))
+
+            fig.update_layout(
+                polar=dict(
+                    radialaxis=dict(
+                        visible=True,
+                        range=[0, 100]
+                    )
+                ),
+                showlegend=False,
+                title=dict(
+                    text="평가 기준별 점수",
+                    x=0.5,
+                    y=0.95
+                )
             )
-        ),
-        showlegend=False,
-        title="평가 기준별 점수"
-    )
-    return fig
+            return fig
+        except Exception as e:
+            st.error(f"차트 생성 중 오류 발생: {str(e)}")
+            return None
+            
+    except Exception as e:
+        st.error(f"데이터 처리 중 오류 발생: {str(e)}")
+        return None
+
+def display_model_result(model_name: str, result: dict, eval_data: dict, idx: int):
+    """각 모델의 결과를 표시하는 함수"""
+    try:
+        copy_text, description_text = extract_copy_and_description(result)
+        feedback_text = eval_data.get('reason', "평가 이유 없음")
+
+        st.markdown(f"""
+        <div class="result-card">
+            <div class="model-tag" style="background-color: {MODEL_COLORS.get(model_name, '#6c757d')}">
+                {model_name.upper()}
+            </div>
+            <div class="copy-text">
+                {copy_text}
+            </div>
+            <div class="description-text">
+                {description_text}
+            </div>
+            <div class="score-badge">
+                점수: {eval_data.get('score', 0)}점
+            </div>
+            <div class="feedback">
+                {feedback_text}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if 'detailed_scores' in eval_data:
+            fig = visualize_evaluation_results(eval_data, f"model-{model_name}-{idx}")
+            if fig is not None:
+                st.plotly_chart(fig, use_container_width=True, key=f"chart-{model_name}-{idx}")
+                
+    except Exception as e:
+        st.error(f"{model_name.upper()} 모델 결과 표시 중 오류 발생: {str(e)}")
+
+
 
 
 def create_map_with_ad_copies(copies: dict):
@@ -1721,36 +1795,107 @@ with col1:
         key="final_prompt"
     )
 
-    # 생성 버튼을 눌렀을 때의 로직 수정
-    # 버튼 클릭 시 실행되는 메인 로직
+    # 메인 결과 표시 부분
     if st.button("🎨 광고 카피 생성", use_container_width=True):
         if not selected_region or not selected_generation:
             st.error("지역과 세대를 선택해주세요!")
         else:
             with st.spinner("AI 모델이 광고 카피를 생성중입니다..."):
-                # 초기 변수 설정
+                st.markdown("## 📊 생성 결과 분석")
+                
+                # 모델 결과를 나란히 표시할 3개의 컬럼 생성
+                model_cols = st.columns(3)
+                
                 results = {}
                 evaluations = {}
-                revisions = {}
-                revision_evaluations = {}
+                revisions = {}  # 퇴고 결과 저장
+                revision_evaluations = {}  # 퇴고 결과 평가 저장
                 
                 # 1차 생성 및 평가
-                for model in ["gpt", "gemini", "claude"]:
-                    result = generate_copy(edited_prompt, model)
-                    if isinstance(result, dict) and result.get("success"):
-                        results[model] = result["content"]
-                        eval_result = st.session_state.evaluator.evaluate(result["content"], "gpt")
-                        evaluations[model] = eval_result
-                        
-                        # 퇴고 생성 및 평가
-                        with st.spinner(f"{model.upper()} 모델의 카피를 개선중입니다..."):
-                            revision = generate_revision(result["content"], eval_result, model)
-                            if isinstance(revision, dict) and revision.get("success"):
-                                revision_eval = st.session_state.evaluator.evaluate(revision["content"], "gpt")
-                                revisions[model] = revision["content"]
-                                revision_evaluations[model] = revision_eval
-                
-                # 실험 데이터 저장
+                for idx, (model_name, col) in enumerate(zip(["gpt", "gemini", "claude"], model_cols)):
+                    with col:
+                        try:
+                            # 모델별 헤더
+                            st.markdown(f"""
+                            <div style="text-align: center; padding: 10px; 
+                                 background-color: {MODEL_COLORS.get(model_name, '#6c757d')}22; 
+                                 border-radius: 10px; margin-bottom: 15px;">
+                                <h3 style="margin: 0; color: {MODEL_COLORS.get(model_name, '#6c757d')}">
+                                    {model_name.upper()}
+                                </h3>
+                            </div>
+                            """, unsafe_allow_html=True)
+    
+                            # 1차 생성
+                            st.markdown("##### 1️⃣ 초안")
+                            result = generate_copy(edited_prompt, model_name)
+                            if isinstance(result, dict) and result.get("success"):
+                                results[model_name] = result["content"]
+                                eval_result = st.session_state.evaluator.evaluate(result["content"], "gpt")
+                                evaluations[model_name] = eval_result
+                                
+                                # 1차 결과 표시
+                                copy_text, description_text = extract_copy_and_description(result["content"])
+                                st.markdown(f"""
+                                <div style="padding: 10px; border-radius: 5px; 
+                                     background-color: rgba(0,0,0,0.02); margin: 10px 0;">
+                                    <p><strong>카피:</strong> {copy_text}</p>
+                                    <p><strong>설명:</strong> {description_text}</p>
+                                    <div style="text-align: center; margin-top: 10px;">
+                                        <span style="background: {MODEL_COLORS.get(model_name, '#6c757d')}22; 
+                                              padding: 5px 15px; border-radius: 15px;">
+                                            점수: {eval_result['score']}점
+                                        </span>
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
+    
+                                # 퇴고 생성 및 평가
+                                st.markdown("##### 2️⃣ 퇴고")
+                                revision = generate_revision(result["content"], eval_result, model_name)
+                                if isinstance(revision, dict) and revision.get("success"):
+                                    revision_eval = st.session_state.evaluator.evaluate(revision["content"], "gpt")
+                                    
+                                    # 더 나은 버전 선택
+                                    final_result, was_improved = handle_revision_results(
+                                        {"content": result["content"], "score": eval_result['score']},
+                                        {"content": revision["content"], "score": revision_eval['score']}
+                                    )
+                                    
+                                    revisions[model_name] = final_result["content"]
+                                    revision_evaluations[model_name] = (
+                                        revision_eval if was_improved else eval_result
+                                    )
+                                    
+                                    # 퇴고 결과 표시
+                                    copy_text, description_text = extract_copy_and_description(final_result["content"])
+                                    current_eval = revision_evaluations[model_name]
+                                    improvement = current_eval['score'] - eval_result['score']
+                                    
+                                    st.markdown(f"""
+                                    <div style="padding: 10px; border-radius: 5px; 
+                                         background-color: {'#e8f5e9' if was_improved else '#ffebee'}; 
+                                         margin: 10px 0;">
+                                        <p><strong>카피:</strong> {copy_text}</p>
+                                        <p><strong>설명:</strong> {description_text}</p>
+                                        <div style="text-align: center; margin-top: 10px;">
+                                            <span style="background: rgba(255,255,255,0.5); 
+                                                  padding: 5px 15px; border-radius: 15px;">
+                                                최종 점수: {current_eval['score']}점 ({improvement:+.1f})
+                                            </span>
+                                        </div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+    
+                                    # 레이더 차트
+                                    fig = visualize_evaluation_results(current_eval, f"{model_name}-{idx}")
+                                    if fig is not None:
+                                        st.plotly_chart(fig, use_container_width=True)
+    
+                        except Exception as e:
+                            st.error(f"{model_name.upper()} 처리 중 오류 발생: {str(e)}")
+    
+                # 전체 실험 데이터 저장
                 experiment_data = {
                     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "prompt": edited_prompt,
@@ -1766,163 +1911,6 @@ with col1:
                     }
                 }
                 st.session_state.history.append(experiment_data)
-    
-            # 결과 표시 시작
-            st.markdown("---")
-            st.markdown("## 📊 생성 결과 분석")
-            
-            # 전체 성능 분석 섹션
-            with st.expander("🔍 전체 성능 분석", expanded=True):
-                analysis = analyze_prompt_performance(st.session_state.history)
-                if analysis:
-                    try:
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.metric("현재 평균 점수", f"{analysis['current_score']:.1f}")
-                            st.metric("이전 대비 개선", f"{analysis['improvement']:+.1f}")
-                            st.metric("최고 성능 모델", analysis['top_model'].upper())
-                        with col2:
-                            st.markdown("#### 💡 개선 포인트:")
-                            for suggestion in analysis['suggestions']:
-                                st.markdown(f"- {suggestion}")
-                    except Exception as e:
-                        st.error(f"성능 분석 표시 중 오류 발생: {str(e)}")
-            
-            # 3개 모델 결과를 나란히 표시
-            model_cols = st.columns(3)
-            for idx, model_name in enumerate(["gpt", "gemini", "claude"]):
-                try:
-                    with model_cols[idx]:
-                        # 모델 헤더
-                        st.markdown(f"""
-                        <div style="
-                            background-color: {MODEL_COLORS.get(model_name, '#6c757d')}22;
-                            padding: 10px;
-                            border-radius: 8px;
-                            margin: 5px 0;
-                            text-align: center;
-                        ">
-                            <h4 style="
-                                color: {MODEL_COLORS.get(model_name, '#6c757d')};
-                                margin: 0;
-                            ">{model_name.upper()}</h4>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                        # 원본 결과
-                        if model_name in results:
-                            copy_text, description_text = extract_copy_and_description(results[model_name])
-                            eval_data = evaluations[model_name]
-                            
-                            st.markdown("##### 원본")
-                            st.markdown(f"""
-                            <div style="
-                                background-color: rgba(0,0,0,0.02);
-                                padding: 10px;
-                                border-radius: 8px;
-                                margin: 5px 0;
-                                font-size: 0.9em;
-                            ">
-                                <p><strong>카피:</strong> {copy_text}</p>
-                                <p><strong>설명:</strong> {description_text}</p>
-                                <div style="
-                                    background-color: {MODEL_COLORS.get(model_name, '#6c757d')}22;
-                                    padding: 5px;
-                                    border-radius: 4px;
-                                    text-align: center;
-                                ">
-                                    점수: {eval_data['score']}점
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            
-                            # 퇴고본 결과
-                            if model_name in revisions:
-                                copy_text, description_text = extract_copy_and_description(revisions[model_name])
-                                revision_eval = revision_evaluations[model_name]
-                                
-                                st.markdown("##### 퇴고본")
-                                st.markdown(f"""
-                                <div style="
-                                    background-color: rgba(0,0,0,0.02);
-                                    padding: 10px;
-                                    border-radius: 8px;
-                                    margin: 5px 0;
-                                    font-size: 0.9em;
-                                ">
-                                    <p><strong>카피:</strong> {copy_text}</p>
-                                    <p><strong>설명:</strong> {description_text}</p>
-                                    <div style="
-                                        background-color: {MODEL_COLORS.get(model_name, '#6c757d')}22;
-                                        padding: 5px;
-                                        border-radius: 4px;
-                                        text-align: center;
-                                    ">
-                                        점수: {revision_eval['score']}점
-                                    </div>
-                                </div>
-                                """, unsafe_allow_html=True)
-                                
-                                # 개선도 분석
-                                try:
-                                    improvement = revision_eval['score'] - eval_data['score']
-                                    improvement_rate = (improvement / eval_data['score'] * 100) if eval_data['score'] > 0 else 0
-                                    
-                                    status_color = '#e8f5e9' if improvement >= 0 else '#ffebee'
-                                    improvement_text = f"+{improvement_rate:.1f}%" if improvement_rate > 0 else f"{improvement_rate:.1f}%"
-                                    
-                                    st.markdown(f"""
-                                    <div style="
-                                        background-color: {status_color};
-                                        padding: 10px;
-                                        border-radius: 8px;
-                                        margin: 5px 0;
-                                        text-align: center;
-                                        font-size: 0.9em;
-                                    ">
-                                        <p style="margin: 0;"><strong>점수 변화:</strong> {improvement:+.1f}점</p>
-                                        <p style="margin: 0;"><strong>개선율:</strong> {improvement_text}</p>
-                                    </div>
-                                    """, unsafe_allow_html=True)
-                                    
-                                    # 레이더 차트
-                                    if 'detailed_scores' in eval_data:
-                                        try:
-                                            fig = visualize_evaluation_results(eval_data, f"{model_name}-{idx}")
-                                            if fig is not None:  # None 체크 추가
-                                                st.plotly_chart(fig, use_container_width=True, key=f"chart-{model_name}-{idx}")
-                                        except Exception as e:
-                                            st.warning(f"차트 표시 실패: {str(e)}")
-                                        
-                                    # 기준별 개선도 분석
-                                    st.markdown("##### 기준별 개선도")
-                                    criteria = st.session_state.scoring_config.criteria
-                                    first_scores = eval_data['detailed_scores']
-                                    revision_scores = revision_eval['detailed_scores']
-                                    
-                                    for c, f, r in zip(criteria, first_scores, revision_scores):
-                                        imp = r - f
-                                        st.markdown(f"""
-                                        <div style="
-                                            padding: 5px;
-                                            font-size: 0.8em;
-                                            display: flex;
-                                            justify-content: space-between;
-                                        ">
-                                            <span>{c}:</span>
-                                            <span style="color: {'#28a745' if imp > 0 else '#dc3545' if imp < 0 else '#6c757d'}">
-                                                {imp:+.1f}
-                                            </span>
-                                        </div>
-                                        """, unsafe_allow_html=True)
-                                        
-                                except Exception as e:
-                                    st.error(f"개선도 분석 중 오류 발생: {str(e)}")
-                                    
-                except Exception as e:
-                    with model_cols[idx]:
-                        st.error(f"{model_name.upper()} 모델 결과 표시 중 오류 발생: {str(e)}")
-
 # 지도 섹션 추가
 st.markdown("---")  # 구분선
 
