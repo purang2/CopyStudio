@@ -311,9 +311,9 @@ MBTI_TYPES = [
 
 # 모델 색상 및 로고 설정
 MODEL_COLORS = {
-    "ChatGPT": "#10a37f",  # OpenAI 그린
-    "Gemini": "#4285f4",  # Google 블루
-    "Claude": "#E8E3D7"  # Claude 베이지
+    "gpt": "#10a37f",  # OpenAI 그린
+    "gemini": "#4285f4",  # Google 블루
+    "claude": "#E8E3D7"  # Claude 베이지
 }
 
 # SVG 로고를 base64로 인코딩
@@ -338,7 +338,7 @@ def get_model_header_html(model_name):
                         {'filter: brightness(0) invert(1);' if model_name != 'claude' else ''}">
             <h3 style="margin: 0; color: white; font-size: 1.5em; 
                 letter-spacing: 0.05em; font-weight: 600;">
-                {model_name}
+                {model_name.upper()}
             </h3>
         </div>
     </div>
