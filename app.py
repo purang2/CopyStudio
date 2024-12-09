@@ -1804,9 +1804,9 @@ with st.sidebar:
             help="선택한 MBTI 성향에 맞는 카피가 생성됩니다"
         )
 # Main content
-col1, col2 = st.columns([3, 2])
+#col1, col2 = st.columns([3.5, 1.5])
 
-with col1:
+with st.container():
     st.subheader("💡 프롬프트 작성")
 
     # 프롬프트 에디터 영역
