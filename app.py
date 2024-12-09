@@ -1408,22 +1408,25 @@ def display_model_result(model_name: str, result: dict, eval_data: dict, idx: in
         copy_text, description_text = extract_copy_and_description(result)
         feedback_text = eval_data.get('reason', "평가 이유 없음")
 
+        # 1차 결과 표시 부분
         st.markdown(f"""
-        <div class="result-card">
-            <div class="model-tag" style="background-color: {MODEL_COLORS.get(model_name, '#6c757d')}">
-                {model_name.upper()}
-            </div>
-            <div class="copy-text">
+        <div style="padding: 15px; border-radius: 10px; 
+             border: 1px solid {MODEL_COLORS.get(model_name, '#6c757d')}22;
+             margin: 10px 0;">
+            <div style="font-size: 1.2em; font-weight: 600; 
+                 color: #1a1a1a; margin-bottom: 12px; 
+                 line-height: 1.4; letter-spacing: -0.02em;">
                 {copy_text}
             </div>
-            <div class="description-text">
+            <p style="color: #666; font-size: 0.95em; 
+                  margin-top: 8px; line-height: 1.5;">
                 {description_text}
-            </div>
-            <div class="score-badge">
-                점수: {eval_data.get('score', 0)}점
-            </div>
-            <div class="feedback">
-                {feedback_text}
+            </p>
+            <div style="text-align: center; margin-top: 12px;">
+                <span style="background: {MODEL_COLORS.get(model_name, '#6c757d')}22; 
+                      padding: 5px 15px; border-radius: 15px;">
+                    점수: {eval_result['score']}점
+                </span>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1885,15 +1888,22 @@ with col1:
                                     current_eval = revision_evaluations[model_name]
                                     improvement = current_eval['score'] - eval_result['score']
                                     
+                                    # 퇴고 결과 표시 부분 (심플하게 수정)
                                     st.markdown(f"""
-                                    <div style="padding: 10px; border-radius: 5px; 
-                                         background-color: {'rgba(232, 245, 233, 0.7)' if was_improved else 'rgba(255, 235, 238, 0.7)'}; 
+                                    <div style="padding: 15px; border-radius: 10px; 
+                                         border: 1px solid #ddd;
                                          margin: 10px 0;">
-                                        <p style="color: #2b2b2b;"><strong>카피:</strong> {copy_text}</p>
-                                        <p style="color: #2b2b2b;"><strong>설명:</strong> {description_text}</p>
-                                        <div style="text-align: center; margin-top: 10px;">
-                                            <span style="background: rgba(0,0,0,0.1); 
-                                                  padding: 5px 15px; border-radius: 15px; color: #2b2b2b;">
+                                        <div style="font-size: 1.2em; font-weight: 600; 
+                                             color: #1a1a1a; margin-bottom: 12px;
+                                             line-height: 1.4; letter-spacing: -0.02em;">
+                                            {copy_text}
+                                        </div>
+                                        <p style="color: #666; font-size: 0.95em; 
+                                              margin-top: 8px; line-height: 1.5;">
+                                            {description_text}
+                                        </p>
+                                        <div style="text-align: center; margin-top: 12px;">
+                                            <span style="color: {('#2e7d32' if improvement > 0 else '#c62828')};">
                                                 최종 점수: {current_eval['score']}점 ({improvement:+.1f})
                                             </span>
                                         </div>
