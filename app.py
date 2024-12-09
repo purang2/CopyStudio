@@ -1934,23 +1934,32 @@ with col2:
                             ), unsafe_allow_html=True)
                         
                         # 개선도 분석
-                        improvement = (
-                            latest_experiment['revision_evaluations'][model_name]['score'] -
-                            latest_experiment['first_evaluations'][model_name]['score']
-                        )
-                        
-                        st.markdown(f"""
-                        <div style="
-                            background-color: {('#e8f5e9' if improvement >= 0 else '#ffebee')};
-                            padding: 15px;
-                            border-radius: 8px;
-                            margin: 15px 0;
-                        ">
-                            <h5>개선도 분석</h5>
-                            <p>점수 변화: {improvement:+.1f}점</p>
-                            <p>개선율: {(improvement / latest_experiment['first_evaluations'][model_name]['score'] * 100):+.1f}%</p>
-                        </div>
-                        """, unsafe_allow_html=True)
+                        try:
+                            first_score = latest_experiment['first_evaluations'][model_name]['score']
+                            revision_score = latest_experiment['revision_evaluations'][model_name]['score']
+                            improvement = revision_score - first_score
+                            
+                            try:
+                                improvement_rate = (improvement / first_score * 100) if first_score > 0 else (100 if revision_score > 0 else 0)
+                            except (ZeroDivisionError, TypeError):
+                                improvement_rate = 0
+                                st.warning(f"{model_name.upper()} 모델의 원본 점수가 0이어서 개선율을 계산할 수 없습니다.")
+                            
+                            status_color = '#e8f5e9' if improvement >= 0 else '#ffebee'
+                            improvement_text = f"+{improvement_rate:.1f}%" if improvement_rate > 0 else f"{improvement_rate:.1f}%"
+                            
+                            st.markdown(f"""
+                            <div style="background-color: {status_color}; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                                <h5>개선도 분석</h5>
+                                <p>점수 변화: {improvement:+.1f}점</p>
+                                <p>개선율: {improvement_text}</p>
+                                {f'<p style="color: #666; font-size: 0.9em;">(원본 점수: {first_score})</p>' if first_score == 0 else ''}
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                        except Exception as e:
+                            st.error(f"{model_name.upper()} 모델의 개선도 분석 중 오류가 발생했습니다: {str(e)}")
+
                         
                         # 레이더 차트 비교
                         if ('detailed_scores' in latest_experiment['first_evaluations'][model_name] and
