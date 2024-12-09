@@ -846,26 +846,43 @@ def create_adaptive_prompt(
 def create_revision_prompt(original_copy: str, evaluation_result: dict) -> str:
     """평가 결과를 바탕으로 퇴고 프롬프트 생성"""
     revision_prompt = f"""
-당신은 광고 카피라이터입니다. 아래 광고 카피를 개선해주세요.
+당신은 숙련된 광고 카피라이터입니다. 아래 광고 카피를 더 효과적으로 개선해주세요.
 
 [원본 카피]
 {original_copy}
 
-[평가 결과]
+[현재 평가 결과]
 - 총점: {evaluation_result.get('score', 0)}점
 - 평가 이유: {evaluation_result.get('reason', '평가 없음')}
 - 세부 점수:
 {chr(10).join([f'- {criterion}: {score}점' for criterion, score in zip(st.session_state.scoring_config.criteria, evaluation_result.get('detailed_scores', []))])}
 
-[개선 지침]
-1. 위 평가 결과에서 부족한 점을 중점적으로 보완해주세요.
-2. 원본의 핵심 메시지는 유지하면서, 표현과 구조를 개선해주세요.
-3. 평가 기준의 점수가 낮은 부분을 특히 신경써서 수정해주세요.
-4. 동일한 형식(카피/설명)으로 작성해주세요.
+[개선 요구사항]
+1. 각 평가 기준의 점수를 분석하여, 가장 낮은 점수를 받은 항목을 중점적으로 개선하세요.
+2. 원본 카피의 핵심 메시지와 톤앤매너는 유지하면서, 다음 사항들을 개선하세요:
+   - 감정적 공감력: 타겟 독자의 감정을 더 강하게 자극하는 표현 사용
+   - 경험의 생생함: 구체적이고 감각적인 표현으로 경험을 더 생생하게 전달
+   - 독자와의 조화: 타겟 세대의 언어와 관심사를 더 적극적으로 반영
+   - 문화적/지역적 특성: 지역의 특색있는 요소를 더 효과적으로 활용
+
+[제약 사항]
+- 반드시 기존 평가 점수보다 높은 품질의 카피를 작성하세요.
+- 형식은 반드시 "**카피**: (내용)" 형태를 유지하세요.
+- 설명도 반드시 "**설명**: (내용)" 형태를 유지하세요.
 
 개선된 버전을 제시해주세요.
 """
     return revision_prompt
+
+def handle_revision_results(original_result: dict, revision_result: dict) -> dict:
+    """퇴고 결과 처리 - 점수가 더 높은 버전을 선택"""
+    original_score = original_result.get('score', 0)
+    revision_score = revision_result.get('score', 0)
+    
+    if revision_score > original_score:
+        return revision_result, True  # 개선됨
+    else:
+        return original_result, False  # 원본 유지
 
 def generate_revision(original_copy: str, evaluation_result: dict, model_name: str) -> Dict:
     """평가 결과를 바탕으로 퇴고된 버전 생성"""
@@ -1710,18 +1727,26 @@ with col1:
                         
                         # 퇴고 생성 및 평가
                         with st.spinner(f"{model.upper()} 모델의 카피를 개선중입니다..."):
-                            revision = generate_revision(
-                                result["content"], 
-                                eval_result, 
-                                model
-                            )
+                            revision = generate_revision(result["content"], eval_result, model)
                             if isinstance(revision, dict) and revision.get("success"):
-                                revisions[model] = revision["content"]
-                                revision_eval = st.session_state.evaluator.evaluate(
-                                    revision["content"], 
-                                    "gpt"
+                                revision_eval = st.session_state.evaluator.evaluate(revision["content"], "gpt")
+                                
+                                # 더 나은 버전 선택
+                                final_result, was_improved = handle_revision_results(
+                                    {"content": result["content"], "score": eval_result['score']},
+                                    {"content": revision["content"], "score": revision_eval['score']}
                                 )
-                                revision_evaluations[model] = revision_eval
+                                
+                                revisions[model] = final_result["content"]
+                                revision_evaluations[model] = (
+                                    revision_eval if was_improved else eval_result
+                                )
+                                
+                                # 개선 여부 표시
+                                if was_improved:
+                                    st.success(f"{model.upper()} 모델의 카피가 성공적으로 개선되었습니다!")
+                                else:
+                                    st.warning(f"{model.upper()} 모델의 원본 카피가 더 좋아 유지되었습니다.")
                 
                 # 결과 저장
                 experiment_data = {
@@ -1934,21 +1959,22 @@ with col2:
                             st.markdown("#### 📊 평가 기준별 비교")
                             col1, col2 = st.columns(2)
                             
+                            # 차트 표시 부분 수정
                             with col1:
                                 st.markdown("**원본 평가**")
                                 fig1 = visualize_evaluation_results(
                                     latest_experiment['first_evaluations'][model_name],
-                                    f"original-{model_name}"
+                                    f"original-{model_name}-{idx}"  # unique key 추가
                                 )
-                                st.plotly_chart(fig1, use_container_width=True)
+                                st.plotly_chart(fig1, use_container_width=True, key=f"chart-original-{model_name}-{idx}")
                             
                             with col2:
                                 st.markdown("**퇴고본 평가**")
                                 fig2 = visualize_evaluation_results(
                                     latest_experiment['revision_evaluations'][model_name],
-                                    f"revision-{model_name}"
+                                    f"revision-{model_name}-{idx}"  # unique key 추가
                                 )
-                                st.plotly_chart(fig2, use_container_width=True)
+                                st.plotly_chart(fig2, use_container_width=True, key=f"chart-revision-{model_name}-{idx}")
                             
                             # 기준별 개선도 분석
                             st.markdown("#### 📈 기준별 개선도")
