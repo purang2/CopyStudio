@@ -309,11 +309,95 @@ MBTI_TYPES = [
     "ISTP", "ISFP", "ESTP", "ESFP"
 ]
 
+# 모델 색상 및 로고 설정
 MODEL_COLORS = {
     "gpt": "#10a37f",  # OpenAI 그린
     "gemini": "#4285f4",  # Google 블루
-    "claude": "#8e44ad"  # Claude 퍼플
+    "claude": "#E8E3D7"  # Claude 베이지
 }
+
+# SVG 로고를 base64로 인코딩
+LOGO_BASE64 = {
+    "gpt": """data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xMiAyYTEwIDEwIDAgMSAwIDAgMjAgMTAgMTAgMCAxIDAgMC0yMHptMCA1YTUgNSAwIDAgMSA1IDUgNSA1IDAgMCAxLTUgNSA1IDUgMCAwIDEtNS01IDUgNSAwIDAgMSA1LTV6Ii8+PC9zdmc+""",  # 무한 매듭 SVG
+
+    "gemini": """data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIj48cGF0aCBkPSJNMTIgMkw0IDZsOCA0IDgtNHoiLz48cGF0aCBkPSJNNCAxOGw4IDQgOC00Ii8+PHBhdGggZD0iTTQgNnY4bDggNCIvPjxwYXRoIGQ9Ik0yMCA2djhsLTggNCIvPjwvc3ZnPg==""",  # 별 모양 SVG
+
+    "claude": """data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIj48cmVjdCB4PSI0IiB5PSI0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHJ4PSIyIi8+PHBhdGggZD0iTTggOGg4Ii8+PHBhdGggZD0iTTggMTJoOCIvPjxwYXRoIGQ9Ik04IDE2aDgiLz48L3N2Zz4="""  # AI 텍스트 SVG
+}
+
+# 모델별 헤더 디자인 (로고 포함)
+def get_model_header_html(model_name):
+    return f'''
+    <div style="text-align: center; padding: 15px; 
+         background-color: {MODEL_COLORS.get(model_name, '#6c757d')}; 
+         border-radius: 12px; margin-bottom: 20px;
+         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+            <img src="{LOGO_BASE64[model_name]}" 
+                 style="width: 24px; height: 24px; object-fit: contain; 
+                        {'filter: brightness(0) invert(1);' if model_name != 'claude' else ''}">
+            <h3 style="margin: 0; color: white; font-size: 1.5em; 
+                letter-spacing: 0.05em; font-weight: 600;">
+                {model_name.upper()}
+            </h3>
+        </div>
+    </div>
+    '''
+
+# 결과 카드 디자인 (초안)
+def get_result_card_html(model_name, copy_text, description_text, eval_result):
+    return f"""
+    <div style="padding: 20px; border-radius: 12px; 
+         background-color: rgba(30, 30, 30, 0.6);
+         border: 1px solid {MODEL_COLORS.get(model_name, '#6c757d')};
+         margin: 15px 0; backdrop-filter: blur(5px);">
+        <div style="font-size: 1.4em; font-weight: 600; 
+             color: #ffffff; margin-bottom: 15px;
+             line-height: 1.5; letter-spacing: -0.02em;">
+            {copy_text}
+        </div>
+        <p style="color: rgba(255, 255, 255, 0.8); font-size: 1.1em; 
+              margin-top: 12px; line-height: 1.6;">
+            {description_text}
+        </p>
+        <div style="text-align: center; margin-top: 15px;">
+            <span style="background: {MODEL_COLORS.get(model_name, '#6c757d')}; 
+                  color: white; padding: 8px 20px; border-radius: 20px;
+                  font-size: 1.1em; font-weight: 500;">
+                점수: {eval_result['score']}점
+            </span>
+        </div>
+    </div>
+    """
+
+# 퇴고 결과 카드 디자인
+def get_revision_card_html(model_name, copy_text, description_text, current_eval, improvement):
+    return f"""
+    <div style="padding: 20px; border-radius: 12px; 
+         background-color: rgba(30, 30, 30, 0.6);
+         border: 1px solid {MODEL_COLORS.get(model_name, '#6c757d')};
+         margin: 15px 0; backdrop-filter: blur(5px);">
+        <div style="font-size: 1.4em; font-weight: 600; 
+             color: #ffffff; margin-bottom: 15px;
+             line-height: 1.5; letter-spacing: -0.02em;">
+            {copy_text}
+        </div>
+        <p style="color: rgba(255, 255, 255, 0.8); font-size: 1.1em; 
+              margin-top: 12px; line-height: 1.6;">
+            {description_text}
+        </p>
+        <div style="text-align: center; margin-top: 15px;">
+            <span style="background: {MODEL_COLORS.get(model_name, '#6c757d')}; 
+                  color: white; padding: 8px 20px; border-radius: 20px;
+                  font-size: 1.2em; font-weight: 500;">
+                최종 점수: {current_eval['score']}점
+                <span style="color: {'#A7F3D0' if improvement > 0 else '#FCA5A5'}">
+                    ({improvement:+.1f})
+                </span>
+            </span>
+        </div>
+    </div>
+    """
 
 
 # 계절 상수 추가
@@ -1828,87 +1912,29 @@ with col1:
                 revision_evaluations = {}  # 퇴고 결과 평가 저장
                 
                 # 1차 생성 및 평가
-                for idx, (model_name, col) in enumerate(zip(["gpt", "gemini", "claude"], model_cols)):
-                    with col:
+                for idx, model_name in enumerate(["gpt", "gemini", "claude"]):
+                    with model_cols[idx]:
                         try:
-                            # 모델별 헤더
-                            st.markdown(f"""
-                            <div style="text-align: center; padding: 10px; 
-                                 background-color: {MODEL_COLORS.get(model_name, '#6c757d')}22; 
-                                 border-radius: 10px; margin-bottom: 15px;">
-                                <h3 style="margin: 0; color: {MODEL_COLORS.get(model_name, '#6c757d')}">
-                                    {model_name.upper()}
-                                </h3>
-                            </div>
-                            """, unsafe_allow_html=True)
-    
-                            # 1차 생성
+                            # 모델 헤더
+                            st.markdown(get_model_header_html(model_name), unsafe_allow_html=True)
+                            
+                            # 초안 결과
                             st.markdown("##### 1️⃣ 초안")
-                            result = generate_copy(edited_prompt, model_name)
-                            if isinstance(result, dict) and result.get("success"):
-                                results[model_name] = result["content"]
-                                eval_result = st.session_state.evaluator.evaluate(result["content"], "gpt")
-                                evaluations[model_name] = eval_result
-                                
-                                # 1차 결과 표시
-                                copy_text, description_text = extract_copy_and_description(result["content"])
-                                st.markdown(f"""
-                                <div style="padding: 10px; border-radius: 5px; 
-                                     background-color: rgba(0,0,0,0.02); margin: 10px 0;">
-                                    <p><strong>카피:</strong> {copy_text}</p>
-                                    <p><strong>설명:</strong> {description_text}</p>
-                                    <div style="text-align: center; margin-top: 10px;">
-                                        <span style="background: {MODEL_COLORS.get(model_name, '#6c757d')}22; 
-                                              padding: 5px 15px; border-radius: 15px;">
-                                            점수: {eval_result['score']}점
-                                        </span>
-                                    </div>
-                                </div>
-                                """, unsafe_allow_html=True)
-    
-                                # 퇴고 생성 및 평가
-                                st.markdown("##### 2️⃣ 퇴고")
-                                revision = generate_revision(result["content"], eval_result, model_name)
-                                if isinstance(revision, dict) and revision.get("success"):
-                                    revision_eval = st.session_state.evaluator.evaluate(revision["content"], "gpt")
-                                    
-                                    # 더 나은 버전 선택
-                                    final_result, was_improved = handle_revision_results(
-                                        {"content": result["content"], "score": eval_result['score']},
-                                        {"content": revision["content"], "score": revision_eval['score']}
-                                    )
-                                    
-                                    revisions[model_name] = final_result["content"]
-                                    revision_evaluations[model_name] = (
-                                        revision_eval if was_improved else eval_result
-                                    )
-                                    
-                                    # 퇴고 결과 표시
-                                    copy_text, description_text = extract_copy_and_description(final_result["content"])
-                                    current_eval = revision_evaluations[model_name]
-                                    improvement = current_eval['score'] - eval_result['score']
-                                    
-                                    # 퇴고 결과 표시 부분 (심플하게 수정)
-                                    st.markdown(f"""
-                                    <div style="padding: 15px; border-radius: 10px; 
-                                         border: 1px solid #ddd;
-                                         margin: 10px 0;">
-                                        <div style="font-size: 1.2em; font-weight: 600; 
-                                             color: #1a1a1a; margin-bottom: 12px;
-                                             line-height: 1.4; letter-spacing: -0.02em;">
-                                            {copy_text}
-                                        </div>
-                                        <p style="color: #666; font-size: 0.95em; 
-                                              margin-top: 8px; line-height: 1.5;">
-                                            {description_text}
-                                        </p>
-                                        <div style="text-align: center; margin-top: 12px;">
-                                            <span style="color: {('#2e7d32' if improvement > 0 else '#c62828')};">
-                                                최종 점수: {current_eval['score']}점 ({improvement:+.1f})
-                                            </span>
-                                        </div>
-                                    </div>
-                                    """, unsafe_allow_html=True)
+                            if model_name in results:
+                                copy_text, description_text = extract_copy_and_description(results[model_name])
+                                st.markdown(get_result_card_html(
+                                    model_name, copy_text, description_text, evaluations[model_name]
+                                ), unsafe_allow_html=True)
+                            
+                            # 퇴고 결과
+                            st.markdown("##### 2️⃣ 퇴고")
+                            if model_name in revisions:
+                                copy_text, description_text = extract_copy_and_description(revisions[model_name])
+                                improvement = revision_evaluations[model_name]['score'] - evaluations[model_name]['score']
+                                st.markdown(get_revision_card_html(
+                                    model_name, copy_text, description_text, 
+                                    revision_evaluations[model_name], improvement
+                                ), unsafe_allow_html=True)
     
                                     # 레이더 차트
                                     fig = visualize_evaluation_results(current_eval, f"{model_name}-{idx}")
