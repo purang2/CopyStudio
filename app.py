@@ -1341,22 +1341,34 @@ def extract_copy_and_description(result_text):
                 return "카피 없음", description_text
     return "카피 없음", "설명 없음"
 
+# visualize_evaluation_results 함수 수정
 def visualize_evaluation_results(eval_data: Dict, unique_key: str):
     """결과 시각화 함수"""
     try:
         if not eval_data or 'detailed_scores' not in eval_data:
             return None
             
+        # 점수와 기준 가져오기
         scores = eval_data.get('detailed_scores', [])
         criteria = st.session_state.scoring_config.criteria
-        
+
+        # 유효성 검사
+        if not scores or not criteria:
+            return None
+
+        # 길이 맞추기
         min_length = min(len(scores), len(criteria))
         scores = scores[:min_length]
         criteria = criteria[:min_length]
         
+        # 최소 3개 축 보장
         while len(criteria) < 3:
             criteria.append(f'기준 {len(criteria)+1}')
             scores.append(0)
+
+        # 데이터 확인용 로그
+        print(f"Model Criteria: {criteria}")
+        print(f"Model Scores: {scores}")
             
         try:
             fig = go.Figure(data=go.Scatterpolar(
@@ -1378,15 +1390,16 @@ def visualize_evaluation_results(eval_data: Dict, unique_key: str):
                     text="평가 기준별 점수",
                     x=0.5,
                     y=0.95
-                )
+                ),
+                height=400  # 높이 고정
             )
             return fig
         except Exception as e:
-            st.error(f"차트 생성 중 오류 발생: {str(e)}")
+            print(f"Chart creation error: {str(e)}")  # 디버깅용
             return None
             
     except Exception as e:
-        st.error(f"데이터 처리 중 오류 발생: {str(e)}")
+        print(f"Data processing error: {str(e)}")  # 디버깅용
         return None
 
 def display_model_result(model_name: str, result: dict, eval_data: dict, idx: int):
@@ -1874,13 +1887,13 @@ with col1:
                                     
                                     st.markdown(f"""
                                     <div style="padding: 10px; border-radius: 5px; 
-                                         background-color: {'#e8f5e9' if was_improved else '#ffebee'}; 
+                                         background-color: {'rgba(232, 245, 233, 0.7)' if was_improved else 'rgba(255, 235, 238, 0.7)'}; 
                                          margin: 10px 0;">
-                                        <p><strong>카피:</strong> {copy_text}</p>
-                                        <p><strong>설명:</strong> {description_text}</p>
+                                        <p style="color: #2b2b2b;"><strong>카피:</strong> {copy_text}</p>
+                                        <p style="color: #2b2b2b;"><strong>설명:</strong> {description_text}</p>
                                         <div style="text-align: center; margin-top: 10px;">
-                                            <span style="background: rgba(255,255,255,0.5); 
-                                                  padding: 5px 15px; border-radius: 15px;">
+                                            <span style="background: rgba(0,0,0,0.1); 
+                                                  padding: 5px 15px; border-radius: 15px; color: #2b2b2b;">
                                                 최종 점수: {current_eval['score']}점 ({improvement:+.1f})
                                             </span>
                                         </div>
@@ -1890,7 +1903,8 @@ with col1:
                                     # 레이더 차트
                                     fig = visualize_evaluation_results(current_eval, f"{model_name}-{idx}")
                                     if fig is not None:
-                                        st.plotly_chart(fig, use_container_width=True)
+                                        unique_key = f"chart_{model_name}_{idx}_{datetime.now().strftime('%H%M%S')}"
+                                        st.plotly_chart(fig, use_container_width=True, key=unique_key)
     
                         except Exception as e:
                             st.error(f"{model_name.upper()} 처리 중 오류 발생: {str(e)}")
