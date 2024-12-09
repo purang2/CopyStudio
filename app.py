@@ -1936,11 +1936,11 @@ with col1:
                                     revision_evaluations[model_name], improvement
                                 ), unsafe_allow_html=True)
     
-                                    # 레이더 차트
-                                    fig = visualize_evaluation_results(current_eval, f"{model_name}-{idx}")
-                                    if fig is not None:
-                                        unique_key = f"chart_{model_name}_{idx}_{datetime.now().strftime('%H%M%S')}"
-                                        st.plotly_chart(fig, use_container_width=True, key=unique_key)
+                                # 레이더 차트
+                                fig = visualize_evaluation_results(current_eval, f"{model_name}-{idx}")
+                                if fig is not None:
+                                    unique_key = f"chart_{model_name}_{idx}_{datetime.now().strftime('%H%M%S')}"
+                                    st.plotly_chart(fig, use_container_width=True, key=unique_key)
     
                         except Exception as e:
                             st.error(f"{model_name.upper()} 처리 중 오류 발생: {str(e)}")
