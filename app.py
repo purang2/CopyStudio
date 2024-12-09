@@ -1925,14 +1925,14 @@ with col1:
                     # 각 모델의 결과 표시
                     with col:
                         st.markdown(get_model_header_html(model_name), unsafe_allow_html=True)
-                        st.markdown("##### 1️⃣ 초안")
+                        st.markdown("##### 1️⃣ 카피 (초안)")
                         if model_name in results:
                             copy_text, description_text = extract_copy_and_description(results[model_name])
                             st.markdown(get_result_card_html(
                                 model_name, copy_text, description_text, evaluations[model_name]
                             ), unsafe_allow_html=True)
                         
-                        st.markdown("##### 2️⃣ 퇴고")
+                        st.markdown("##### 2️⃣ AI 에이전트 퇴고 카피")
                         if model_name in revisions:
                             copy_text, description_text = extract_copy_and_description(revisions[model_name])
                             improvement = revision_evaluations[model_name]['score'] - evaluations[model_name]['score']
