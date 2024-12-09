@@ -54,7 +54,7 @@ client = OpenAI(api_key=st.secrets["chatgpt"])  # API 키 입력
 #'gemini-1.5-pro-exp-0827'
 #'gemini-1.5-pro-002'
 model_zoo = ['gpt-4o',
-             'gemini-1.5-flash-002',
+             'gemini-1.5-pro-002',
              'claude-3-5-haiku-20241022']
 
 # Gemini model configuration
@@ -311,9 +311,9 @@ MBTI_TYPES = [
 
 # 모델 색상 및 로고 설정
 MODEL_COLORS = {
-    "gpt": "#10a37f",  # OpenAI 그린
-    "gemini": "#4285f4",  # Google 블루
-    "claude": "#E8E3D7"  # Claude 베이지
+    "ChatGPT": "#10a37f",  # OpenAI 그린
+    "Gemini": "#4285f4",  # Google 블루
+    "Claude": "#E8E3D7"  # Claude 베이지
 }
 
 # SVG 로고를 base64로 인코딩
@@ -338,7 +338,7 @@ def get_model_header_html(model_name):
                         {'filter: brightness(0) invert(1);' if model_name != 'claude' else ''}">
             <h3 style="margin: 0; color: white; font-size: 1.5em; 
                 letter-spacing: 0.05em; font-weight: 600;">
-                {model_name.upper()}
+                {model_name}
             </h3>
         </div>
     </div>
