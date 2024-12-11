@@ -1851,7 +1851,37 @@ def create_map_with_ad_copies(copies: dict):
     
     return m
 
-
+# 카드 HTML 생성 함수 추가
+def get_persona_variation_card_html(model_name, persona_name, transformed_copy, explanation, score, improvement):
+    return f"""
+    <div style="padding: 20px; border-radius: 12px; 
+         background-color: rgba(30, 30, 30, 0.6);
+         border: 1px solid {MODEL_COLORS.get(model_name, '#6c757d')};
+         margin: 15px 0; backdrop-filter: blur(5px);">
+        <div style="font-size: 1.1em; font-weight: 600; margin-bottom: 8px;">
+            🎭 {persona_name}의 버전
+        </div>
+        <div style="font-size: 1.4em; font-weight: 600; 
+             color: #ffffff; margin-bottom: 15px;
+             line-height: 1.5;">
+            {transformed_copy}
+        </div>
+        <div style="color: rgba(255, 255, 255, 0.8); 
+             font-size: 1.1em; line-height: 1.6;">
+            {explanation}
+        </div>
+        <div style="text-align: center; margin-top: 15px;">
+            <span style="background: {MODEL_COLORS.get(model_name, '#6c757d')}; 
+                  color: white; padding: 8px 20px; border-radius: 20px;
+                  font-size: 1.2em; font-weight: 500; display: inline-block;">
+                점수: {score:.1f}점
+                <span style="color: {'#A7F3D0' if improvement > 0 else '#FCA5A5'}">
+                    ({improvement:+.1f})
+                </span>
+            </span>
+        </div>
+    </div>
+    """
 
 
 # Load documents
@@ -2143,41 +2173,17 @@ with st.container():
                                             explanation = result.split("Explanation:")[1].split("Transformed Copy:")[0].strip()
                                             transformed_copy = result.split("Transformed Copy:")[1].strip()
                                             
-                                            st.markdown(f"""
-                                            <div style="padding: 20px; border-radius: 12px; 
-                                                 background-color: rgba(30, 30, 30, 0.6);
-                                                 border: 1px solid {MODEL_COLORS.get(model_name, '#6c757d')};
-                                                 margin: 15px 0; backdrop-filter: blur(5px);">
-                                                <div style="font-size: 1.1em; font-weight: 600; margin-bottom: 8px;">
-                                                    🎭 {persona_name}의 버전
-                                                </div>
-                                                <div style="font-size: 1.4em; font-weight: 600; 
-                                                     color: #ffffff; margin-bottom: 15px;
-                                                     line-height: 1.5;">
-                                                    {transformed_copy}
-                                                </div>
-                                                <div style="color: rgba(255, 255, 255, 0.8); 
-                                                     font-size: 1.1em; line-height: 1.6;">
-                                                    {explanation}
-                                                </div>
-                                                <div style="text-align: center; margin-top: 15px;">
-                                                    <span style="background: {MODEL_COLORS.get(model_name, '#6c757d')}; 
-                                                          color: white; padding: 8px 20px; border-radius: 20px;
-                                                          font-size: 1.2em; font-weight: 500;">
-                                                        점수: {eval_result['score']}점
-                                                        <span style="color: {'#A7F3D0' if improvement > 0 else '#FCA5A5'}">
-                                                            ({improvement:+.1f})
-                                                        </span>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            """, unsafe_allow_html=True)
-                                        else:
-                                            st.error(f"변형 결과 파싱 실패: {result}")
+                                            st.markdown(get_persona_variation_card_html(
+                                                model_name, 
+                                                persona_name, 
+                                                transformed_copy, 
+                                                explanation,
+                                                eval_result['score'],
+                                                improvement
+                                            ), unsafe_allow_html=True)
                                             
                                     except Exception as e:
                                         st.error(f"{persona_name} 처리 중 오류 발생: {str(e)}")
-
                 
     
                 experiment_data = {
