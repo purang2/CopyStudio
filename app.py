@@ -1853,35 +1853,33 @@ def create_map_with_ad_copies(copies: dict):
 
 # 카드 HTML 생성 함수 추가
 def get_persona_variation_card_html(model_name, persona_name, transformed_copy, explanation, score, improvement):
+    score_color = '#A7F3D0' if improvement > 0 else '#FCA5A5'
     return f"""
-    <div style="padding: 20px; border-radius: 12px; 
+    <div class="persona-card" style="padding: 20px; border-radius: 12px; 
          background-color: rgba(30, 30, 30, 0.6);
          border: 1px solid {MODEL_COLORS.get(model_name, '#6c757d')};
-         margin: 15px 0; backdrop-filter: blur(5px);">
-        <div style="font-size: 1.1em; font-weight: 600; margin-bottom: 8px;">
+         margin: 15px 0; backdrop-filter: blur(5px)">
+        <div class="persona-name" style="font-size: 1.1em; font-weight: 600; margin-bottom: 8px">
             🎭 {persona_name}의 버전
         </div>
-        <div style="font-size: 1.4em; font-weight: 600; 
+        <div class="copy" style="font-size: 1.4em; font-weight: 600; 
              color: #ffffff; margin-bottom: 15px;
-             line-height: 1.5;">
+             line-height: 1.5">
             {transformed_copy}
         </div>
-        <div style="color: rgba(255, 255, 255, 0.8); 
-             font-size: 1.1em; line-height: 1.6;">
+        <div class="explanation" style="color: rgba(255, 255, 255, 0.8); 
+             font-size: 1.1em; line-height: 1.6">
             {explanation}
         </div>
-        <div style="text-align: center; margin-top: 15px;">
-            <span style="background: {MODEL_COLORS.get(model_name, '#6c757d')}; 
+        <div class="score" style="text-align: center; margin-top: 15px">
+            <div style="display: inline-block; background: {MODEL_COLORS.get(model_name, '#6c757d')}; 
                   color: white; padding: 8px 20px; border-radius: 20px;
-                  font-size: 1.2em; font-weight: 500; display: inline-block;">
+                  font-size: 1.2em; font-weight: 500">
                 점수: {score:.1f}점
-                <span style="color: {'#A7F3D0' if improvement > 0 else '#FCA5A5'}">
-                    ({improvement:+.1f})
-                </span>
-            </span>
+                <span style="color: {score_color}">({improvement:+.1f})</span>
+            </div>
         </div>
-    </div>
-    """
+    </div>"""
 
 
 # Load documents
