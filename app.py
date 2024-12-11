@@ -2100,10 +2100,14 @@ with st.container():
                                 ), unsafe_allow_html=True)
                 
                 # 3차 페르소나 변형은 따로 생성
-                selected_personas = random.sample(name_list, 3)  # 랜덤 페르소나 3명 선택
-
+                persona_variations = {}  # 페르소나 변형 결과 저장
+                
                 for model_name, col in zip(["gpt", "gemini", "claude"], model_cols):
                     if model_name in revisions:
+                        # 각 모델마다 새로운 랜덤 2명 선택
+                        selected_personas = random.sample(name_list, 2)
+                        persona_variations[model_name] = {}
+                        
                         with col:
                             with st.spinner(f"{model_name.upper()} 페르소나 변형 생성 중..."):
                                 st.markdown("##### 3️⃣ 페르소나 변형")
@@ -2122,6 +2126,17 @@ with st.container():
                                             
                                         # 2단계: 페르소나 기반 광고 카피 변형
                                         result = transform_ad_copy(base_copy, persona_prompt, persona_name)
+                                        
+                                        # 3단계: 변형된 결과 평가
+                                        eval_result = st.session_state.evaluator.evaluate(result, "gpt")
+                                        improvement = eval_result['score'] - revision_evaluations[model_name]['score']
+                                        
+                                        # 결과 저장
+                                        persona_variations[model_name][persona_name] = {
+                                            "result": result,
+                                            "evaluation": eval_result,
+                                            "improvement": improvement
+                                        }
                                         
                                         # 결과 파싱 및 표시
                                         if "Explanation:" in result and "Transformed Copy:" in result:
@@ -2145,6 +2160,16 @@ with st.container():
                                                      font-size: 1.1em; line-height: 1.6;">
                                                     {explanation}
                                                 </div>
+                                                <div style="text-align: center; margin-top: 15px;">
+                                                    <span style="background: {MODEL_COLORS.get(model_name, '#6c757d')}; 
+                                                          color: white; padding: 8px 20px; border-radius: 20px;
+                                                          font-size: 1.2em; font-weight: 500;">
+                                                        점수: {eval_result['score']}점
+                                                        <span style="color: {'#A7F3D0' if improvement > 0 else '#FCA5A5'}">
+                                                            ({improvement:+.1f})
+                                                        </span>
+                                                    </span>
+                                                </div>
                                             </div>
                                             """, unsafe_allow_html=True)
                                         else:
@@ -2162,19 +2187,12 @@ with st.container():
                     "first_evaluations": evaluations,
                     "revisions": revisions,
                     "revision_evaluations": revision_evaluations,
-                    "persona_variations": {  # 페르소나 변형 결과 추가
-                        model_name: {
-                            persona_name: transform_result
-                            for persona_name, transform_result in persona_results[model_name].items()
-                        } if model_name in persona_results else {}
-                        for model_name in ["gpt", "gemini", "claude"]
-                    },
+                    "persona_variations": persona_variations,
                     "settings": {
                         "region": selected_region,
                         "generation": selected_generation,
                         "season": selected_season if selected_season else None,
-                        "mbti": selected_mbti if include_mbti else None,
-                        "selected_personas": selected_personas  # 선택된 페르소나 정보 추가
+                        "mbti": selected_mbti if include_mbti else None
                     }
                 }
                 st.session_state.history.append(experiment_data)
