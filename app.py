@@ -1951,58 +1951,58 @@ with st.container():
                 model_cols = st.columns(3)
                 
                 # 1&2차 생성 (모델별로 1,2차를 연속해서)
-for idx, (model_name, col) in enumerate(zip(["gpt", "gemini", "claude"], model_cols)):
-    with col:
-        st.markdown(get_model_header_html(model_name), unsafe_allow_html=True)
-        
-        # 1차 초안 생성
-        st.markdown("##### 1️⃣ 카피 (초안)")
-        result = generate_copy(edited_prompt, model_name)
-        if isinstance(result, dict) and result.get("success"):
-            results[model_name] = result["content"]
-            eval_result = st.session_state.evaluator.evaluate(result["content"], "gpt")
-            evaluations[model_name] = eval_result
-            
-            copy_text, description_text = extract_copy_and_description(results[model_name])
-            st.markdown(get_result_card_html(
-                model_name, copy_text, description_text, evaluations[model_name]
-            ), unsafe_allow_html=True)
-            
-            # 바로 2차 퇴고 생성
-            st.markdown("##### 2️⃣ AI 에이전트 퇴고 카피")
-            revision = generate_revision(results[model_name], evaluations[model_name], model_name)
-            if isinstance(revision, dict) and revision.get("success"):
-                revision_eval = st.session_state.evaluator.evaluate(revision["content"], "gpt")
-                revisions[model_name] = revision["content"]
-                revision_evaluations[model_name] = revision_eval
+                for idx, (model_name, col) in enumerate(zip(["gpt", "gemini", "claude"], model_cols)):
+                    with col:
+                        st.markdown(get_model_header_html(model_name), unsafe_allow_html=True)
+                        
+                        # 1차 초안 생성
+                        st.markdown("##### 1️⃣ 카피 (초안)")
+                        result = generate_copy(edited_prompt, model_name)
+                        if isinstance(result, dict) and result.get("success"):
+                            results[model_name] = result["content"]
+                            eval_result = st.session_state.evaluator.evaluate(result["content"], "gpt")
+                            evaluations[model_name] = eval_result
+                            
+                            copy_text, description_text = extract_copy_and_description(results[model_name])
+                            st.markdown(get_result_card_html(
+                                model_name, copy_text, description_text, evaluations[model_name]
+                            ), unsafe_allow_html=True)
+                            
+                            # 바로 2차 퇴고 생성
+                            st.markdown("##### 2️⃣ AI 에이전트 퇴고 카피")
+                            revision = generate_revision(results[model_name], evaluations[model_name], model_name)
+                            if isinstance(revision, dict) and revision.get("success"):
+                                revision_eval = st.session_state.evaluator.evaluate(revision["content"], "gpt")
+                                revisions[model_name] = revision["content"]
+                                revision_evaluations[model_name] = revision_eval
+                                
+                                copy_text, description_text = extract_copy_and_description(revisions[model_name])
+                                improvement = revision_evaluations[model_name]['score'] - evaluations[model_name]['score']
+                                st.markdown(get_revision_card_html(
+                                    model_name, copy_text, description_text, 
+                                    revision_evaluations[model_name], improvement
+                                ), unsafe_allow_html=True)
                 
-                copy_text, description_text = extract_copy_and_description(revisions[model_name])
-                improvement = revision_evaluations[model_name]['score'] - evaluations[model_name]['score']
-                st.markdown(get_revision_card_html(
-                    model_name, copy_text, description_text, 
-                    revision_evaluations[model_name], improvement
-                ), unsafe_allow_html=True)
-
-# 3차 페르소나 변형은 따로 생성
-selected_personas = random.sample(name_list, 3)  # 랜덤 페르소나 3명 선택
-
-for model_name, col in zip(["gpt", "gemini", "claude"], model_cols):
-    if model_name in revisions:
-        with col:
-            with st.spinner(f"{model_name.upper()} 페르소나 변형 생성 중..."):
-                st.markdown("##### 3️⃣ 페르소나 변형")
-                for persona_name in selected_personas:
-                    persona_prompt = name_to_persona(persona_name)
-                    copy_text, description_text = extract_copy_and_description(revisions[model_name])
-                    result = transform_ad_copy(f"{copy_text} {description_text}", 
-                                            persona_prompt, 
-                                            persona_name)
-                    
-                    if isinstance(result, str):
-                        transformed_copy, explanation = extract_copy_and_description(result)
-                        st.markdown(get_persona_variation_card_html(
-                            model_name, persona_name, transformed_copy, explanation
-                        ), unsafe_allow_html=True)
+                # 3차 페르소나 변형은 따로 생성
+                selected_personas = random.sample(name_list, 3)  # 랜덤 페르소나 3명 선택
+                
+                for model_name, col in zip(["gpt", "gemini", "claude"], model_cols):
+                    if model_name in revisions:
+                        with col:
+                            with st.spinner(f"{model_name.upper()} 페르소나 변형 생성 중..."):
+                                st.markdown("##### 3️⃣ 페르소나 변형")
+                                for persona_name in selected_personas:
+                                    persona_prompt = name_to_persona(persona_name)
+                                    copy_text, description_text = extract_copy_and_description(revisions[model_name])
+                                    result = transform_ad_copy(f"{copy_text} {description_text}", 
+                                                            persona_prompt, 
+                                                            persona_name)
+                                    
+                                    if isinstance(result, str):
+                                        transformed_copy, explanation = extract_copy_and_description(result)
+                                        st.markdown(get_persona_variation_card_html(
+                                            model_name, persona_name, transformed_copy, explanation
+                                        ), unsafe_allow_html=True)
 
                 
     
