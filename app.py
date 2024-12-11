@@ -368,6 +368,20 @@ LOGO_BASE64 = {
     "claude": """data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIj48cmVjdCB4PSI0IiB5PSI0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHJ4PSIyIi8+PHBhdGggZD0iTTggOGg4Ii8+PHBhdGggZD0iTTggMTJoOCIvPjxwYXRoIGQ9Ik04IDE2aDgiLz48L3N2Zz4="""  # AI 텍스트 SVG
 }
 
+
+# 상단에 name_list 정의 추가
+name_list = [
+    # 시인 (국내/해외)
+    "윤동주", "김소월", "정호승", "나태주", "백석", "정지용", 
+    "헤르만 헤세", "마츠오 바쇼", "파블로 네루다", "셰익스피어",
+    # 유명인 (국내)
+    "김구라", "유재석", "김광석", "서태지", "이명박", "문재인", 
+    "수지", "레드벨벳", "임영웅",
+    # 유명인 (해외)
+    "스티브 잡스", "일론 머스크", "마틴 루터 킹", "모차르트", "빈센트 반 고흐"
+]
+
+
 # 모델별 헤더 디자인 (로고 포함)
 def get_model_header_html(model_name):
     return f'''
