@@ -385,12 +385,11 @@ name_list = [
 #오디오 파트 (1213~)
 
 
-
 # 오디오 파일 재생 함수
 def play_audio(file_path):
     audio_file = open(file_path, "rb")
     audio_bytes = audio_file.read()
-    st.audio(audio_bytes, format="audio/mp3", start_time=0)
+    st.audio(audio_bytes, format="audio/mp3")
 
 # TTS 생성 함수
 def generate_tts(copy_text, file_name):
@@ -402,12 +401,13 @@ def generate_tts(copy_text, file_name):
         )
         audio_file_path = f"{file_name}.mp3"
         with open(audio_file_path, "wb") as audio_file:
-            for chunk in response:
+            for chunk in response.iter_bytes():  # 올바른 바이너리 응답 처리
                 audio_file.write(chunk)
         return audio_file_path
     except Exception as e:
         st.error(f"TTS 생성 중 오류 발생: {str(e)}")
         return None
+
 
 
 
