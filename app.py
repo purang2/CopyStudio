@@ -2149,11 +2149,11 @@ with st.container():
                                 model_name, copy_text, description_text, evaluations[model_name]
                             ), unsafe_allow_html=True)
     
-                            # 초안 음성 생성 및 자동 재생
+                            # 초안 음성 생성 및 수동 재생 버튼 추가
                             audio_file_path = generate_tts(copy_text, f"{model_name}_copy_audio")
                             if audio_file_path:
-                                st.success("🎧 초안 음성 재생 중...")
-                                play_audio_autoplay(audio_file_path)
+                                if st.button(f"🎧 {model_name.upper()} 초안 음성 듣기"):
+                                    st.audio(audio_file_path, format="audio/mp3")
     
                         # 2️⃣ 퇴고 카피
                         st.markdown("##### 2️⃣ AI 에이전트 퇴고 카피")
@@ -2170,11 +2170,11 @@ with st.container():
                                 revision_evaluations[model_name], improvement
                             ), unsafe_allow_html=True)
     
-                            # 퇴고 음성 생성 및 자동 재생
+                            # 퇴고 음성 생성 및 수동 재생 버튼 추가
                             audio_file_path = generate_tts(copy_text, f"{model_name}_revision_audio")
                             if audio_file_path:
-                                st.success("🎧 퇴고 음성 재생 중...")
-                                play_audio_autoplay(audio_file_path)
+                                if st.button(f"🎧 {model_name.upper()} 퇴고 음성 듣기"):
+                                    st.audio(audio_file_path, format="audio/mp3")
     
                 # 3차 페르소나 변형 생성
                 persona_variations = {}
@@ -2220,11 +2220,11 @@ with st.container():
                                                 improvement
                                             ), unsafe_allow_html=True)
     
-                                            # 페르소나 음성 생성 및 자동 재생
+                                            # 페르소나 음성 생성 및 수동 재생 버튼 추가
                                             audio_file_path = generate_tts(transformed_copy, f"{model_name}_{persona_name}_audio")
                                             if audio_file_path:
-                                                st.success(f"🎧 {persona_name} 페르소나 음성 재생 중...")
-                                                play_audio_autoplay(audio_file_path)
+                                                if st.button(f"🎧 {persona_name} 페르소나 음성 듣기"):
+                                                    st.audio(audio_file_path, format="audio/mp3")
     
                                     except Exception as e:
                                         st.error(f"{persona_name} 처리 중 오류 발생: {str(e)}")
