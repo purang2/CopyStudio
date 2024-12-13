@@ -2025,9 +2025,14 @@ with st.sidebar:
 # Main content
 #col1, col2 = st.columns([3.5, 1.5])
 
+
 # 세션 상태 초기화
 if "results" not in st.session_state:
     st.session_state["results"] = {}
+if "revisions" not in st.session_state:
+    st.session_state["revisions"] = {}
+if "persona_variations" not in st.session_state:
+    st.session_state["persona_variations"] = {}
 if "tts_file_paths" not in st.session_state:
     st.session_state["tts_file_paths"] = {}
 
@@ -2122,7 +2127,6 @@ with st.container():
     )
 
     
-    
     # 광고 카피 생성 버튼
     if st.button("🎨 광고 카피 생성", use_container_width=True):
         if not selected_region or not selected_generation:
@@ -2149,8 +2153,8 @@ with st.container():
                                 play_audio(audio_file_path)
                                 st.session_state["tts_file_paths"][model_name] = audio_file_path
     
-                        # 2️⃣ 퇴고 생성
-                        st.markdown("##### 2️⃣ AI 에이전트 퇴고 카피")
+                        # 2️⃣ 퇴고 카피
+                        st.markdown("##### 2️⃣ 퇴고 카피")
                         if model_name in st.session_state["results"]:
                             revision = generate_revision(
                                 st.session_state["results"][model_name],
@@ -2187,7 +2191,6 @@ with st.container():
             if st.button(f"🎧 {model_name.upper()} 초안 음성 다시 듣기"):
                 if model_name in st.session_state["tts_file_paths"]:
                     play_audio(st.session_state["tts_file_paths"][model_name])
-
     
             # 2️⃣ 퇴고
             if model_name in st.session_state["revisions"]:
