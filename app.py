@@ -408,15 +408,7 @@ def play_audio(file_path):
     audio_bytes = audio_file.read()
     st.audio(audio_bytes, format="audio/mp3", start_time=0)
 
-# 수정된 코드에서 HTML 태그를 사용해 자동 재생
-def play_audio_autoplay(file_path):
-    audio_html = f'''
-    <audio autoplay>
-        <source src="{file_path}" type="audio/mpeg">
-        Your browser does not support the audio element.
-    </audio>
-    '''
-    st.markdown(audio_html, unsafe_allow_html=True)
+
 
 
 
@@ -2144,17 +2136,16 @@ with st.container():
                             results[model_name] = result["content"]
                             eval_result = st.session_state.evaluator.evaluate(result["content"], "gpt")
                             evaluations[model_name] = eval_result
-                        
+    
                             copy_text, description_text = extract_copy_and_description(results[model_name])
                             st.markdown(get_result_card_html(
                                 model_name, copy_text, description_text, evaluations[model_name]
                             ), unsafe_allow_html=True)
-                        
-                            # 음성 생성 및 HTML 자동 재생
+    
+                            # TTS 생성 및 자동 재생
                             audio_file_path = generate_tts(copy_text, f"{model_name}_copy_audio")
                             if audio_file_path:
-                                st.success("🎧 음성 자동 재생 중...")
-                                play_audio_autoplay(audio_file_path)
+                                play_audio(audio_file_path)  # 음성 자동 재생
     
                             # 바로 2️⃣ 퇴고 생성
                             st.markdown("##### 2️⃣ AI 에이전트 퇴고 카피")
