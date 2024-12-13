@@ -385,12 +385,18 @@ name_list = [
 
 #오디오 파트 (1213~)
 
-# TTS 생성 함수
+# TTS 생성 함수 수정
 def generate_tts(copy_text, file_name):
     try:
+        # 4개의 음성 엔트리 중 랜덤 선택
+        voice_options = ["alloy", "echo", "fable", "onyx"]
+        selected_voice = random.choice(voice_options)
+        st.info(f"🎤 선택된 목소리: {selected_voice}")
+
+        # OpenAI TTS 요청
         response = client.audio.speech.create(
             model="tts-1",
-            voice="alloy",  # 원하는 목소리
+            voice=selected_voice,  # 랜덤으로 선택된 목소리
             input=copy_text
         )
         audio_file_path = f"{file_name}.mp3"
@@ -2120,16 +2126,17 @@ with st.container():
             with st.spinner("AI 모델이 광고 카피를 생성중입니다..."):
                 results = {}
                 evaluations = {}
-                revisions = {}
-                revision_evaluations = {}
+                revisions = {}  # 퇴고 결과 저장
+                revision_evaluations = {}  # 퇴고 결과 평가 저장
+    
                 model_cols = st.columns(3)
     
-                # 1️⃣ 초안 및 2️⃣ 퇴고 생성
+                # 1&2차 생성 (모델별로 1,2차를 연속해서)
                 for idx, (model_name, col) in enumerate(zip(["gpt", "gemini", "claude"], model_cols)):
                     with col:
                         st.markdown(get_model_header_html(model_name), unsafe_allow_html=True)
     
-                        # 1️⃣ 초안 생성
+                        # 1️⃣ 카피 (초안) 생성
                         st.markdown("##### 1️⃣ 카피 (초안)")
                         result = generate_copy(edited_prompt, model_name)
                         if isinstance(result, dict) and result.get("success"):
@@ -2142,32 +2149,40 @@ with st.container():
                                 model_name, copy_text, description_text, evaluations[model_name]
                             ), unsafe_allow_html=True)
     
-                            # TTS 생성 및 자동 재생
+                            # 초안 음성 생성 및 자동 재생
                             audio_file_path = generate_tts(copy_text, f"{model_name}_copy_audio")
                             if audio_file_path:
-                                play_audio(audio_file_path)  # 음성 자동 재생
+                                st.success("🎧 초안 음성 재생 중...")
+                                play_audio_autoplay(audio_file_path)
     
-                            # 바로 2️⃣ 퇴고 생성
-                            st.markdown("##### 2️⃣ AI 에이전트 퇴고 카피")
-                            revision = generate_revision(results[model_name], evaluations[model_name], model_name)
-                            if isinstance(revision, dict) and revision.get("success"):
-                                revision_eval = st.session_state.evaluator.evaluate(revision["content"], "gpt")
-                                revisions[model_name] = revision["content"]
-                                revision_evaluations[model_name] = revision_eval
+                        # 2️⃣ 퇴고 카피
+                        st.markdown("##### 2️⃣ AI 에이전트 퇴고 카피")
+                        revision = generate_revision(results[model_name], evaluations[model_name], model_name)
+                        if isinstance(revision, dict) and revision.get("success"):
+                            revision_eval = st.session_state.evaluator.evaluate(revision["content"], "gpt")
+                            revisions[model_name] = revision["content"]
+                            revision_evaluations[model_name] = revision_eval
     
-                                copy_text, description_text = extract_copy_and_description(revisions[model_name])
-                                improvement = revision_evaluations[model_name]['score'] - evaluations[model_name]['score']
-                                st.markdown(get_revision_card_html(
-                                    model_name, copy_text, description_text, 
-                                    revision_evaluations[model_name], improvement
-                                ), unsafe_allow_html=True)
+                            copy_text, description_text = extract_copy_and_description(revisions[model_name])
+                            improvement = revision_evaluations[model_name]['score'] - evaluations[model_name]['score']
+                            st.markdown(get_revision_card_html(
+                                model_name, copy_text, description_text,
+                                revision_evaluations[model_name], improvement
+                            ), unsafe_allow_html=True)
     
-                # 3️⃣ 페르소나 변형
+                            # 퇴고 음성 생성 및 자동 재생
+                            audio_file_path = generate_tts(copy_text, f"{model_name}_revision_audio")
+                            if audio_file_path:
+                                st.success("🎧 퇴고 음성 재생 중...")
+                                play_audio_autoplay(audio_file_path)
+    
+                # 3차 페르소나 변형 생성
                 persona_variations = {}
                 for model_name, col in zip(["gpt", "gemini", "claude"], model_cols):
                     if model_name in revisions:
                         selected_personas = random.sample(name_list, 2)
                         persona_variations[model_name] = {}
+    
                         with col:
                             with st.spinner(f"{model_name.upper()} 페르소나 변형 생성 중..."):
                                 st.markdown("##### 3️⃣ 페르소나 변형")
@@ -2197,13 +2212,19 @@ with st.container():
                                             transformed_copy = result.split("Transformed Copy:")[1].strip()
     
                                             st.markdown(get_persona_variation_card_html(
-                                                model_name, 
-                                                persona_name, 
-                                                transformed_copy, 
+                                                model_name,
+                                                persona_name,
+                                                transformed_copy,
                                                 explanation,
                                                 eval_result['score'],
                                                 improvement
                                             ), unsafe_allow_html=True)
+    
+                                            # 페르소나 음성 생성 및 자동 재생
+                                            audio_file_path = generate_tts(transformed_copy, f"{model_name}_{persona_name}_audio")
+                                            if audio_file_path:
+                                                st.success(f"🎧 {persona_name} 페르소나 음성 재생 중...")
+                                                play_audio_autoplay(audio_file_path)
     
                                     except Exception as e:
                                         st.error(f"{persona_name} 처리 중 오류 발생: {str(e)}")
