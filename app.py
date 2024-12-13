@@ -381,6 +381,38 @@ name_list = [
     "스티브 잡스", "일론 머스크", "마틴 루터 킹", "모차르트", "빈센트 반 고흐"
 ]
 
+
+#오디오 파트 (1213~)
+
+
+# 오디오 파일 재생을 위한 함수
+def play_audio(file_path):
+    audio_file = open(file_path, "rb")
+    audio_bytes = audio_file.read()
+    st.audio(audio_bytes, format="audio/mp3")
+
+# TTS 생성 함수
+def generate_tts(copy_text, file_name):
+    try:
+        response = client.audio.speech.create(
+            model="tts-1",
+            voice="alloy",  # 원하는 음성 스타일 선택
+            input=copy_text
+        )
+        audio_file_path = f"{file_name}.mp3"
+        with open(audio_file_path, "wb") as audio_file:
+            for chunk in response:
+                audio_file.write(chunk)
+        return audio_file_path
+    except Exception as e:
+        st.error(f"TTS 생성 중 오류 발생: {str(e)}")
+        return None
+
+
+
+
+
+
 def name_to_persona(name):
     """
     Generate a persona prompt for a given name by analyzing the representative works and characteristics of the person.
@@ -2082,6 +2114,8 @@ with st.container():
         key="final_prompt"
     )
 
+    
+    # 광고 카피 생성 버튼
     if st.button("🎨 광고 카피 생성", use_container_width=True):
         if not selected_region or not selected_generation:
             st.error("지역과 세대를 선택해주세요!")
@@ -2089,99 +2123,87 @@ with st.container():
             with st.spinner("AI 모델이 광고 카피를 생성중입니다..."):
                 results = {}
                 evaluations = {}
-                revisions = {}  # 퇴고 결과 저장
-                revision_evaluations = {}  # 퇴고 결과 평가 저장
+                revisions = {}
+                revision_evaluations = {}
                 
                 model_cols = st.columns(3)
-                
-                # 1&2차 생성 (모델별로 1,2차를 연속해서)
+    
+                # 1차 생성 (모델별로)
                 for idx, (model_name, col) in enumerate(zip(["gpt", "gemini", "claude"], model_cols)):
                     with col:
                         st.markdown(get_model_header_html(model_name), unsafe_allow_html=True)
-                        
-                        # 1차 초안 생성
+    
+                        # 1️⃣ 카피 (초안) 생성
                         st.markdown("##### 1️⃣ 카피 (초안)")
                         result = generate_copy(edited_prompt, model_name)
                         if isinstance(result, dict) and result.get("success"):
                             results[model_name] = result["content"]
                             eval_result = st.session_state.evaluator.evaluate(result["content"], "gpt")
                             evaluations[model_name] = eval_result
-                            
+    
                             copy_text, description_text = extract_copy_and_description(results[model_name])
                             st.markdown(get_result_card_html(
                                 model_name, copy_text, description_text, evaluations[model_name]
                             ), unsafe_allow_html=True)
-                            
-                            # 바로 2차 퇴고 생성
-                            st.markdown("##### 2️⃣ AI 에이전트 퇴고 카피")
-                            revision = generate_revision(results[model_name], evaluations[model_name], model_name)
-                            if isinstance(revision, dict) and revision.get("success"):
-                                revision_eval = st.session_state.evaluator.evaluate(revision["content"], "gpt")
-                                revisions[model_name] = revision["content"]
-                                revision_evaluations[model_name] = revision_eval
-                                
-                                copy_text, description_text = extract_copy_and_description(revisions[model_name])
-                                improvement = revision_evaluations[model_name]['score'] - evaluations[model_name]['score']
-                                st.markdown(get_revision_card_html(
-                                    model_name, copy_text, description_text, 
-                                    revision_evaluations[model_name], improvement
-                                ), unsafe_allow_html=True)
-                
-                # 3차 페르소나 변형은 따로 생성
-                persona_variations = {}  # 페르소나 변형 결과 저장
-                
-                for model_name, col in zip(["gpt", "gemini", "claude"], model_cols):
-                    if model_name in revisions:
-                        # 각 모델마다 새로운 랜덤 2명 선택
+    
+                            # 초안 TTS 선택 버튼
+                            if st.button(f"🎧 {model_name.upper()} 초안 음성 듣기"):
+                                st.info("🔊 음성을 생성 중입니다... 잠시만 기다려주세요!")
+                                audio_file_path = generate_tts(copy_text, f"{model_name}_copy_audio")
+                                if audio_file_path:
+                                    st.success("🎧 초안 음성 생성 완료!")
+                                    play_audio(audio_file_path)
+                                    os.remove(audio_file_path)
+    
+                        # 2️⃣ 퇴고 카피
+                        st.markdown("##### 2️⃣ AI 에이전트 퇴고 카피")
+                        revision = generate_revision(results[model_name], evaluations[model_name], model_name)
+                        if isinstance(revision, dict) and revision.get("success"):
+                            revision_eval = st.session_state.evaluator.evaluate(revision["content"], "gpt")
+                            revisions[model_name] = revision["content"]
+                            revision_evaluations[model_name] = revision_eval
+    
+                            copy_text, description_text = extract_copy_and_description(revisions[model_name])
+                            st.markdown(get_revision_card_html(
+                                model_name, copy_text, description_text, 
+                                revision_evaluations[model_name], 
+                                revision_evaluations[model_name]['score'] - evaluations[model_name]['score']
+                            ), unsafe_allow_html=True)
+    
+                            # 퇴고 TTS 선택 버튼
+                            if st.button(f"🎧 {model_name.upper()} 퇴고 음성 듣기"):
+                                st.info("🔊 음성을 생성 중입니다... 잠시만 기다려주세요!")
+                                audio_file_path = generate_tts(copy_text, f"{model_name}_revision_audio")
+                                if audio_file_path:
+                                    st.success("🎧 퇴고 음성 생성 완료!")
+                                    play_audio(audio_file_path)
+                                    os.remove(audio_file_path)
+    
+                        # 3️⃣ 페르소나 변형
+                        st.markdown("##### 3️⃣ 페르소나 변형")
                         selected_personas = random.sample(name_list, 2)
-                        persona_variations[model_name] = {}
-                        
-                        with col:
-                            with st.spinner(f"{model_name.upper()} 페르소나 변형 생성 중..."):
-                                st.markdown("##### 3️⃣ 페르소나 변형")
-                                
-                                # 퇴고된 카피에서 텍스트 추출
-                                base_copy_text, base_description_text = extract_copy_and_description(revisions[model_name])
-                                base_copy = f"{base_copy_text} {base_description_text}"
-                                
-                                for persona_name in selected_personas:
-                                    try:
-                                        # 1단계: 페르소나 프롬프트 생성
-                                        persona_prompt = name_to_persona(persona_name)
-                                        if "Error:" in persona_prompt:
-                                            st.error(f"페르소나 생성 실패: {persona_prompt}")
-                                            continue
-                                            
-                                        # 2단계: 페르소나 기반 광고 카피 변형
-                                        result = transform_ad_copy(base_copy, persona_prompt, persona_name)
-                                        
-                                        # 3단계: 변형된 결과 평가
-                                        eval_result = st.session_state.evaluator.evaluate(result, "gpt")
-                                        improvement = eval_result['score'] - revision_evaluations[model_name]['score']
-                                        
-                                        # 결과 저장
-                                        persona_variations[model_name][persona_name] = {
-                                            "result": result,
-                                            "evaluation": eval_result,
-                                            "improvement": improvement
-                                        }
-                                        
-                                        # 결과 파싱 및 표시
-                                        if "Explanation:" in result and "Transformed Copy:" in result:
-                                            explanation = result.split("Explanation:")[1].split("Transformed Copy:")[0].strip()
-                                            transformed_copy = result.split("Transformed Copy:")[1].strip()
-                                            
-                                            st.markdown(get_persona_variation_card_html(
-                                                model_name, 
-                                                persona_name, 
-                                                transformed_copy, 
-                                                explanation,
-                                                eval_result['score'],
-                                                improvement
-                                            ), unsafe_allow_html=True)
-                                            
-                                    except Exception as e:
-                                        st.error(f"{persona_name} 처리 중 오류 발생: {str(e)}")
+                        for persona_name in selected_personas:
+                            persona_prompt = name_to_persona(persona_name)
+                            result = transform_ad_copy(revisions[model_name], persona_prompt, persona_name)
+                            eval_result = st.session_state.evaluator.evaluate(result, "gpt")
+    
+                            if "Explanation:" in result and "Transformed Copy:" in result:
+                                explanation = result.split("Explanation:")[1].split("Transformed Copy:")[0].strip()
+                                transformed_copy = result.split("Transformed Copy:")[1].strip()
+                                st.markdown(get_persona_variation_card_html(
+                                    model_name, persona_name, transformed_copy, explanation,
+                                    eval_result['score'],
+                                    eval_result['score'] - revision_evaluations[model_name]['score']
+                                ), unsafe_allow_html=True)
+    
+                                # 페르소나 TTS 선택 버튼
+                                if st.button(f"🎧 {model_name.upper()} 페르소나({persona_name}) 음성 듣기"):
+                                    st.info("🔊 음성을 생성 중입니다... 잠시만 기다려주세요!")
+                                    audio_file_path = generate_tts(transformed_copy, f"{model_name}_{persona_name}_audio")
+                                    if audio_file_path:
+                                        st.success("🎧 페르소나 음성 생성 완료!")
+                                        play_audio(audio_file_path)
+                                        os.remove(audio_file_path)
                 
     
                 experiment_data = {
