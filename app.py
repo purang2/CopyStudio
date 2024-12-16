@@ -30,6 +30,52 @@ st.set_page_config(
     layout="wide"
 )
 
+# Initialize session state
+if 'history' not in st.session_state:
+    st.session_state.history = []
+if 'show_tutorial' not in st.session_state:
+    st.session_state.show_tutorial = True
+
+# Initialize scoring config
+DEFAULT_SCORING_CONFIG = ScoringConfig(
+    prompt="""
+주어진 광고 카피를 다음 기준으로 평가해주세요.
+각 기준별로 0-100점 사이의 점수를 부여하고, 
+최종 점수는 각 기준의 평균으로 계산합니다.
+
+💡 **평가 기준**
+1. 감정적 공감력: 카피가 감정적으로 독자에게 와닿고, 직관적으로 반응을 이끌어낼 수 있는지 평가하세요.
+2. 경험의 생생함: 단순한 정보가 아니라, 카피가 독자가 상상할 수 있는 경험을 얼마나 생생하게 전달하는지 평가하세요.
+3. 독자와의 조화: 카피가 독자에게 개인적으로 필요한 이야기로 다가가며, 어떤 긍정적인 변화를 제안하는지 평가하세요.
+4. 문화적/지역적 특성 반영: 카피가 해당 지역의 독특한 매력을 얼마나 효과적으로 반영하고 있는지 평가하세요.
+    """,
+    criteria=[
+        "Emotional Resonance (감정적 공감력)",
+        "Experiential Vividness (경험의 생생함)",
+        "Audience Alignment (독자와의 조화)",
+        "Cultural Authenticity (문화적/지역적 특성 반영)"
+    ]
+)
+
+if 'scoring_config' not in st.session_state:
+    st.session_state.scoring_config = DEFAULT_SCORING_CONFIG
+if 'evaluator' not in st.session_state:
+    st.session_state.evaluator = AdCopyEvaluator(st.session_state.scoring_config)
+if "final_prompt" not in st.session_state:
+    # 기본 프롬프트 구조 정의
+    base_structure = """당신은 맞춤형 감성 카피를 창작하는 숙련된 카피라이터입니다... (생략)"""
+    
+    st.session_state["final_prompt"] = f"""{base_structure}
+
+평가 프롬프트:
+{DEFAULT_SCORING_CONFIG.prompt}
+
+평가 기준:
+{", ".join(DEFAULT_SCORING_CONFIG.criteria)}
+"""
+
+
+
 # 앱 제목
 st.markdown("""
 <style>
