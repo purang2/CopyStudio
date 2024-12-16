@@ -1962,23 +1962,29 @@ with st.sidebar:
         st.code(base_structure, language="markdown")
 
     # 평가 프롬프트 설정
+    # 평가 프롬프트 설정
     with st.expander("📝 평가 프롬프트 설정", expanded=False):
         st.markdown("### 📝 평가 프롬프트 설정")
+    
+        # 올바른 접근 방식으로 수정
+        scoring_config = st.session_state.get("scoring_config", DEFAULT_SCORING_CONFIG)
         new_prompt = st.text_area(
             "평가 프롬프트",
-            value=st.session_state.get("scoring_config", DEFAULT_SCORING_CONFIG)["prompt"],
+            value=scoring_config.prompt if hasattr(scoring_config, "prompt") else scoring_config["prompt"],
             height=150
         )
         new_criteria = st.text_area(
             "평가 기준 (줄바꿈으로 구분)",
-            value="\n".join(st.session_state.get("scoring_config", DEFAULT_SCORING_CONFIG)["criteria"]),
+            value="\n".join(scoring_config.criteria if hasattr(scoring_config, "criteria") else scoring_config["criteria"]),
             height=100
         )
+    
         if st.button("평가 설정 업데이트", key="update_scoring"):
-            st.session_state["scoring_config"] = {
+            new_config = {
                 "prompt": new_prompt,
                 "criteria": [c.strip() for c in new_criteria.split('\n') if c.strip()]
             }
+            st.session_state["scoring_config"] = new_config
             st.success("평가 설정이 업데이트되었습니다!")
 
     # 요구사항
