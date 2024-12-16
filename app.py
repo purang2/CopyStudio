@@ -21,7 +21,6 @@ import folium
 from streamlit_folium import folium_static
 import random
 import re 
-
 # Page config must be the first Streamlit command
 st.set_page_config(
     page_title="광고카피 문구 생성 AI - Copybara", 
@@ -54,6 +53,12 @@ st.markdown("""
     .centered-container {
         text-align: center;
     }
+    .centered-img {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        width: 50%; /* 원하는 비율로 조정 */
+    }
 </style>
 
 <div class="header-title">
@@ -62,19 +67,13 @@ st.markdown("""
 <p class="sub-header">당신만의 국내 명소 광고 카피를 감성적이고 창의적으로 변신시키는 AI 도우미</p>
 """, unsafe_allow_html=True)
 
-image = Image.open("copybara_santa_logo.png")
-new_width = 640  # 원하는 너비로 조정
-width_percent = (new_width / float(image.size[0]))
-new_height = int((float(image.size[1]) * float(width_percent)))
-resized_image = image.resize((new_width, new_height), Image.LANCZOS)
-
-# 이미지 중앙에 배치
-st.markdown(
-    '<div class="centered-container">',
-    unsafe_allow_html=True
-)
-st.image(resized_image)
-st.markdown('</div>', unsafe_allow_html=True)
+# 이미지 중앙 정렬 (HTML 사용)
+st.markdown("""
+<div class="centered-container">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Copybara_santa_logo.png/800px-Copybara_santa_logo.png" 
+         class="centered-img" alt="Copybara Santa Logo">
+</div>
+""", unsafe_allow_html=True)
 
 # 튜토리얼 섹션 중앙 정렬
 st.markdown("""
