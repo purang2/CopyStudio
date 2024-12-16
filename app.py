@@ -2142,23 +2142,32 @@ with st.sidebar:
 # 메인 영역의 생성 버튼
 st.markdown("---")  # 구분선
 
-
 if st.button("🎨 광고 카피 생성", use_container_width=True):
     if not selected_region or not selected_generation:
         st.error("지역과 세대를 선택해주세요!")
     else:
-        # final_prompt 가져오기 (edited_prompt 대신)
-        final_prompt = st.session_state.get("final_prompt", "")  # 기본값 빈 문자열
-        
+        # 최종 프롬프트 조합하기
+        base_prompt = st.session_state.get("final_prompt", "")
+        # 입력값 추가
+        final_prompt = f"""
+{base_prompt}
+
+[선택된 설정]
+- 지역: {selected_region}
+- 세대: {selected_generation}
+- 계절: {selected_season if selected_season else '선택 안함'}
+- MBTI: {selected_mbti if include_mbti else '선택 안함'}
+"""
+
         with st.spinner("AI 모델이 광고 카피를 생성중입니다..."):
             results = {}
             evaluations = {}
-            revisions = {}  # 퇴고 결과 저장
-            revision_evaluations = {}  # 퇴고 결과 평가 저장
-                
+            revisions = {}
+            revision_evaluations = {}
+
+            # 3컬럼 결과 표시
             model_cols = st.columns(3)
-                
-            # 1&2차 생성 (모델별로 1,2차를 연속해서)
+            
             # 1&2차 생성 (모델별로 1차 초안 및 2차 퇴고를 연속 실행)
             for idx, (model_name, col) in enumerate(zip(["gpt", "gemini", "claude"], model_cols)):
                 with col:
@@ -2166,7 +2175,7 @@ if st.button("🎨 광고 카피 생성", use_container_width=True):
             
                     # 1️⃣ 1차 초안 생성
                     st.markdown("##### 1️⃣ 카피 (초안)")
-                    result = generate_copy(edited_prompt, model_name)
+                    result = generate_copy(final_prompt, model_name)  # edited_prompt를 final_prompt로 변경
                     if isinstance(result, dict) and result.get("success"):
                         results[model_name] = result["content"]
                         eval_result = st.session_state.evaluator.evaluate(result["content"], model_name)
