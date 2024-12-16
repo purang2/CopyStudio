@@ -1974,29 +1974,29 @@ with col1:
     selected_region = st.selectbox(
         "지역 선택",
         options=[""] + list(DOCS["region"].keys()),
-        format_func=lambda x: "지역을 선택하세요" if x == "" else x
+        format_func=lambda x: "지역을 선택하세요" if x == "" else x,
+        help="선택한 지역을 홍보하는 멋진 카피가 생성됩니다"
     )
 with col2:
     selected_generation = st.selectbox(
         "세대 선택",
         options=[""] + list(DOCS["generation"].keys()),
-        format_func=lambda x: "세대를 선택하세요" if x == "" else x
+        format_func=lambda x: "세대를 선택하세요" if x == "" else x,
+        help="선택한 연령세대에 맞는 카피가 생성됩니다"
     )
 with col3:
     selected_season = st.selectbox(
-        "계절 선택 (선택사항)",
+        "계절 선택",
         options=[""] + list(SEASONS.keys()),
-        format_func=lambda x: "계절을 선택하세요" if x == "" else x
+        format_func=lambda x: "계절을 선택하세요" if x == "" else x,
+        help="선택한 계절에 맞는 카피가 생성됩니다"
     )
 with col4:
-    include_mbti = st.checkbox("MBTI 특성 포함하기")
-    selected_mbti = None
-    if include_mbti:
-        selected_mbti = st.selectbox(
-            "MBTI 선택",
-            options=MBTI_TYPES,
-            help="선택한 MBTI 성향에 맞는 카피가 생성됩니다"
-        )
+    selected_mbti = st.selectbox(
+        "MBTI 선택",
+        options=MBTI_TYPES,
+        help="선택한 MBTI 성향에 맞는 카피가 생성됩니다"
+    )
 
 # **프롬프트 수정 섹션**
 with st.expander("🛠️ 프롬프트 엔지니어링 직접 수정", expanded=False):
