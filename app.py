@@ -2055,8 +2055,97 @@ with col4:
 
 # ㅍㅍㅍㅍ
 if st.button("🎨 광고 카피 생성", use_container_width=True):
-    # 필수ㄷ
+    # 필수 옵션 검증
+    if not selected_region or not selected_generation:
+        st.error("지역과 세대를 선택해주세요!")
+    else:
+        # 편집된 최종 프롬프트 가져오기
+        edited_prompt = st.session_state.get("final_prompt", st.session_state.scoring_config["prompt"])
 
+        with st.spinner("AI 모델이 광고 카피를 생성중입니다..."):
+            results = {}
+            evaluations = {}
+            revisions = {}
+            revision_evaluations = {}
+
+            # 3컬럼 결과 표시
+            model_cols = st.columns(3)
+            for model_name, col in zip(["gpt", "gemini", "claude"], model_cols):
+                with col:
+                    st.markdown(f"### {model_name.upper()} 결과")
+                    
+                    # 1️⃣ 1차 초안 생성
+                    result = generate_copy(edited_prompt, model_name)
+                    if isinstance(result, dict) and result.get("success"):
+                        results[model_name] = result["content"]
+                        eval_result = st.session_state.evaluator.evaluate(result["content"], model_name)
+                        evaluations[model_name] = eval_result
+                        
+                        copy_text, description_text = extract_copy_and_description(results[model_name])
+                        st.markdown(get_result_card_html(
+                            model_name, copy_text, description_text, evaluations[model_name]
+                        ), unsafe_allow_html=True)
+                        
+                        # 2️⃣ 2차 퇴고 생성
+                        st.markdown("#### 퇴고 결과")
+                        revision = generate_revision(results[model_name], evaluations[model_name], model_name)
+                        if isinstance(revision, dict) and revision.get("success"):
+                            revision_eval = st.session_state.evaluator.evaluate(revision["content"], model_name)
+                            revisions[model_name] = revision["content"]
+                            revision_evaluations[model_name] = revision_eval
+                            
+                            copy_text, description_text = extract_copy_and_description(revisions[model_name])
+                            improvement = revision_evaluations[model_name]['score'] - evaluations[model_name]['score']
+                            st.markdown(get_revision_card_html(
+                                model_name, copy_text, description_text, revision_evaluations[model_name], improvement
+                            ), unsafe_allow_html=True)
+
+            # 3️⃣ 페르소나 변형
+            persona_variations = {}
+            for model_name, col in zip(["gpt", "gemini", "claude"], model_cols):
+                if model_name in revisions:
+                    selected_personas = random.sample(name_list, 2)
+                    persona_variations[model_name] = {}
+                    with col:
+                        st.markdown("#### 페르소나 변형 결과")
+                        base_copy_text, base_description_text = extract_copy_and_description(revisions[model_name])
+                        base_copy = f"{base_copy_text} {base_description_text}"
+                        for persona_name in selected_personas:
+                            try:
+                                persona_prompt = name_to_persona(persona_name)
+                                result = transform_ad_copy(base_copy, persona_prompt, persona_name)
+                                eval_result = st.session_state.evaluator.evaluate(result, model_name)
+                                improvement = eval_result['score'] - revision_evaluations[model_name]['score']
+                                persona_variations[model_name][persona_name] = {
+                                    "result": result,
+                                    "evaluation": eval_result,
+                                    "improvement": improvement
+                                }
+                                transformed_copy = result.split("Transformed Copy:")[1].strip()
+                                explanation = result.split("Explanation:")[1].split("Transformed Copy:")[0].strip()
+                                st.markdown(get_persona_variation_card_html(
+                                    model_name, persona_name, transformed_copy, explanation, eval_result['score'], improvement
+                                ), unsafe_allow_html=True)
+                            except Exception as e:
+                                st.error(f"페르소나 처리 중 오류 발생: {e}")
+
+            # 결과 저장
+            experiment_data = {
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "prompt": edited_prompt,
+                "first_results": results,
+                "first_evaluations": evaluations,
+                "revisions": revisions,
+                "revision_evaluations": revision_evaluations,
+                "persona_variations": persona_variations,
+                "settings": {
+                    "region": selected_region,
+                    "generation": selected_generation,
+                    "season": selected_season,
+                    "mbti": selected_mbti
+                }
+            }
+            st.session_state.history.append(experiment_data)
 
 
 # 지도 섹션 추가
