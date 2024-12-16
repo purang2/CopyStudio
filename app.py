@@ -69,66 +69,6 @@ st.image(resized_image)
 
 
 
-st.markdown("---")  # 구분선
-
-# **타겟 설정**
-st.markdown("### 🎯 타겟 설정")
-
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    selected_region = st.selectbox(
-        "지역 선택",
-        options=[""] + list(DOCS["region"].keys()),
-        format_func=lambda x: "지역을 선택하세요" if x == "" else x
-    )
-with col2:
-    selected_generation = st.selectbox(
-        "세대 선택",
-        options=[""] + list(DOCS["generation"].keys()),
-        format_func=lambda x: "세대를 선택하세요" if x == "" else x
-    )
-with col3:
-    selected_season = st.selectbox(
-        "계절 선택 (선택사항)",
-        options=[""] + list(SEASONS.keys()),
-        format_func=lambda x: "계절을 선택하세요" if x == "" else x
-    )
-with col4:
-    include_mbti = st.checkbox("MBTI 특성 포함하기")
-    selected_mbti = None
-    if include_mbti:
-        selected_mbti = st.selectbox(
-            "MBTI 선택",
-            options=MBTI_TYPES,
-            help="선택한 MBTI 성향에 맞는 카피가 생성됩니다"
-        )
-
-# **프롬프트 수정 섹션**
-with st.expander("🛠️ 프롬프트 엔지니어링 직접 수정", expanded=False):
-    st.markdown("### 📝 평가 프롬프트 설정")
-    new_prompt = st.text_area(
-        "평가 프롬프트",
-        value=st.session_state.scoring_config.prompt,
-        height=150
-    )
-    new_criteria = st.text_area(
-        "평가 기준 (줄바꿈으로 구분)",
-        value="\n".join(st.session_state.scoring_config.criteria),
-        height=100
-    )
-    if st.button("평가 설정 업데이트"):
-        new_config = ScoringConfig(
-            prompt=new_prompt,
-            criteria=[c.strip() for c in new_criteria.split('\n') if c.strip()]
-        )
-        st.session_state.scoring_config = new_config
-        st.session_state.evaluator = AdCopyEvaluator(new_config)
-        st.success("평가 설정이 업데이트되었습니다!")
-
-st.markdown("---")
-
-
-
 # Initialize API keys from Streamlit secrets
 #openai.api_key = st.secrets["chatgpt"]
 genai.configure(api_key=st.secrets["gemini"])
@@ -2005,6 +1945,69 @@ if 'scoring_config' not in st.session_state:
     st.session_state.scoring_config = DEFAULT_SCORING_CONFIG
 if 'evaluator' not in st.session_state:
     st.session_state.evaluator = AdCopyEvaluator(st.session_state.scoring_config)
+
+
+
+
+
+st.markdown("---")  # 구분선
+
+# **타겟 설정**
+st.markdown("### 🎯 타겟 설정")
+
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    selected_region = st.selectbox(
+        "지역 선택",
+        options=[""] + list(DOCS["region"].keys()),
+        format_func=lambda x: "지역을 선택하세요" if x == "" else x
+    )
+with col2:
+    selected_generation = st.selectbox(
+        "세대 선택",
+        options=[""] + list(DOCS["generation"].keys()),
+        format_func=lambda x: "세대를 선택하세요" if x == "" else x
+    )
+with col3:
+    selected_season = st.selectbox(
+        "계절 선택 (선택사항)",
+        options=[""] + list(SEASONS.keys()),
+        format_func=lambda x: "계절을 선택하세요" if x == "" else x
+    )
+with col4:
+    include_mbti = st.checkbox("MBTI 특성 포함하기")
+    selected_mbti = None
+    if include_mbti:
+        selected_mbti = st.selectbox(
+            "MBTI 선택",
+            options=MBTI_TYPES,
+            help="선택한 MBTI 성향에 맞는 카피가 생성됩니다"
+        )
+
+# **프롬프트 수정 섹션**
+with st.expander("🛠️ 프롬프트 엔지니어링 직접 수정", expanded=False):
+    st.markdown("### 📝 평가 프롬프트 설정")
+    new_prompt = st.text_area(
+        "평가 프롬프트",
+        value=st.session_state.scoring_config.prompt,
+        height=150
+    )
+    new_criteria = st.text_area(
+        "평가 기준 (줄바꿈으로 구분)",
+        value="\n".join(st.session_state.scoring_config.criteria),
+        height=100
+    )
+    if st.button("평가 설정 업데이트"):
+        new_config = ScoringConfig(
+            prompt=new_prompt,
+            criteria=[c.strip() for c in new_criteria.split('\n') if c.strip()]
+        )
+        st.session_state.scoring_config = new_config
+        st.session_state.evaluator = AdCopyEvaluator(new_config)
+        st.success("평가 설정이 업데이트되었습니다!")
+
+st.markdown("---")
+
 
 
 
