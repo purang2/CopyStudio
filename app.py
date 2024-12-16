@@ -2054,7 +2054,6 @@ with col4:
         selected_mbti = st.selectbox(
             "MBTI 선택",
             options=MBTI_TYPES,
-            index=random.randint(0, len(MBTI_TYPES) - 1),
             help="선택한 MBTI 성향에 맞는 카피가 생성됩니다"
         )
 ##ㅁㄴㅇㅁㄴㅇㄴㅁ
