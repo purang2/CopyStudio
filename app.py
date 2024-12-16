@@ -21,7 +21,9 @@ import folium
 from streamlit_folium import folium_static
 import random
 import re 
-# Page config must be the first Streamlit command
+
+
+
 st.set_page_config(
     page_title="광고카피 문구 생성 AI - Copybara", 
     page_icon="🐾", 
@@ -44,20 +46,11 @@ st.markdown("""
         text-align: center;
         margin-bottom: 20px;
     }
-    .tutorial-text {
-        font-size: 1.1em;
-        text-align: center;
-        line-height: 1.8;
-        margin-top: 20px;
-    }
-    .centered-container {
-        text-align: center;
-    }
     .centered-img {
         display: block;
         margin-left: auto;
         margin-right: auto;
-        width: 50%; /* 원하는 비율로 조정 */
+        width: 50%; /* 비율 조정 */
     }
 </style>
 
@@ -67,25 +60,27 @@ st.markdown("""
 <p class="sub-header">당신만의 국내 명소 광고 카피를 감성적이고 창의적으로 변신시키는 AI 도우미</p>
 """, unsafe_allow_html=True)
 
-# 이미지 중앙 정렬 (HTML 사용)
+# 로컬 이미지 불러오기
+from PIL import Image
+
+image = Image.open("copybara_santa_logo.png")
+
+# 이미지 중앙 정렬
 st.markdown("""
-<div class="centered-container">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Copybara_santa_logo.png/800px-Copybara_santa_logo.png" 
-         class="centered-img" alt="Copybara Santa Logo">
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img src="copybara_santa_logo.png" alt="Copybara Santa Logo" class="centered-img">
 </div>
 """, unsafe_allow_html=True)
 
-# 튜토리얼 섹션 중앙 정렬
+# 튜토리얼 섹션
 st.markdown("""
-<div class="tutorial-text">
-    <h3>👋 처음 오셨나요?</h3>
-    ⬅️ 좌측 상단의 '<'를 찾아서 사이드바를 열면 프롬프트를 세팅할 수 있어요<br>
-    1️⃣ 지역과 세대를 선택하세요<br>
-    2️⃣ 필요하면 계절과 MBTI를 추가 설정하세요<br>
-    3️⃣ 원하는 프롬프트를 수정하거나 기본 설정을 그대로 사용하세요<br>
-    4️⃣ 광고 카피를 생성하고, 평가를 확인하세요
-</div>
-""", unsafe_allow_html=True)
+### 👋 처음 오셨나요?
+⬅️ 좌측 상단의 '<'를 찾아서 사이드바를 열면 프롬프트를 세팅할 수 있어요  
+1️⃣ 지역과 세대를 선택하세요  
+2️⃣ 필요하면 계절과 MBTI를 추가 설정하세요  
+3️⃣ 원하는 프롬프트를 수정하거나 기본 설정을 그대로 사용하세요  
+4️⃣ 광고 카피를 생성하고, 평가를 확인하세요  
+""")
 
 # Initialize API keys from Streamlit secrets
 #openai.api_key = st.secrets["chatgpt"]
