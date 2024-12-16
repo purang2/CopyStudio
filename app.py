@@ -1953,8 +1953,10 @@ if 'evaluator' not in st.session_state:
 st.markdown("""
     <style>
         .stSelectbox label {
-            font-size: 18px; /* SELECTBOX 제목 글자 크기 */
-            font-weight: bold; /* 제목 강조 */
+            font-size: 20px;
+            font-weight: bold;
+            color: #1E88E5; /* 파란색 */
+            margin-bottom: 10px;
         }
         .stSelectbox div[data-baseweb="select"] > div {
             font-size: 16px; /* 항목 글자 크기 */
