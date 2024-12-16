@@ -60,17 +60,11 @@ st.markdown("""
 <p class="sub-header">당신만의 국내 명소 광고 카피를 감성적이고 창의적으로 변신시키는 AI 도우미</p>
 """, unsafe_allow_html=True)
 
-# 로컬 이미지 불러오기
-from PIL import Image
-
 image = Image.open("copybara_santa_logo.png")
-
-# 이미지 중앙 정렬
-st.markdown("""
-<div style="display: flex; justify-content: center; align-items: center;">
-    <img src="copybara_santa_logo.png" alt="Copybara Santa Logo" class="centered-img">
-</div>
-""", unsafe_allow_html=True)
+new_width = 640  # 원하는 너비로 조정
+width_percent = (new_width / float(image.size[0]))
+new_height = int((float(image.size[1]) * float(width_percent)))
+resized_image = image.resize((new_width, new_height), Image.LANCZOS)
 
 # 튜토리얼 섹션
 st.markdown("""
