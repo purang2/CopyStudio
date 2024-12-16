@@ -1949,6 +1949,18 @@ if 'evaluator' not in st.session_state:
 
 
 
+# CSS 스타일 적용
+st.markdown("""
+    <style>
+        .stSelectbox label {
+            font-size: 18px; /* SELECTBOX 제목 글자 크기 */
+            font-weight: bold; /* 제목 강조 */
+        }
+        .stSelectbox div[data-baseweb="select"] > div {
+            font-size: 16px; /* 항목 글자 크기 */
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 st.markdown("---")  # 구분선
 
@@ -2007,6 +2019,7 @@ with st.expander("🛠️ 프롬프트 엔지니어링 직접 수정", expanded=
         st.success("평가 설정이 업데이트되었습니다!")
 
 st.markdown("---")
+
 
 
 with st.container():
