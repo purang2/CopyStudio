@@ -2026,7 +2026,6 @@ with col1:
     selected_region = st.selectbox(
         "지역 선택",
         options=[""] + list(DOCS["region"].keys()),
-        index=(list(DOCS["region"].keys()).index("부산 해운대") + 1) if "부산 해운대" in DOCS["region"].keys() else 0,
         format_func=lambda x: "지역을 선택하세요" if x == "" else x
     )
 
@@ -2034,7 +2033,6 @@ with col2:
     selected_generation = st.selectbox(
         "세대 선택",
         options=[""] + list(DOCS["generation"].keys()),
-        index=(list(DOCS["generation"].keys()).index("X세대 (1965-1980년 출생)") + 1) if "X세대 (1965-1980년 출생)" in DOCS["generation"].keys() else 0,
         format_func=lambda x: "세대를 선택하세요" if x == "" else x
     )
 
@@ -2042,7 +2040,6 @@ with col3:
     selected_season = st.selectbox(
         "계절 선택 (선택사항)",
         options=[""] + list(SEASONS.keys()),
-        index=(list(SEASONS.keys()).index("겨울") + 1) if "겨울" in SEASONS.keys() else 0,
         format_func=lambda x: "계절을 선택하세요" if x == "" else x
     )
 
