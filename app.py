@@ -1949,61 +1949,8 @@ if 'evaluator' not in st.session_state:
 
 
 
-# CSS 스타일 적용
-st.markdown("""
-    <style>
-        .stSelectbox label {
-            font-size: 20px;
-            font-weight: bold;
-            color: #1E88E5; /* 파란색 */
-            margin-bottom: 10px;
-        }
-        .stSelectbox div[data-baseweb="select"] > div {
-            font-size: 16px; /* 항목 글자 크기 */
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-st.markdown("---")  # 구분선
-
-# **타겟 설정**
-st.markdown("### 🎯 타겟 설정")
-
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    selected_region = st.selectbox(
-        "지역 선택",
-        options=[""] + list(DOCS["region"].keys()),
-        format_func=lambda x: "지역을 선택하세요" if x == "" else x
-    )
-with col2:
-    selected_generation = st.selectbox(
-        "세대 선택",
-        options=[""] + list(DOCS["generation"].keys()),
-        format_func=lambda x: "세대를 선택하세요" if x == "" else x
-    )
-with col3:
-    selected_season = st.selectbox(
-        "계절 선택 (선택사항)",
-        options=[""] + list(SEASONS.keys()),
-        format_func=lambda x: "계절을 선택하세요" if x == "" else x
-    )
-with col4:
-    include_mbti = st.checkbox("MBTI 특성 포함하기")
-    selected_mbti = None
-    if include_mbti:
-        selected_mbti = st.selectbox(
-            "MBTI 선택",
-            options=MBTI_TYPES,
-            help="선택한 MBTI 성향에 맞는 카피가 생성됩니다"
-        )
-
-st.markdown("---")
-
-
-
 # 프롬프트 작성 섹션
-st.subheader("🛠️ 프롬프트 엔지니어링 직접 수정")
+st.subheader("🛠️ 설정 - 프롬프트")
 
 with st.expander("📄 기본 설정", expanded=True):
     base_structure = """당신은 맞춤형 감성 카피를 창작하는 숙련된 카피라이터입니다. 
@@ -2066,6 +2013,58 @@ with col3:
     with st.expander("📝 최종 프롬프트", expanded=False):
         final_prompt = f"{base_structure}\n\n요구사항:\n1. ...\n\n참고 예시:\n- ..."
         st.text_area("최종 프롬프트 수정", value=final_prompt, height=200)
+
+
+# CSS 스타일 적용
+st.markdown("""
+    <style>
+        .stSelectbox label {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1E88E5; /* 파란색 */
+            margin-bottom: 10px;
+        }
+        .stSelectbox div[data-baseweb="select"] > div {
+            font-size: 16px; /* 항목 글자 크기 */
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+st.markdown("---")  # 구분선
+
+# **타겟 설정**
+st.markdown("### 🎯 타겟 설정")
+
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    selected_region = st.selectbox(
+        "지역 선택",
+        options=[""] + list(DOCS["region"].keys()),
+        format_func=lambda x: "지역을 선택하세요" if x == "" else x
+    )
+with col2:
+    selected_generation = st.selectbox(
+        "세대 선택",
+        options=[""] + list(DOCS["generation"].keys()),
+        format_func=lambda x: "세대를 선택하세요" if x == "" else x
+    )
+with col3:
+    selected_season = st.selectbox(
+        "계절 선택 (선택사항)",
+        options=[""] + list(SEASONS.keys()),
+        format_func=lambda x: "계절을 선택하세요" if x == "" else x
+    )
+with col4:
+    include_mbti = st.checkbox("MBTI 특성 포함하기")
+    selected_mbti = None
+    if include_mbti:
+        selected_mbti = st.selectbox(
+            "MBTI 선택",
+            options=MBTI_TYPES,
+            help="선택한 MBTI 성향에 맞는 카피가 생성됩니다"
+        )
+
+st.markdown("---")
 
 
 if st.button("🎨 광고 카피 생성", use_container_width=True):
