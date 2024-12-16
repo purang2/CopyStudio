@@ -2083,6 +2083,9 @@ if st.button("🎨 광고 카피 생성", use_container_width=True):
     if not selected_region or not selected_generation:
         st.error("지역과 세대를 선택해주세요!")
     else:
+        # final_prompt 가져오기 (edited_prompt 대신)
+        final_prompt = st.session_state.get("final_prompt", "")  # 기본값 빈 문자열
+        
         with st.spinner("AI 모델이 광고 카피를 생성중입니다..."):
             results = {}
             evaluations = {}
