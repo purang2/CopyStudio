@@ -1998,6 +1998,26 @@ with col4:
             help="선택한 MBTI 성향에 맞는 카피가 생성됩니다"
         )
 
+st.markdown("---")
+
+
+
+# 프롬프트 작성 섹션
+st.subheader("💡 프롬프트 작성")
+
+with st.expander("📄 기본 설정", expanded=True):
+    base_structure = """당신은 맞춤형 감성 카피를 창작하는 숙련된 카피라이터입니다. 
+아래 제공된 정보를 바탕으로 특정 여행지의 매력과 경험을 감성적으로 표현하세요.
+
+💡 **목표**
+1. 독자의 세대와 MBTI 특성에 맞는 메시지를 작성하여 공감대를 형성하고 관심을 유도합니다.
+2. 여행지가 제공하는 구체적인 경험과 독자가 느낄 수 있는 변화를 철학적이고 감성적으로 묘사합니다.
+3. 한 문장의 카피와 짧은 설명을 함께 작성하세요. 반드시 아래 외에 아무것도 출력하지 마세요.
+   - **카피**: 여행지나 경험의 정서를 함축한 한 줄 메시지.
+   - **설명**: 카피의 맥락을 보완하는 짧고 감성적인 해설로 독자가 느낄 변화를 상상하게 만드세요."""
+    st.code(base_structure, language="markdown")
+
+
 # **프롬프트 수정 섹션**
 with st.expander("🛠️ 프롬프트 엔지니어링 직접 수정", expanded=False):
     st.markdown("### 📝 평가 프롬프트 설정")
@@ -2019,25 +2039,6 @@ with st.expander("🛠️ 프롬프트 엔지니어링 직접 수정", expanded=
         st.session_state.scoring_config = new_config
         st.session_state.evaluator = AdCopyEvaluator(new_config)
         st.success("평가 설정이 업데이트되었습니다!")
-
-st.markdown("---")
-
-
-
-# 프롬프트 작성 섹션
-st.subheader("💡 프롬프트 작성")
-
-with st.expander("📄 기본 설정", expanded=True):
-    base_structure = """당신은 맞춤형 감성 카피를 창작하는 숙련된 카피라이터입니다. 
-아래 제공된 정보를 바탕으로 특정 여행지의 매력과 경험을 감성적으로 표현하세요.
-
-💡 **목표**
-1. 독자의 세대와 MBTI 특성에 맞는 메시지를 작성하여 공감대를 형성하고 관심을 유도합니다.
-2. 여행지가 제공하는 구체적인 경험과 독자가 느낄 수 있는 변화를 철학적이고 감성적으로 묘사합니다.
-3. 한 문장의 카피와 짧은 설명을 함께 작성하세요. 반드시 아래 외에 아무것도 출력하지 마세요.
-   - **카피**: 여행지나 경험의 정서를 함축한 한 줄 메시지.
-   - **설명**: 카피의 맥락을 보완하는 짧고 감성적인 해설로 독자가 느낄 변화를 상상하게 만드세요."""
-    st.code(base_structure, language="markdown")
 
 # 3개의 주요 섹션을 Expander로 변경
 col1, col2, col3 = st.columns(3)
