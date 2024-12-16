@@ -2085,7 +2085,42 @@ with col4:
             help="선택한 MBTI 성향에 맞는 카피가 생성됩니다"
         )
 
-
+st.markdown("""
+    <style>
+    .result-card, .revision-card, .persona-card {
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 10px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        background-color: rgba(255, 255, 255, 0.8);
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .result-header, .revision-header, .persona-header {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #333;
+    }
+    .result-body, .revision-body, .persona-body {
+        font-size: 1em;
+        color: #666;
+        line-height: 1.5;
+    }
+    .result-footer, .revision-footer, .persona-footer {
+        margin-top: 10px;
+        font-size: 0.9em;
+        color: #999;
+        text-align: right;
+    }
+    .score {
+        font-weight: bold;
+        color: #333;
+    }
+    .improvement {
+        font-weight: bold;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # ㅍㅍㅍㅍ
 if st.button("🎨 광고 카피 생성", use_container_width=True):
@@ -2104,64 +2139,87 @@ if st.button("🎨 광고 카피 생성", use_container_width=True):
 
             # 3컬럼 결과 표시
             model_cols = st.columns(3)
-            for model_name, col in zip(["gpt", "gemini", "claude"], model_cols):
+            # 1&2차 생성 (모델별로 1차 초안 및 2차 퇴고를 연속 실행)
+            for idx, (model_name, col) in enumerate(zip(["gpt", "gemini", "claude"], model_cols)):
                 with col:
-                    st.markdown(f"### {model_name.upper()} 결과")
-
+                    st.markdown(get_model_header_html(model_name), unsafe_allow_html=True)
+            
                     # 1️⃣ 1차 초안 생성
+                    st.markdown("##### 1️⃣ 카피 (초안)")
                     result = generate_copy(edited_prompt, model_name)
                     if isinstance(result, dict) and result.get("success"):
                         results[model_name] = result["content"]
                         eval_result = st.session_state.evaluator.evaluate(result["content"], model_name)
                         evaluations[model_name] = eval_result
-
+            
+                        # 결과 표시
                         copy_text, description_text = extract_copy_and_description(results[model_name])
                         st.markdown(get_result_card_html(
                             model_name, copy_text, description_text, evaluations[model_name]
                         ), unsafe_allow_html=True)
-
+            
                         # 2️⃣ 2차 퇴고 생성
-                        st.markdown("#### 퇴고 결과")
+                        st.markdown("##### 2️⃣ AI 에이전트 퇴고 카피")
                         revision = generate_revision(results[model_name], evaluations[model_name], model_name)
                         if isinstance(revision, dict) and revision.get("success"):
                             revision_eval = st.session_state.evaluator.evaluate(revision["content"], model_name)
                             revisions[model_name] = revision["content"]
                             revision_evaluations[model_name] = revision_eval
-
+            
+                            # 결과 표시
                             copy_text, description_text = extract_copy_and_description(revisions[model_name])
                             improvement = revision_evaluations[model_name]['score'] - evaluations[model_name]['score']
                             st.markdown(get_revision_card_html(
                                 model_name, copy_text, description_text, revision_evaluations[model_name], improvement
                             ), unsafe_allow_html=True)
-
-            # 3️⃣ 페르소나 변형
+            
+            # 3️⃣ 페르소나 변형 생성
             persona_variations = {}
             for model_name, col in zip(["gpt", "gemini", "claude"], model_cols):
                 if model_name in revisions:
-                    selected_personas = random.sample(name_list, 2)
+                    selected_personas = random.sample(name_list, 2)  # 각 모델마다 랜덤 페르소나 2명 선택
                     persona_variations[model_name] = {}
                     with col:
-                        st.markdown("#### 페르소나 변형 결과")
-                        base_copy_text, base_description_text = extract_copy_and_description(revisions[model_name])
-                        base_copy = f"{base_copy_text} {base_description_text}"
-                        for persona_name in selected_personas:
-                            try:
-                                persona_prompt = name_to_persona(persona_name)
-                                result = transform_ad_copy(base_copy, persona_prompt, persona_name)
-                                eval_result = st.session_state.evaluator.evaluate(result, model_name)
-                                improvement = eval_result['score'] - revision_evaluations[model_name]['score']
-                                persona_variations[model_name][persona_name] = {
-                                    "result": result,
-                                    "evaluation": eval_result,
-                                    "improvement": improvement
-                                }
-                                transformed_copy = result.split("Transformed Copy:")[1].strip()
-                                explanation = result.split("Explanation:")[1].split("Transformed Copy:")[0].strip()
-                                st.markdown(get_persona_variation_card_html(
-                                    model_name, persona_name, transformed_copy, explanation, eval_result['score'], improvement
-                                ), unsafe_allow_html=True)
-                            except Exception as e:
-                                st.error(f"페르소나 처리 중 오류 발생: {e}")
+                        with st.spinner(f"{model_name.upper()} 페르소나 변형 생성 중..."):
+                            st.markdown("##### 3️⃣ 페르소나 변형")
+                            
+                            # 퇴고된 카피에서 텍스트 추출
+                            base_copy_text, base_description_text = extract_copy_and_description(revisions[model_name])
+                            base_copy = f"{base_copy_text} {base_description_text}"
+            
+                            for persona_name in selected_personas:
+                                try:
+                                    # 1단계: 페르소나 프롬프트 생성
+                                    persona_prompt = name_to_persona(persona_name)
+                                    if "Error:" in persona_prompt:
+                                        st.error(f"페르소나 생성 실패: {persona_prompt}")
+                                        continue
+                                    
+                                    # 2단계: 페르소나 기반 광고 카피 변형
+                                    result = transform_ad_copy(base_copy, persona_prompt, persona_name)
+            
+                                    # 3단계: 변형된 결과 평가
+                                    eval_result = st.session_state.evaluator.evaluate(result, model_name)
+                                    improvement = eval_result['score'] - revision_evaluations[model_name]['score']
+                                    
+                                    # 결과 저장
+                                    persona_variations[model_name][persona_name] = {
+                                        "result": result,
+                                        "evaluation": eval_result,
+                                        "improvement": improvement
+                                    }
+            
+                                    # 결과 파싱 및 표시
+                                    if "Explanation:" in result and "Transformed Copy:" in result:
+                                        explanation = result.split("Explanation:")[1].split("Transformed Copy:")[0].strip()
+                                        transformed_copy = result.split("Transformed Copy:")[1].strip()
+            
+                                        st.markdown(get_persona_variation_card_html(
+                                            model_name, persona_name, transformed_copy, explanation, eval_result['score'], improvement
+                                        ), unsafe_allow_html=True)
+            
+                                except Exception as e:
+                                    st.error(f"{persona_name} 처리 중 오류 발생: {str(e)}")
 
             # 결과 저장
             experiment_data = {
