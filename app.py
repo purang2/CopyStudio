@@ -60,11 +60,17 @@ st.markdown("""
 <p class="sub-header">당신만의 국내 명소 광고 카피를 감성적이고 창의적으로 변신시키는 AI 도우미</p>
 """, unsafe_allow_html=True)
 
+
+
 image = Image.open("copybara_santa_logo.png")
+
 new_width = 640  # 원하는 너비로 조정
 width_percent = (new_width / float(image.size[0]))
 new_height = int((float(image.size[1]) * float(width_percent)))
 resized_image = image.resize((new_width, new_height), Image.LANCZOS)
+st.image(resized_image)
+
+
 
 # 튜토리얼 섹션
 st.markdown("""
