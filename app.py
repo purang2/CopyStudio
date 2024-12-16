@@ -2134,7 +2134,7 @@ if st.button("🎨 광고 카피 생성", use_container_width=True):
                                     # 1단계: 페르소나 프롬프트 생성
                                     persona_prompt = name_to_persona(persona_name)
                                     if "Error:" in persona_prompt:
-                                         st.error(f"페르소나 생성 실패: {persona_prompt}")
+                                        st.error(f"페르소나 생성 실패: {persona_prompt}")
                                         continue
                                             
                                     # 2단계: 페르소나 기반 광고 카피 변형
