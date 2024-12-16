@@ -1937,14 +1937,83 @@ DEFAULT_SCORING_CONFIG = ScoringConfig(
     ]
 )
 
-
-
 if 'scoring_config' not in st.session_state:
     st.session_state.scoring_config = DEFAULT_SCORING_CONFIG
 if 'evaluator' not in st.session_state:
     st.session_state.evaluator = AdCopyEvaluator(st.session_state.scoring_config)
 
 
+
+# 사이드바: 설정 및 프롬프트 통합
+with st.sidebar:
+    st.header("🛠️ 설정 - 프롬프트")
+
+    # 기본 설정
+    with st.expander("📄 기본 설정", expanded=True):
+        base_structure = """당신은 맞춤형 감성 카피를 창작하는 숙련된 카피라이터입니다. 
+        아래 제공된 정보를 바탕으로 특정 여행지의 매력과 경험을 감성적으로 표현하세요.
+
+        💡 **목표**
+        1. 독자의 세대와 MBTI 특성에 맞는 메시지를 작성하여 공감대를 형성하고 관심을 유도합니다.
+        2. 여행지가 제공하는 구체적인 경험과 독자가 느낄 수 있는 변화를 철학적이고 감성적으로 묘사합니다.
+        3. 한 문장의 카피와 짧은 설명을 함께 작성하세요. 반드시 아래 외에 아무것도 출력하지 마세요.
+           - **카피**: 여행지나 경험의 정서를 함축한 한 줄 메시지.
+           - **설명**: 카피의 맥락을 보완하는 짧고 감성적인 해설로 독자가 느낄 변화를 상상하게 만드세요."""
+        st.code(base_structure, language="markdown")
+
+    # 평가 프롬프트 설정
+    with st.expander("📝 평가 프롬프트 설정", expanded=False):
+        st.markdown("### 📝 평가 프롬프트 설정")
+        new_prompt = st.text_area(
+            "평가 프롬프트",
+            value=st.session_state.get("scoring_config", DEFAULT_SCORING_CONFIG)["prompt"],
+            height=150
+        )
+        new_criteria = st.text_area(
+            "평가 기준 (줄바꿈으로 구분)",
+            value="\n".join(st.session_state.get("scoring_config", DEFAULT_SCORING_CONFIG)["criteria"]),
+            height=100
+        )
+        if st.button("평가 설정 업데이트", key="update_scoring"):
+            st.session_state["scoring_config"] = {
+                "prompt": new_prompt,
+                "criteria": [c.strip() for c in new_criteria.split('\n') if c.strip()]
+            }
+            st.success("평가 설정이 업데이트되었습니다!")
+
+    # 요구사항
+    with st.expander("📌 요구사항", expanded=False):
+        st.markdown("""
+        1. 세대와 MBTI 특성을 반영해 독자의 성향에 맞는 메시지를 작성하세요.
+        2. 여행지가 독자에게 가져올 긍정적 변화와 감정적 연결을 강조하세요.
+        3. 카피와 설명은 서로를 보완하며, 독립적으로도 매력적이어야 합니다.
+        4. 짧고 강렬한 메시지와 감성적인 해설을 작성하세요.
+        5. 기존 예시의 톤과 스타일을 유지하며, 추가 데이터에 따라 맞춤형 메시지를 제안하세요.
+        """)
+
+    # 참고 예시
+    with st.expander("✨ 참고 예시", expanded=False):
+        example_copies = [
+            "**카피**: 어른은 그렇게 강하지 않다.\n**설명**: 서로의 약함을 품을 때 비로소 강해지는 곳, 이 도시는 그런 당신을 위한 쉼터입니다.",
+            "**카피**: 인생을 세 단어로 말하면, Boy Meets Girl.\n**설명**: 사랑이 시작된 이곳, 이 작은 거리가 당신의 이야기를 기다리고 있습니다.",
+            "**카피**: 인류는 달에 가서도 영어를 말한다.\n**설명**: 어떤 곳에서도 소통이 중요한 순간이 찾아옵니다.",
+            "**카피**: 누군가로 끝나지 마라.\n**설명**: 이 도시는 당신만의 이야기를 만들 기회를 제공합니다.",
+            "**카피**: 마흔살은 두번째 스무살.\n**설명**: 새로운 시작을 축하하는 여행지, 여기서 인생의 다음 장을 열어보세요.",
+            "**카피**: 기적은 우연을 가장해 나타난다.\n**설명**: 일상의 순간들이 특별해지는 이곳을 만나보세요.",
+            "**카피**: 뛰어난 팀에는 뛰어난 2인자가 있다.\n**설명**: 이 도시의 숨은 매력들이 당신을 돕는 동반자가 됩니다.",
+            "**카피**: 인생의 등장인물이 달라진다.\n**설명**: 이 여행지는 당신의 새로운 이야기를 위한 무대입니다."
+        ]
+        st.text_area("예시 수정/추가", value="\n\n".join(example_copies), height=200, key="copy_examples")
+
+    # 최종 프롬프트
+    with st.expander("📝 최종 프롬프트", expanded=False):
+        final_prompt = st.session_state.get("final_prompt", DEFAULT_SCORING_CONFIG["prompt"])
+        final_prompt = st.text_area(
+            "프롬프트 직접 수정",
+            value=final_prompt,
+            height=200,
+            key="final_prompt"
+        )
 
 
 st.markdown("---")  # 시각적 구분선
@@ -1986,163 +2055,8 @@ with col4:
 
 # ㅍㅍㅍㅍ
 if st.button("🎨 광고 카피 생성", use_container_width=True):
-    # 필수 옵션 검증
-    if not selected_region or not selected_generation:
-        st.error("지역과 세대를 선택해주세요!")
-    else:
-        # 편집된 최종 프롬프트 가져오기
-        edited_prompt = st.session_state.get("final_prompt", st.session_state.scoring_config["prompt"])
+    # 필수ㄷ
 
-        with st.spinner("AI 모델이 광고 카피를 생성중입니다..."):
-            results = {}
-            evaluations = {}
-            revisions = {}
-            revision_evaluations = {}
-
-            # 3컬럼 결과 표시
-            model_cols = st.columns(3)
-            for model_name, col in zip(["gpt", "gemini", "claude"], model_cols):
-                with col:
-                    st.markdown(f"### {model_name.upper()} 결과")
-                    
-                    # 1️⃣ 1차 초안 생성
-                    result = generate_copy(edited_prompt, model_name)
-                    if isinstance(result, dict) and result.get("success"):
-                        results[model_name] = result["content"]
-                        eval_result = st.session_state.evaluator.evaluate(result["content"], model_name)
-                        evaluations[model_name] = eval_result
-                        
-                        copy_text, description_text = extract_copy_and_description(results[model_name])
-                        st.markdown(get_result_card_html(
-                            model_name, copy_text, description_text, evaluations[model_name]
-                        ), unsafe_allow_html=True)
-                        
-                        # 2️⃣ 2차 퇴고 생성
-                        st.markdown("#### 퇴고 결과")
-                        revision = generate_revision(results[model_name], evaluations[model_name], model_name)
-                        if isinstance(revision, dict) and revision.get("success"):
-                            revision_eval = st.session_state.evaluator.evaluate(revision["content"], model_name)
-                            revisions[model_name] = revision["content"]
-                            revision_evaluations[model_name] = revision_eval
-                            
-                            copy_text, description_text = extract_copy_and_description(revisions[model_name])
-                            improvement = revision_evaluations[model_name]['score'] - evaluations[model_name]['score']
-                            st.markdown(get_revision_card_html(
-                                model_name, copy_text, description_text, revision_evaluations[model_name], improvement
-                            ), unsafe_allow_html=True)
-
-            # 3️⃣ 페르소나 변형
-            persona_variations = {}
-            for model_name, col in zip(["gpt", "gemini", "claude"], model_cols):
-                if model_name in revisions:
-                    selected_personas = random.sample(name_list, 2)
-                    persona_variations[model_name] = {}
-                    with col:
-                        st.markdown("#### 페르소나 변형 결과")
-                        base_copy_text, base_description_text = extract_copy_and_description(revisions[model_name])
-                        base_copy = f"{base_copy_text} {base_description_text}"
-                        for persona_name in selected_personas:
-                            try:
-                                persona_prompt = name_to_persona(persona_name)
-                                result = transform_ad_copy(base_copy, persona_prompt, persona_name)
-                                eval_result = st.session_state.evaluator.evaluate(result, model_name)
-                                improvement = eval_result['score'] - revision_evaluations[model_name]['score']
-                                persona_variations[model_name][persona_name] = {
-                                    "result": result,
-                                    "evaluation": eval_result,
-                                    "improvement": improvement
-                                }
-                                transformed_copy = result.split("Transformed Copy:")[1].strip()
-                                explanation = result.split("Explanation:")[1].split("Transformed Copy:")[0].strip()
-                                st.markdown(get_persona_variation_card_html(
-                                    model_name, persona_name, transformed_copy, explanation, eval_result['score'], improvement
-                                ), unsafe_allow_html=True)
-                            except Exception as e:
-                                st.error(f"페르소나 처리 중 오류 발생: {e}")
-
-            # 결과 저장
-            experiment_data = {
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "prompt": edited_prompt,
-                "first_results": results,
-                "first_evaluations": evaluations,
-                "revisions": revisions,
-                "revision_evaluations": revision_evaluations,
-                "persona_variations": persona_variations,
-                "settings": {
-                    "region": selected_region,
-                    "generation": selected_generation,
-                    "season": selected_season,
-                    "mbti": selected_mbti
-                }
-            }
-            st.session_state.history.append(experiment_data)
-
-st.subheader("🛠️ 설정 - 프롬프트")
-
-with st.expander("📄 기본 설정", expanded=True):
-    base_structure = """당신은 맞춤형 감성 카피를 창작하는 숙련된 카피라이터입니다. 
-아래 제공된 정보를 바탕으로 특정 여행지의 매력과 경험을 감성적으로 표현하세요.
-
-💡 **목표**
-1. 독자의 세대와 MBTI 특성에 맞는 메시지를 작성하여 공감대를 형성하고 관심을 유도합니다.
-2. 여행지가 제공하는 구체적인 경험과 독자가 느낄 수 있는 변화를 철학적이고 감성적으로 묘사합니다.
-3. 한 문장의 카피와 짧은 설명을 함께 작성하세요. 반드시 아래 외에 아무것도 출력하지 마세요.
-   - **카피**: 여행지나 경험의 정서를 함축한 한 줄 메시지.
-   - **설명**: 카피의 맥락을 보완하는 짧고 감성적인 해설로 독자가 느낄 변화를 상상하게 만드세요."""
-    st.code(base_structure, language="markdown")
-
-with st.expander("📝 평가 프롬프트 설정", expanded=False):
-    st.markdown("### 📝 평가 프롬프트 설정")
-    new_prompt = st.text_area(
-        "평가 프롬프트",
-        value=st.session_state.get("scoring_config", DEFAULT_SCORING_CONFIG).prompt,
-        height=150
-    )
-    new_criteria = st.text_area(
-        "평가 기준 (줄바꿈으로 구분)",
-        value="\n".join(st.session_state.get("scoring_config", DEFAULT_SCORING_CONFIG).criteria),
-        height=100
-    )
-    if st.button("평가 설정 업데이트"):
-        new_config = ScoringConfig(
-            prompt=new_prompt,
-            criteria=[c.strip() for c in new_criteria.split('\n') if c.strip()]
-        )
-        st.session_state["scoring_config"] = new_config
-        st.session_state["final_prompt"] = new_prompt  # 최종 프롬프트에 반영
-        st.success("평가 설정이 업데이트되었습니다!")
-
-with st.expander("📌 요구사항", expanded=False):
-    st.markdown("""
-    1. 세대와 MBTI 특성을 반영해 독자의 성향에 맞는 메시지를 작성하세요.
-    2. 여행지가 독자에게 가져올 긍정적 변화와 감정적 연결을 강조하세요.
-    3. 카피와 설명은 서로를 보완하며, 독립적으로도 매력적이어야 합니다.
-    4. 짧고 강렬한 메시지와 감성적인 해설을 작성하세요.
-    5. 기존 예시의 톤과 스타일을 유지하며, 추가 데이터에 따라 맞춤형 메시지를 제안하세요.
-    """)
-
-with st.expander("✨ 참고 예시", expanded=False):
-    example_copies = [
-        "**카피**: 어른은 그렇게 강하지 않다.\n**설명**: 서로의 약함을 품을 때 비로소 강해지는 곳, 이 도시는 그런 당신을 위한 쉼터입니다.",
-        "**카피**: 인생을 세 단어로 말하면, Boy Meets Girl.\n**설명**: 사랑이 시작된 이곳, 이 작은 거리가 당신의 이야기를 기다리고 있습니다.",
-        "**카피**: 인류는 달에 가서도 영어를 말한다.\n**설명**: 어떤 곳에서도 소통이 중요한 순간이 찾아옵니다.",
-        "**카피**: 누군가로 끝나지 마라.\n**설명**: 이 도시는 당신만의 이야기를 만들 기회를 제공합니다.",
-        "**카피**: 마흔살은 두번째 스무살.\n**설명**: 새로운 시작을 축하하는 여행지, 여기서 인생의 다음 장을 열어보세요.",
-        "**카피**: 기적은 우연을 가장해 나타난다.\n**설명**: 일상의 순간들이 특별해지는 이곳을 만나보세요.",
-        "**카피**: 뛰어난 팀에는 뛰어난 2인자가 있다.\n**설명**: 이 도시의 숨은 매력들이 당신을 돕는 동반자가 됩니다.",
-        "**카피**: 인생의 등장인물이 달라진다.\n**설명**: 이 여행지는 당신의 새로운 이야기를 위한 무대입니다."
-    ]
-    st.text_area("예시 수정/추가", value="\n\n".join(example_copies), height=200)
-
-with st.expander("📝 최종 프롬프트", expanded=False):
-    final_prompt = st.session_state.get("final_prompt", DEFAULT_SCORING_CONFIG.prompt)
-    final_prompt = st.text_area(
-        "프롬프트 직접 수정",
-        value=final_prompt,
-        height=200,
-        key="final_prompt"
-    )
 
 
 # 지도 섹션 추가
