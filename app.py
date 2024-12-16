@@ -1910,11 +1910,7 @@ def get_persona_variation_card_html(model_name, persona_name, transformed_copy, 
 # Load documents
 DOCS = load_docs()
 
-# Initialize session state
-if 'history' not in st.session_state:
-    st.session_state.history = []
-if 'show_tutorial' not in st.session_state:
-    st.session_state.show_tutorial = True
+
 
 # Initialize scoring config
 DEFAULT_SCORING_CONFIG = ScoringConfig(
@@ -1937,12 +1933,27 @@ DEFAULT_SCORING_CONFIG = ScoringConfig(
     ]
 )
 
+# Initialize session state
+if "history" not in st.session_state:
+    st.session_state["history"] = []
+if "show_tutorial" not in st.session_state:
+    st.session_state["show_tutorial"] = True
+if "scoring_config" not in st.session_state:
+    st.session_state["scoring_config"] = DEFAULT_SCORING_CONFIG
+
 if 'scoring_config' not in st.session_state:
     st.session_state.scoring_config = DEFAULT_SCORING_CONFIG
 if 'evaluator' not in st.session_state:
     st.session_state.evaluator = AdCopyEvaluator(st.session_state.scoring_config)
+if "final_prompt" not in st.session_state:
+    st.session_state["final_prompt"] = f"""{DEFAULT_SCORING_CONFIG.prompt}
 
+기본 프롬프트:
+{DEFAULT_SCORING_CONFIG.prompt}
 
+기준:
+{", ".join(DEFAULT_SCORING_CONFIG.criteria)}
+"""
 
 # 사이드바: 설정 및 프롬프트 통합
 with st.sidebar:
@@ -1963,28 +1974,35 @@ with st.sidebar:
 
     # 평가 프롬프트 설정
     # 평가 프롬프트 설정
+    # 평가 프롬프트 설정
     with st.expander("📝 평가 프롬프트 설정", expanded=False):
-        st.markdown("### 📝 평가 프롬프트 설정")
-    
-        # 올바른 접근 방식으로 수정
-        scoring_config = st.session_state.get("scoring_config", DEFAULT_SCORING_CONFIG)
+        scoring_config = st.session_state["scoring_config"]
         new_prompt = st.text_area(
             "평가 프롬프트",
-            value=scoring_config.prompt if hasattr(scoring_config, "prompt") else scoring_config["prompt"],
+            value=scoring_config.prompt,
             height=150
         )
         new_criteria = st.text_area(
             "평가 기준 (줄바꿈으로 구분)",
-            value="\n".join(scoring_config.criteria if hasattr(scoring_config, "criteria") else scoring_config["criteria"]),
+            value="\n".join(scoring_config.criteria),
             height=100
         )
-    
         if st.button("평가 설정 업데이트", key="update_scoring"):
-            new_config = {
-                "prompt": new_prompt,
-                "criteria": [c.strip() for c in new_criteria.split('\n') if c.strip()]
-            }
-            st.session_state["scoring_config"] = new_config
+            st.session_state["scoring_config"] = ScoringConfig(
+                prompt=new_prompt,
+                criteria=[c.strip() for c in new_criteria.split("\n") if c.strip()]
+            )
+            st.session_state["final_prompt"] = f"""{base_structure}
+        
+        평가 프롬프트:
+        {new_prompt}
+        
+        평가 기준:
+        {", ".join(st.session_state["scoring_config"].criteria)}
+        
+        참고 예시:
+        {st.session_state.get("copy_examples", "")}
+        """
             st.success("평가 설정이 업데이트되었습니다!")
 
     # 요구사항
@@ -2009,17 +2027,27 @@ with st.sidebar:
             "**카피**: 뛰어난 팀에는 뛰어난 2인자가 있다.\n**설명**: 이 도시의 숨은 매력들이 당신을 돕는 동반자가 됩니다.",
             "**카피**: 인생의 등장인물이 달라진다.\n**설명**: 이 여행지는 당신의 새로운 이야기를 위한 무대입니다."
         ]
-        st.text_area("예시 수정/추가", value="\n\n".join(example_copies), height=200, key="copy_examples")
+        edited_copies = st.text_area(
+            "예시 수정/추가",
+            value="\n\n".join(example_copies),
+            height=200,
+            key="copy_examples"
+        )
+        if st.button("예시 저장"):
+            st.session_state["final_prompt"] += f"\n\n참고 예시:\n{edited_copies}"
+            st.success("참고 예시가 반영되었습니다.")
 
     # 최종 프롬프트
     with st.expander("📝 최종 프롬프트", expanded=False):
-        final_prompt = st.session_state.get("final_prompt", DEFAULT_SCORING_CONFIG["prompt"])
         final_prompt = st.text_area(
             "프롬프트 직접 수정",
-            value=final_prompt,
+            value=st.session_state["final_prompt"],
             height=200,
             key="final_prompt"
         )
+        if st.button("프롬프트 저장"):
+            st.session_state["final_prompt"] = final_prompt
+            st.success("최종 프롬프트가 저장되었습니다.")
 
 
 st.markdown("---")  # 시각적 구분선
@@ -2065,8 +2093,8 @@ if st.button("🎨 광고 카피 생성", use_container_width=True):
     if not selected_region or not selected_generation:
         st.error("지역과 세대를 선택해주세요!")
     else:
-        # 편집된 최종 프롬프트 가져오기
-        edited_prompt = st.session_state.get("final_prompt", st.session_state.scoring_config["prompt"])
+        # 최종 프롬프트 가져오기
+        edited_prompt = st.session_state["final_prompt"]
 
         with st.spinner("AI 모델이 광고 카피를 생성중입니다..."):
             results = {}
@@ -2079,19 +2107,19 @@ if st.button("🎨 광고 카피 생성", use_container_width=True):
             for model_name, col in zip(["gpt", "gemini", "claude"], model_cols):
                 with col:
                     st.markdown(f"### {model_name.upper()} 결과")
-                    
+
                     # 1️⃣ 1차 초안 생성
                     result = generate_copy(edited_prompt, model_name)
                     if isinstance(result, dict) and result.get("success"):
                         results[model_name] = result["content"]
                         eval_result = st.session_state.evaluator.evaluate(result["content"], model_name)
                         evaluations[model_name] = eval_result
-                        
+
                         copy_text, description_text = extract_copy_and_description(results[model_name])
                         st.markdown(get_result_card_html(
                             model_name, copy_text, description_text, evaluations[model_name]
                         ), unsafe_allow_html=True)
-                        
+
                         # 2️⃣ 2차 퇴고 생성
                         st.markdown("#### 퇴고 결과")
                         revision = generate_revision(results[model_name], evaluations[model_name], model_name)
@@ -2099,7 +2127,7 @@ if st.button("🎨 광고 카피 생성", use_container_width=True):
                             revision_eval = st.session_state.evaluator.evaluate(revision["content"], model_name)
                             revisions[model_name] = revision["content"]
                             revision_evaluations[model_name] = revision_eval
-                            
+
                             copy_text, description_text = extract_copy_and_description(revisions[model_name])
                             improvement = revision_evaluations[model_name]['score'] - evaluations[model_name]['score']
                             st.markdown(get_revision_card_html(
