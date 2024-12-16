@@ -46,7 +46,7 @@ st.markdown("""
     }
 </style>
 <h1 class="header-title">Copybara - 광고 카피 생성 AI</h1>
-<p class="sub-header">당신의 광고 카피를 감성적이고 창의적으로 변신시키는 AI 도우미</p>
+<p class="sub-header">당신만의 국내 명소 광고 카피를 감성적이고 창의적으로 변신시키는 AI 도우미</p>
 """, unsafe_allow_html=True)
 
 # **튜토리얼 섹션**
