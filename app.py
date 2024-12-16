@@ -2023,13 +2023,11 @@ with st.expander("🛠️ 프롬프트 엔지니어링 직접 수정", expanded=
 st.markdown("---")
 
 
-# 프롬프트 작성 섹션
-with st.container():
-    st.subheader("💡 프롬프트 작성")
-    st.markdown("""
-    💡 **사색적이고 감성적인 카피를 작성해 특정 여행지나 경험에 대한 관심을 이끌어내세요.**
-    """, unsafe_allow_html=True)
 
+# 프롬프트 작성 섹션
+st.subheader("💡 프롬프트 작성")
+
+with st.expander("📄 기본 설정", expanded=True):
     base_structure = """당신은 맞춤형 감성 카피를 창작하는 숙련된 카피라이터입니다. 
 아래 제공된 정보를 바탕으로 특정 여행지의 매력과 경험을 감성적으로 표현하세요.
 
@@ -2039,66 +2037,36 @@ with st.container():
 3. 한 문장의 카피와 짧은 설명을 함께 작성하세요. 반드시 아래 외에 아무것도 출력하지 마세요.
    - **카피**: 여행지나 경험의 정서를 함축한 한 줄 메시지.
    - **설명**: 카피의 맥락을 보완하는 짧고 감성적인 해설로 독자가 느낄 변화를 상상하게 만드세요."""
-
-    st.markdown("#### 기본 설정")
     st.code(base_structure, language="markdown")
 
-    # 참고 문서 섹션
-    with st.expander("📄 참고 문서 내용 보기/수정", expanded=False):
-        edited_docs = f"""
-### 지역 정보
-{DOCS["region"].get(selected_region, "지역 정보가 없습니다.")}
+# 3개의 주요 섹션을 Expander로 변경
+col1, col2, col3 = st.columns(3)
 
-### 세대 특성
-{DOCS["generation"].get(selected_generation, "세대 정보가 없습니다.")}
+with col1:
+    with st.expander("📌 요구사항", expanded=False):
+        st.markdown("""
+        1. 세대와 MBTI 특성을 반영해 독자의 성향에 맞는 메시지를 작성하세요.
+        2. 여행지가 독자에게 가져올 긍정적 변화와 감정적 연결을 강조하세요.
+        3. 카피와 설명은 서로를 보완하며, 독립적으로도 매력적이어야 합니다.
+        4. 짧고 강렬한 메시지와 감성적인 해설을 작성하세요.
+        5. 기존 예시의 톤과 스타일을 유지하며, 추가 데이터에 따라 맞춤형 메시지를 제안하세요.
+        """)
 
-### MBTI 특성
-{DOCS["mbti"].get(selected_mbti, f"{selected_mbti} 정보를 찾을 수 없습니다.")}
+with col2:
+    with st.expander("✨ 참고 예시", expanded=False):
+        example_copies = [
+            "**카피**: 어른은 그렇게 강하지 않다.\n**설명**: 서로의 약함을 품을 때 비로소 강해지는 곳, 이 도시는 그런 당신을 위한 쉼터입니다.",
+            "**카피**: 인생을 세 단어로 말하면, Boy Meets Girl.\n**설명**: 사랑이 시작된 이곳, 이 작은 거리가 당신의 이야기를 기다리고 있습니다.",
+            "**카피**: 인류는 달에 가서도 영어를 말한다.\n**설명**: 어떤 곳에서도 소통이 중요한 순간이 찾아옵니다.",
+        ]
+        st.text_area("예시 수정/추가", value="\n\n".join(example_copies), height=200)
 
-### 계절 특성
-{selected_season}의 특징을 반영합니다.
-"""
-        edited_docs = st.text_area(
-            "문서 내용 수정",
-            value=edited_docs,
-            height=300,
-            key="docs_editor"
-        )
+with col3:
+    with st.expander("📝 최종 프롬프트", expanded=False):
+        final_prompt = f"{base_structure}\n\n요구사항:\n1. ...\n\n참고 예시:\n- ..."
+        st.text_area("최종 프롬프트 수정", value=final_prompt, height=200)
 
-    # 요구사항
-    st.markdown("#### 요구사항")
-    requirements = """
-1. 세대와 MBTI 특성을 반영해 독자의 성향에 맞는 메시지를 작성하세요.
-2. 여행지가 독자에게 가져올 긍정적 변화와 감정적 연결을 강조하세요.
-3. 카피와 설명은 서로를 보완하며, 독립적으로도 매력적이어야 합니다.
-4. 짧고 강렬한 메시지와 감성적인 해설을 작성하세요.
-5. 기존 예시의 톤과 스타일을 유지하며, 추가 데이터에 따라 맞춤형 메시지를 제안하세요.
-"""
-    st.markdown(requirements)
 
-    # 참고 예시 섹션
-    st.markdown("#### ✨ 참고 예시")
-    example_copies = [
-        "**카피**: 어른은 그렇게 강하지 않다.\n**설명**: 서로의 약함을 품을 때 비로소 강해지는 곳, 이 도시는 그런 당신을 위한 쉼터입니다.",
-        "**카피**: 인생을 세 단어로 말하면, Boy Meets Girl.\n**설명**: 사랑이 시작된 이곳, 이 작은 거리가 당신의 이야기를 기다리고 있습니다.",
-        "**카피**: 인류는 달에 가서도 영어를 말한다.\n**설명**: 어떤 곳에서도 소통이 중요한 순간이 찾아옵니다.",
-    ]
-    edited_copies = st.text_area(
-        "예시 수정/추가",
-        value="\n\n".join(example_copies),
-        height=200,
-        key="copy_examples"
-    )
-
-    # 최종 프롬프트
-    st.markdown("#### 📝 최종 프롬프트")
-    final_prompt = f"{base_structure}\n\n{edited_docs}\n\n요구사항:\n{requirements}\n\n참고 예시:\n{edited_copies}"
-    edited_prompt = st.text_area(
-        "최종 프롬프트 직접 수정",
-        value=final_prompt,
-        height=400,
-        key="final_prompt"
-    )
 
     if st.button("🎨 광고 카피 생성", use_container_width=True):
         if not selected_region or not selected_generation:
