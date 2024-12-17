@@ -1971,42 +1971,6 @@ if 'scoring_config' not in st.session_state:
 if 'evaluator' not in st.session_state:
     st.session_state.evaluator = AdCopyEvaluator(st.session_state.scoring_config)
 
-# Pretendard 폰트 및 버튼 스타일 적용
-st.markdown("""
-    <style>
-    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-
-    /* 버튼 스타일 */
-    .custom-button {
-        font-family: "Pretendard", sans-serif;
-        font-size: 18px;
-        font-weight: 600;
-        color: #ffffff;
-        background-color: #10a37f;
-        padding: 14px 24px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        width: 100%; /* 버튼 가로 길이를 부모 컨테이너에 맞춤 */
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-        transition: all 0.2s ease-in-out;
-        text-align: center;
-        outline: none;
-    }
-
-    .custom-button:hover {
-        background-color: #0e8d6d;
-        box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
-        transform: translateY(-2px);
-    }
-
-    .custom-button:active {
-        background-color: #0c7a5e;
-        transform: translateY(0);
-    }
-
-    </style>
-""", unsafe_allow_html=True)
 
 # 버튼 생성 및 이벤트 연결
 st.markdown("""
@@ -2173,6 +2137,44 @@ with st.container():
     
     # 광고 카피 생성 버튼
     #if st.button("🎨 광고 카피 생성", use_container_width=True):
+
+    # Pretendard 폰트 및 버튼 스타일 적용
+    st.markdown("""
+        <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    
+        /* 버튼 스타일 */
+        .custom-button {
+            font-family: "Pretendard", sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+            background-color: #10a37f;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%; /* 버튼 가로 길이를 부모 컨테이너에 맞춤 */
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease-in-out;
+            text-align: center;
+            outline: none;
+        }
+    
+        .custom-button:hover {
+            background-color: #0e8d6d;
+            box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
+        }
+    
+        .custom-button:active {
+            background-color: #0c7a5e;
+            transform: translateY(0);
+        }
+    
+        </style>
+    """, unsafe_allow_html=True)
+    
     if st.button("🎨 광고 카피 생성", key="adgen-button", use_container_width=True):
         if not selected_region or not selected_generation:
             st.error("지역과 세대를 선택해주세요!")
