@@ -1050,7 +1050,6 @@ class ScoringConfig:
     def from_dict(cls, data: dict) -> 'ScoringConfig':
         return cls(**data)
 
-
 def load_docs() -> Dict[str, Dict[str, str]]:
     docs = {
         "region": {},
@@ -1058,33 +1057,49 @@ def load_docs() -> Dict[str, Dict[str, str]]:
         "mbti": {}
     }
     
-    docs_path = pathlib.Path("docs")
+    try:
+        docs_path = pathlib.Path("docs")
+        
+        # Load region docs
+        region_path = docs_path / "regions"
+        if region_path.exists():
+            for file in sorted(region_path.glob("*.txt")):  # 가나다 순 정렬
+                with open(file, "r", encoding="utf-8") as f:
+                    docs["region"][file.stem] = f.read()
+        
+        # Load generation docs
+        generation_path = docs_path / "generations"
+        if generation_path.exists():
+            for file in sorted(generation_path.glob("*.txt")):  # 가나다 순 정렬
+                with open(file, "r", encoding="utf-8") as f:
+                    docs["generation"][file.stem] = f.read()
+        
+        # Load individual MBTI files
+        mbti_path = docs_path / "mbti"
+        if mbti_path.exists():
+            for mbti in sorted(MBTI_TYPES):  # MBTI도 가나다 순 정렬
+                mbti_file = mbti_path / f"{mbti}.txt"
+                try:
+                    if mbti_file.exists():
+                        with open(mbti_file, "r", encoding="utf-8") as f:
+                            docs["mbti"][mbti] = f.read()
+                            print(f"로드된 MBTI 파일: {mbti}.txt")
+                    else:
+                        print(f"MBTI 파일을 찾을 수 없습니다: {mbti}.txt")
+                except Exception as e:
+                    print(f"{mbti} 파일 로딩 중 오류: {str(e)}")
+        else:
+            print(f"MBTI 디렉토리를 찾을 수 없습니다: {mbti_path}")
+        
+        # 가나다 순 정렬된 딕셔너리 생성
+        docs["region"] = dict(sorted(docs["region"].items()))
+        docs["generation"] = dict(sorted(docs["generation"].items()))
+        docs["mbti"] = dict(sorted(docs["mbti"].items()))
     
-    # Load region docs
-    region_path = docs_path / "regions"
-    if region_path.exists():
-        for file in region_path.glob("*.txt"):
-            with open(file, "r", encoding="utf-8") as f:
-                docs["region"][file.stem] = f.read()
-    
-    # Load generation docs
-    generation_path = docs_path / "generations"
-    if generation_path.exists():
-        for file in generation_path.glob("*.txt"):
-            with open(file, "r", encoding="utf-8") as f:
-                docs["generation"][file.stem] = f.read()
-    
-    # Load MBTI docs
-    mbti_path = docs_path / "mbti"
-    if mbti_path.exists():
-        for mbti in MBTI_TYPES:
-            mbti_file = mbti_path / f"{mbti}.txt"
-            if mbti_file.exists():
-                with open(mbti_file, "r", encoding="utf-8") as f:
-                    docs["mbti"][mbti] = f.read()
+    except Exception as e:
+        print(f"문서 로딩 중 오류: {str(e)}")
     
     return docs
-
 
 DOCS = load_docs()
 
@@ -2002,23 +2017,23 @@ with st.sidebar:
     
     selected_region = st.selectbox(
         "지역 선택",
-        options=[""] + list(DOCS["region"].keys()),
+        options=[""] + sorted(DOCS["region"].keys()),  # 가나다 순 정렬
         format_func=lambda x: "지역을 선택하세요" if x == "" else x
     )
     
     selected_generation = st.selectbox(
         "세대 선택",
-        options=[""] + list(DOCS["generation"].keys()),
+        options=[""] + sorted(DOCS["generation"].keys()),  # 가나다 순 정렬
         format_func=lambda x: "세대를 선택하세요" if x == "" else x
     )
-
+    
     # 계절 선택 추가
     selected_season = st.selectbox(
         "계절 선택 (선택사항)",
-        options=[""] + list(SEASONS.keys()),
+        options=[""] + sorted(SEASONS.keys()),  # 가나다 순 정렬
         format_func=lambda x: "계절을 선택하세요" if x == "" else x
     )
-    
+        
     include_mbti = st.checkbox("MBTI 특성 포함하기")
     selected_mbti = None
     if include_mbti:
