@@ -1971,14 +1971,6 @@ if 'scoring_config' not in st.session_state:
 if 'evaluator' not in st.session_state:
     st.session_state.evaluator = AdCopyEvaluator(st.session_state.scoring_config)
 
-
-# 버튼 생성 및 이벤트 연결
-st.markdown("""
-    <div style="text-align: center;">
-        <button class="custom-button" onclick="document.getElementById('adgen-button').click()">🎨 광고 카피 생성</button>
-    </div>
-""", unsafe_allow_html=True)
-
 # Tutorial
 if st.session_state.show_tutorial:
     with st.sidebar:
