@@ -2133,43 +2133,8 @@ with st.container():
             height=400,
             key="final_prompt"
         )
-
     
-    
-    # 특정 버튼만 스타일링할 CSS 추가
-    st.markdown("""
-        <style>
-        /* Custom 버튼 스타일 */
-        #custom-button {
-            font-family: 'Pretendard', sans-serif; /* 글씨체 */
-            font-size: 18px; /* 글씨 크기 */
-            font-weight: 600;
-            color: #ffffff; /* 글씨 색상 */
-            background-color: #10a37f; /* 초록색 */
-            border-radius: 8px; /* 모서리 둥글게 */
-            border: none;
-            padding: 14px 24px;
-            cursor: pointer;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-            transition: all 0.2s ease-in-out;
-            text-align: center;
-        }
-    
-        #custom-button:hover {
-            background-color: #0e8d6d; /* 호버 시 색상 변경 */
-            box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
-            transform: translateY(-2px);
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    # 커스텀 버튼 UI
-    st.markdown("""
-        <button id="custom-button" onclick="document.getElementById('hidden-button').click()">🎨 광고 카피 생성</button>
-    """, unsafe_allow_html=True)
-
-    
-    if st.button("🎨 광고 카피 생성", key="hidden-button", use_container_width=True):
+    if st.button("🎨 광고 카피 생성", use_container_width=True):
         if not selected_region or not selected_generation:
             st.error("지역과 세대를 선택해주세요!")
         else:
