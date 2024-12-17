@@ -1971,7 +1971,49 @@ if 'scoring_config' not in st.session_state:
 if 'evaluator' not in st.session_state:
     st.session_state.evaluator = AdCopyEvaluator(st.session_state.scoring_config)
 
+# Pretendard 폰트 및 버튼 스타일 적용
+st.markdown("""
+    <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
+    /* 버튼 스타일 */
+    .custom-button {
+        font-family: "Pretendard", sans-serif;
+        font-size: 18px;
+        font-weight: 600;
+        color: #ffffff;
+        background-color: #10a37f;
+        padding: 14px 24px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        width: 100%; /* 버튼 가로 길이를 부모 컨테이너에 맞춤 */
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease-in-out;
+        text-align: center;
+        outline: none;
+    }
+
+    .custom-button:hover {
+        background-color: #0e8d6d;
+        box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
+        transform: translateY(-2px);
+    }
+
+    .custom-button:active {
+        background-color: #0c7a5e;
+        transform: translateY(0);
+    }
+
+    </style>
+""", unsafe_allow_html=True)
+
+# 버튼 생성 및 이벤트 연결
+st.markdown("""
+    <div style="text-align: center;">
+        <button class="custom-button" onclick="document.getElementById('adgen-button').click()">🎨 광고 카피 생성</button>
+    </div>
+""", unsafe_allow_html=True)
 
 # Tutorial
 if st.session_state.show_tutorial:
@@ -2066,7 +2108,7 @@ with st.container():
         st.markdown(base_structure)
 
     # 외부 데이터와 연결된 참고 문서 (접기 가능)
-    with st.expander("Context Data Hub: 여행지 메타데이터 라이브러리", expanded=False):
+    with st.expander("📄 Context Data Hub: 여행지 메타데이터 라이브러리", expanded=False):
         edited_docs = f"""
 ### 지역 정보
 {DOCS["region"].get(selected_region, "지역 정보가 없습니다.")}
@@ -2088,7 +2130,7 @@ with st.container():
         )
 
     # 요구사항 (접기 가능)
-    with st.expander("Task Constraints: 감성 카피 최적화 요구사항", expanded=False):
+    with st.expander("⚙️ Task Constraints: 감성 카피 최적화 요구사항", expanded=False):
         requirements = """
 1. 세대와 MBTI 특성을 반영해 독자의 성향에 맞는 메시지를 작성하세요.
 2. 여행지가 독자에게 가져올 긍정적 변화와 감정적 연결을 강조하세요.
@@ -2099,7 +2141,7 @@ with st.container():
         st.markdown(requirements)
 
     # 참고 예시 (접기 가능)
-    with st.expander("Few-Shot Prompting: 감성 카피 예시 전략", expanded=False):
+    with st.expander("✨ Few-Shot Prompting: 감성 카피 예시 전략", expanded=False):
         example_copies = [
             "**카피**: 어른은 그렇게 강하지 않다.\n**설명**: 서로의 약함을 품을 때 비로소 강해지는 곳, 이 도시는 그런 당신을 위한 쉼터입니다.",
             "**카피**: 인생을 세 단어로 말하면, Boy Meets Girl.\n**설명**: 사랑이 시작된 이곳, 이 작은 거리가 당신의 이야기를 기다리고 있습니다.",
@@ -2119,7 +2161,7 @@ with st.container():
         )
 
     # 최종 프롬프트 미리보기 및 수정 (접기 가능)
-    with st.expander("Final Prompt Output: 최종 카피 프롬프트 미리보", expanded=False):
+    with st.expander("📝 Final Prompt Output: 최종 카피 프롬프트 미리보기", expanded=False):
         final_prompt = f"{base_structure}\n\n{edited_docs}\n\n요구사항:\n{requirements}\n\n참고 예시:\n{edited_copies}"
         edited_prompt = st.text_area(
             "프롬프트 직접 수정",
@@ -2130,7 +2172,8 @@ with st.container():
 
     
     # 광고 카피 생성 버튼
-    if st.button("🎨 광고 카피 생성", use_container_width=True):
+    #if st.button("🎨 광고 카피 생성", use_container_width=True):
+    if st.button("실제 동작 버튼", key="adgen-button", use_container_width=True):
         if not selected_region or not selected_generation:
             st.error("지역과 세대를 선택해주세요!")
         else:
