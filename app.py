@@ -2138,44 +2138,43 @@ with st.container():
     # 광고 카피 생성 버튼
     #if st.button("🎨 광고 카피 생성", use_container_width=True):
 
-    # Pretendard 폰트 및 버튼 스타일 적용
+    
+    # 특정 버튼만 스타일 적용하는 CSS
     st.markdown("""
         <style>
-        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-    
-        /* 버튼 스타일 */
         .custom-button {
-            font-family: "Pretendard", sans-serif;
-            font-size: 18px;
-            font-weight: 600;
-            color: #ffffff;
-            background-color: #10a37f;
-            padding: 14px 24px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%; /* 버튼 가로 길이를 부모 컨테이너에 맞춤 */
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-            transition: all 0.2s ease-in-out;
-            text-align: center;
-            outline: none;
+            font-family: 'Pretendard', sans-serif; /* 폰트 스타일 */
+            font-size: 18px; /* 글씨 크기 */
+            font-weight: 600; /* 글씨 두께 */
+            color: #ffffff; /* 글씨 색상 */
+            background-color: #10a37f; /* 버튼 색상 */
+            border-radius: 8px; /* 모서리 둥글게 */
+            border: none; /* 테두리 제거 */
+            padding: 14px 24px; /* 버튼 내부 여백 */
+            transition: all 0.2s ease-in-out; /* 부드러운 효과 */
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* 그림자 효과 */
+            cursor: pointer; /* 마우스 포인터 변경 */
         }
     
         .custom-button:hover {
-            background-color: #0e8d6d;
-            box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
-            transform: translateY(-2px);
+            background-color: #0e8d6d; /* 호버 시 색상 */
+            box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2); /* 호버 시 그림자 */
+            transform: translateY(-2px); /* 버튼 떠오르는 효과 */
         }
-    
-        .custom-button:active {
-            background-color: #0c7a5e;
-            transform: translateY(0);
-        }
-    
         </style>
     """, unsafe_allow_html=True)
     
-    if st.button("🎨 광고 카피 생성", key="adgen-button", use_container_width=True):
+    # 커스텀 버튼만 특정 클래스 적용
+    custom_button_html = """
+        <button class="custom-button" onclick="document.getElementById('hidden-button').click()">
+            🎨 광고 카피 생성
+        </button>
+    """
+    
+    # HTML 버튼 표시
+    st.markdown(custom_button_html, unsafe_allow_html=True)
+    
+    if st.button("🎨 광고 카피 생성", key="hidden-button", use_container_width=True):
         if not selected_region or not selected_generation:
             st.error("지역과 세대를 선택해주세요!")
         else:
