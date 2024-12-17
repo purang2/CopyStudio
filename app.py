@@ -2173,7 +2173,7 @@ with st.container():
     
     # 광고 카피 생성 버튼
     #if st.button("🎨 광고 카피 생성", use_container_width=True):
-    if st.button("실제 동작 버튼", key="adgen-button", use_container_width=True):
+    if st.button("🎨 광고 카피 생성", key="adgen-button", use_container_width=True):
         if not selected_region or not selected_generation:
             st.error("지역과 세대를 선택해주세요!")
         else:
