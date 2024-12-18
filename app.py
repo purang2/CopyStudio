@@ -25,9 +25,8 @@ import re
 
 # Page config must be the first Streamlit command
 st.set_page_config(
-    page_title="명소를 돋보이게 하는 AI 카피라이터 - Copybara", 
-    page_icon="🏞️", 
-    layout="wide"
+    page_title="COPYBARA - 국내 명소 AI 카피라이터", 
+    page_icon="🏞️"
 )
 
 
