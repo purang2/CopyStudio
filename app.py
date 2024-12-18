@@ -1998,8 +1998,8 @@ import pandas as pd
 
 
 TUTO  ="""
-👋 처음 오셨나요?
             
+            👋 처음 오셨나요?
             1️⃣ 지역과 세대를 선택하세요  
             2️⃣ 계절과 MBTI를 선택할 수 있습니다 (선택사항)  
             3️⃣ 생성된 프롬프트를 손쉽게 검토/수정하세요  
@@ -2012,7 +2012,7 @@ TUTO  ="""
 def stream_data():
     for word in TUTO.split(" "):
         yield word + " "
-        time.sleep(0.02)
+        time.sleep(0.06)
 
 # Tutorial
 if st.button("😸 카피바라에게 인사하기 : 안녕 카피바라!", use_container_width=True):
