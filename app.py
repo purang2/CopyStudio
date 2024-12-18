@@ -1990,10 +1990,10 @@ if 'scoring_config' not in st.session_state:
 if 'evaluator' not in st.session_state:
     st.session_state.evaluator = AdCopyEvaluator(st.session_state.scoring_config)
 
-# Tutorial
-if st.session_state.show_tutorial:
-    st.info("""
-            👋 처음 오셨나요?
+
+
+TUTO  ="""
+👋 처음 오셨나요?
             
             1️⃣ 지역과 세대를 선택하세요  
             2️⃣ 계절과 MBTI를 선택할 수 있습니다 (선택사항)  
@@ -2001,10 +2001,28 @@ if st.session_state.show_tutorial:
             4️⃣ 광고 카피를 생성하고 결과를 분석하세요  
             
             🎯 좌측 메뉴바를 켜서 ('<'버튼 클릭) 프롬프트를 개선하며 
-            더 좋은 결과를 만들어보세요!  
-            """)
-    if st.button("알겠습니다!", use_container_width=True):
-        st.session_state.show_tutorial = False
+            더 좋은 결과를 만들어보세요! 
+"""
+
+def stream_data():
+    for word in TUTO.split(" "):
+        yield word + " "
+        time.sleep(0.02)
+
+    yield pd.DataFrame(
+        np.random.randn(5, 10),
+        columns=["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
+    )
+
+    for word in TUTO.split(" "):
+        yield word + " "
+        time.sleep(0.02)
+
+
+# Tutorial
+if st.button("카피바라에게 인사하기 : 안녕 카피바라!"):
+    st.write_stream(stream_data)
+    
 
 
 
