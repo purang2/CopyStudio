@@ -2011,7 +2011,7 @@ if st.session_state.show_tutorial:
 
 with st.container():
     
-    st.subtitle("🎯 타겟 설정")
+    st.subheader("🎯 타겟 설정",divider="blue")
     
     selected_region = st.selectbox(
         "지역 선택",
