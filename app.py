@@ -2003,8 +2003,8 @@ if st.session_state.show_tutorial:
             🎯 좌측 메뉴바를 켜서 ('<'버튼 클릭) 프롬프트를 개선하며 
             더 좋은 결과를 만들어보세요!  
             """)
-        if st.button("알겠습니다!", use_container_width=True):
-            st.session_state.show_tutorial = False
+    if st.button("알겠습니다!", use_container_width=True):
+        st.session_state.show_tutorial = False
 
 
 
