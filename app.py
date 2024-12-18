@@ -25,7 +25,7 @@ import re
 
 # Page config must be the first Streamlit command
 st.set_page_config(
-    page_title="COPYBARA - 국내 명소 AI 카피라이터", 
+    page_title="CopyBara - 국내 명소 AI 카피라이터", 
     page_icon="🏞️"
 )
 
@@ -50,11 +50,8 @@ st.markdown("""
 <div class="header-title">
     <span class="copybara-title">🏞️ Copybara - 국내 명소를 빛내는 AI 카피라이터</span>
 </div>
+<p class="sub-header">창의적이고 감성적인 카피로 당신의 대한민국 관광지를 더 특별하게 만들어드립니다</p>
 """, unsafe_allow_html=True)
-
-
-st.subheader("창의적이고 감성적인 카피로 당신의 대한민국 관광지를 더 특별하게 만들어드립니다!", divider="blue")
-
 
 #image = Image.open("image/copybara_logo2.png")
 image = Image.open("image/copybara_santa_logo.png")
