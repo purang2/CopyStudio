@@ -31,7 +31,22 @@ st.set_page_config(
 )
 
 # 앱 제목
-st.title("🐾 Copybara - 광고카피 문구 생성 AI")
+st.markdown("""
+<style>
+    .header-title {
+        font-size: 2.5em;
+        font-weight: bold;
+        text-align: center;
+    }
+    .sub-header {
+        font-size: 1.2em;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+</style>
+<h1 class="header-title">🐾Copybara - 광고 카피 생성 AI</h1>
+<p class="sub-header">당신만의 국내 명소 광고 카피를 감성적이고 창의적으로 변신시키는 AI 도우미</p>
+""", unsafe_allow_html=True)
 
 
 #image = Image.open("image/copybara_logo2.png")
