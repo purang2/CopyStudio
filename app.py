@@ -2051,7 +2051,7 @@ with st.container():
         """, unsafe_allow_html=True)
 
     # 기본 프롬프트 구조 (접기 가능)
-    with st.expander("📝 Prompt Blueprint: 감성 카피 생성 핵심 프롬프트 구", expanded=False):
+    with st.expander("📝 Prompt Blueprint: 감성 카피 생성 핵심 프롬프트", expanded=False):
         base_structure = """당신은 맞춤형 감성 카피를 창작하는 숙련된 카피라이터입니다. 
 아래 제공된 정보를 바탕으로 특정 여행지의 매력과 경험을 감성적으로 표현하세요.
 
