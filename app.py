@@ -2020,7 +2020,7 @@ def stream_data():
 
 
 # Tutorial
-if st.button("카피바라에게 인사하기 : 안녕 카피바라!"):
+if st.button("😸 카피바라에게 인사하기 : 안녕 카피바라!", use_container_width=True):
     st.write_stream(stream_data)
     
 
