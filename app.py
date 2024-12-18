@@ -1992,6 +1992,11 @@ if 'evaluator' not in st.session_state:
 
 
 
+import time
+import numpy as np
+import pandas as pd
+
+
 TUTO  ="""
 👋 처음 오셨나요?
             
@@ -2008,16 +2013,6 @@ def stream_data():
     for word in TUTO.split(" "):
         yield word + " "
         time.sleep(0.02)
-
-    yield pd.DataFrame(
-        np.random.randn(5, 10),
-        columns=["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
-    )
-
-    for word in TUTO.split(" "):
-        yield word + " "
-        time.sleep(0.02)
-
 
 # Tutorial
 if st.button("😸 카피바라에게 인사하기 : 안녕 카피바라!", use_container_width=True):
