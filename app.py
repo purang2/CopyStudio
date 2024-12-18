@@ -25,8 +25,8 @@ import re
 
 # Page config must be the first Streamlit command
 st.set_page_config(
-    page_title="광고카피 문구 생성 AI - Copybara", 
-    page_icon="🐾", 
+    page_title="명소를 돋보이게 하는 AI 카피라이터 - Copybara", 
+    page_icon="🏞️", 
     layout="wide"
 )
 
@@ -49,9 +49,9 @@ st.markdown("""
     }
 </style>
 <div class="header-title">
-    <span class="copybara-title">Copybara - AI 카피라이터 for 대한민국 관광명소</span>
+    <span class="copybara-title">🏞️ Copybara - 국내 명소를 빛내는 AI 카피라이터</span>
 </div>
-<p class="sub-header">당신만의 국내 명소를 광고 카피를 감성적이고 창의적으로 소개해주는 AI 도우미를 만나보세요</p>
+<p class="sub-header">창의적이고 감성적인 카피로 당신의 대한민국 관광지를 더 특별하게 만들어드립니다</p>
 """, unsafe_allow_html=True)
 
 
