@@ -51,7 +51,7 @@ st.markdown("""
 <div class="header-title">
     <span class="copybara-title">Copybara</span> - AI 카피라이터 for 국내 명소 여행지
 </div>
-<p class="sub-header">당신만의 국내 명소를 광고 카피를 감성적이고 창의적으로 소개해주는 AI 도우미</p>
+<p class="sub-header">당신만의 국내 명소를 광고 카피를 감성적이고 창의적으로 소개해주는 AI 도우미를 만나보세요</p>
 """, unsafe_allow_html=True)
 
 
