@@ -25,13 +25,13 @@ import re
 
 # Page config must be the first Streamlit command
 st.set_page_config(
-    page_title="광고카피 문구 생성 AI - Copybara", 
+    page_title="Copybara - 여행지 홍보 카피라이팅 문구 생성 AI", 
     page_icon="🐾", 
     layout="wide"
 )
 
 # 앱 제목
-st.title("🐾 Copybara - 광고카피 문구 생성 AI")
+st.title("🐾 Copybara - 여행지 홍보 카피라이팅 문구 생성 AI")
 
 
 #image = Image.open("copybara_logo2.png")
@@ -2125,7 +2125,8 @@ with st.container():
             height=400,
             key="final_prompt"
         )
-    
+
+    st.subheader("🎨 여행지 광고 카피라이팅 생성하기")
     if st.button("🎨 광고 카피 생성", use_container_width=True):
         if not selected_region or not selected_generation:
             st.error("지역과 세대를 선택해주세요!")
