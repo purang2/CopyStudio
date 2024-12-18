@@ -22,6 +22,7 @@ from metadata import SEASONS, PERSONA_CATEGORIES, CITY_COORDINATES, MBTI_GROUPS,
 from persona import PERSONAS
 from audio import generate_tts, play_audio
 from css import get_model_header_html, get_result_card_html, get_revision_card_html
+from personafunction import name_to_persona, transform_ad_copy, get_balanced_random_personas
 from prompt_design import create_adaptive_prompt, create_revision_prompt, handle_revision_results, generate_revision, generate_copy, display_performance_analysis
 from prompt_design import analyze_prompt_performance, extract_copy_and_description
 from visual_map import visualize_evaluation_results, display_model_result, create_map_with_ad_copies, get_persona_variation_card_html
