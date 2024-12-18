@@ -1992,15 +1992,16 @@ if 'evaluator' not in st.session_state:
 
 # Tutorial
 if st.session_state.show_tutorial:
-    st.info("""
+    st.echo("""
         👋 처음 오셨나요?
         
-        1️⃣ 지역과 세대를 선택하세요
-        2️⃣ 계절과 MBTI를 선택할 수 있습니다 (선택사항)
-        3️⃣ 생성된 프롬프트를 손쉽게 검토/수정하세요
-        4️⃣ 광고 카피를 생성하고 결과를 분석하세요
+        1️⃣ 지역과 세대를 선택하세요  
+        2️⃣ 계절과 MBTI를 선택할 수 있습니다 (선택사항)  
+        3️⃣ 생성된 프롬프트를 손쉽게 검토/수정하세요  
+        4️⃣ 광고 카피를 생성하고 결과를 분석하세요  
         
-        🎯 좌측 메뉴바를 켜서 ('<'버튼 클릭) 프롬프트를 개선하며 더 좋은 결과를 만들어보세요!
+        🎯 좌측 메뉴바를 켜서 ('<'버튼 클릭) 프롬프트를 개선하며 
+        더 좋은 결과를 만들어보세요!  
         """)
     if st.button("알겠습니다!", use_container_width=True):
         st.session_state.show_tutorial = False
