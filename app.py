@@ -898,7 +898,7 @@ class AdCopyEvaluator:
                 "detailed_scores": detailed_scores[:len(self.scoring_config.criteria)]
             }
         except Exception as e:
-            st.error(f"결과 파싱 중 오류 발생: {str(e)}")
+            st.error(f"아쉽게 이번엔 점수가 반영되지 못했어요.: {str(e)}")
             return {
                 "score": 0,
                 "reason": f"파싱 실패: {str(e)}",
