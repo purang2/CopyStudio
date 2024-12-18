@@ -1992,8 +1992,7 @@ if 'evaluator' not in st.session_state:
 
 # Tutorial
 if st.session_state.show_tutorial:
-    with st.echo():
-        st.info("""
+    st.info("""
             👋 처음 오셨나요?
             
             1️⃣ 지역과 세대를 선택하세요  
