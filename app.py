@@ -2031,36 +2031,6 @@ with st.sidebar:
             st.session_state.evaluator = AdCopyEvaluator(new_config)
             st.success("평가 설정이 업데이트되었습니다!")
 
-    st.title("🎯 타겟 설정")
-    
-    selected_region = st.selectbox(
-        "지역 선택",
-        options=[""] + sorted(DOCS["region"].keys()),  # 가나다 순 정렬
-        format_func=lambda x: "지역을 선택하세요" if x == "" else x
-    )
-    
-    selected_generation = st.selectbox(
-        "세대 선택",
-        options=[""] + sorted(DOCS["generation"].keys()),  # 가나다 순 정렬
-        format_func=lambda x: "세대를 선택하세요" if x == "" else x
-    )
-    
-    # 계절 선택 추가
-    selected_season = st.selectbox(
-        "계절 선택 (선택사항)",
-        options=[""] + sorted(SEASONS.keys()),  # 가나다 순 정렬
-        format_func=lambda x: "계절을 선택하세요" if x == "" else x
-    )
-        
-    include_mbti = st.checkbox("MBTI 특성 포함하기")
-    selected_mbti = None
-    if include_mbti:
-        selected_mbti = st.selectbox(
-            "MBTI 선택",
-            options=MBTI_TYPES,
-            help="선택한 MBTI 성향에 맞는 카피가 생성됩니다"
-        )
-
     st.subheader("💡 감성 여행 카피 생성을 위한 프롬프트 엔지니어링")
 
     # 프롬프트 에디터 영역
@@ -2071,7 +2041,7 @@ with st.sidebar:
         """, unsafe_allow_html=True)
 
     # 기본 프롬프트 구조 (접기 가능)
-    with st.expander("📝 Prompt Blueprint: 감성 카피 생성 핵심 프롬프트 구", expanded=False):
+    with st.expander("📝 Prompt Blueprint: 감성 카피 생성 핵심 프롬프트", expanded=False):
         base_structure = """당신은 맞춤형 감성 카피를 창작하는 숙련된 카피라이터입니다. 
 아래 제공된 정보를 바탕으로 특정 여행지의 매력과 경험을 감성적으로 표현하세요.
 
@@ -2150,89 +2120,35 @@ with st.sidebar:
 
 
 with st.container():
-    st.subheader("💡 감성 여행 카피 생성을 위한 프롬프트 엔지니어링")
-
-    # 프롬프트 에디터 영역
-    with st.expander("📌 프롬프트 작성 가이드 보기", expanded=False):
-        st.markdown("""
-        💡 사색적이고 감성적인 카피를 작성해 특정 여행지나 경험에 대한 관심을 이끌어내세요.
-        문서 내용은 접어두고 필요할 때 펼쳐볼 수 있습니다!
-        """, unsafe_allow_html=True)
-
-    # 기본 프롬프트 구조 (접기 가능)
-    with st.expander("📝 Prompt Blueprint: 감성 카피 생성 핵심 프롬프트 구", expanded=False):
-        base_structure = """당신은 맞춤형 감성 카피를 창작하는 숙련된 카피라이터입니다. 
-아래 제공된 정보를 바탕으로 특정 여행지의 매력과 경험을 감성적으로 표현하세요.
-
-💡 **목표**
-1. 독자의 세대와 MBTI 특성에 맞는 메시지를 작성하여 공감대를 형성하고 관심을 유도합니다.
-2. 여행지가 제공하는 구체적인 경험과 독자가 느낄 수 있는 변화를 철학적이고 감성적으로 묘사합니다.
-3. 한 문장의 카피와 짧은 설명을 함께 작성하세요. 반드시 아래 외에 아무것도 출력하지 마세요.
-   - **카피**: 여행지나 경험의 정서를 함축한 한 줄 메시지.
-   - **설명**: 카피의 맥락을 보완하는 짧고 감성적인 해설로 독자가 느낄 변화를 상상하게 만드세요."""
-        st.markdown(base_structure)
-
-    # 외부 데이터와 연결된 참고 문서 (접기 가능)
-    with st.expander("📄 Context Data Hub: 여행지 메타데이터 라이브러리", expanded=False):
-        edited_docs = f"""
-### 지역 정보
-{DOCS["region"].get(selected_region, "지역 정보가 없습니다.")}
-
-### 세대 특성
-{DOCS["generation"].get(selected_generation, "세대 정보가 없습니다.")}
-
-### MBTI 특성
-{DOCS["mbti"].get(selected_mbti, f"{selected_mbti} 정보를 찾을 수 없습니다.")}
-
-### 계절 특성
-{selected_season}의 특징을 반영합니다.
-"""
-        edited_docs = st.text_area(
-            "문서 내용 수정",
-            value=edited_docs,
-            height=300,
-            key="docs_editor"
-        )
-
-    # 요구사항 (접기 가능)
-    with st.expander("⚙️ Task Constraints: 감성 카피 최적화 요구사항", expanded=False):
-        requirements = """
-1. 세대와 MBTI 특성을 반영해 독자의 성향에 맞는 메시지를 작성하세요.
-2. 여행지가 독자에게 가져올 긍정적 변화와 감정적 연결을 강조하세요.
-3. 카피와 설명은 서로를 보완하며, 독립적으로도 매력적이어야 합니다.
-4. 짧고 강렬한 메시지와 감성적인 해설을 작성하세요.
-5. 기존 예시의 톤과 스타일을 유지하며, 추가 데이터에 따라 맞춤형 메시지를 제안하세요.
-"""
-        st.markdown(requirements)
-
-    # 참고 예시 (접기 가능)
-    with st.expander("✨ Few-Shot Prompting: 감성 카피 예시 전략", expanded=False):
-        example_copies = [
-            "**카피**: 어른은 그렇게 강하지 않다.\n**설명**: 서로의 약함을 품을 때 비로소 강해지는 곳, 이 도시는 그런 당신을 위한 쉼터입니다.",
-            "**카피**: 인생을 세 단어로 말하면, Boy Meets Girl.\n**설명**: 사랑이 시작된 이곳, 이 작은 거리가 당신의 이야기를 기다리고 있습니다.",
-            "**카피**: 인류는 달에 가서도 영어를 말한다.\n**설명**: 어떤 곳에서도 소통이 중요한 순간이 찾아옵니다.",
-            "**카피**: 누군가로 끝나지 마라.\n**설명**: 이 도시는 당신만의 이야기를 만들 기회를 제공합니다.",
-            "**카피**: 마흔살은 두번째 스무살.\n**설명**: 새로운 시작을 축하하는 여행지, 여기서 인생의 다음 장을 열어보세요.",
-            "**카피**: 기적은 우연을 가장해 나타난다.\n**설명**: 일상의 순간들이 특별해지는 이곳을 만나보세요.",
-            "**카피**: 뛰어난 팀에는 뛰어난 2인자가 있다.\n**설명**: 이 도시의 숨은 매력들이 당신을 돕는 동반자가 됩니다.",
-            "**카피**: 인생의 등장인물이 달라진다.\n**설명**: 이 여행지는 당신의 새로운 이야기를 위한 무대입니다."
-        ]
-
-        edited_copies = st.text_area(
-            "예시 수정/추가",
-            value="\n\n".join(example_copies),
-            height=400,
-            key="copy_examples"
-        )
-
-    # 최종 프롬프트 미리보기 및 수정 (접기 가능)
-    with st.expander("📝 Final Prompt Output: 최종 카피 프롬프트 미리보기", expanded=False):
-        final_prompt = f"{base_structure}\n\n{edited_docs}\n\n요구사항:\n{requirements}\n\n참고 예시:\n{edited_copies}"
-        edited_prompt = st.text_area(
-            "프롬프트 직접 수정",
-            value=final_prompt,
-            height=400,
-            key="final_prompt"
+    
+    st.title("🎯 타겟 설정")
+    
+    selected_region = st.selectbox(
+        "지역 선택",
+        options=[""] + sorted(DOCS["region"].keys()),  # 가나다 순 정렬
+        format_func=lambda x: "지역을 선택하세요" if x == "" else x
+    )
+    
+    selected_generation = st.selectbox(
+        "세대 선택",
+        options=[""] + sorted(DOCS["generation"].keys()),  # 가나다 순 정렬
+        format_func=lambda x: "세대를 선택하세요" if x == "" else x
+    )
+    
+    # 계절 선택 추가
+    selected_season = st.selectbox(
+        "계절 선택 (선택사항)",
+        options=[""] + sorted(SEASONS.keys()),  # 가나다 순 정렬
+        format_func=lambda x: "계절을 선택하세요" if x == "" else x
+    )
+        
+    include_mbti = st.checkbox("MBTI 특성 포함하기")
+    selected_mbti = None
+    if include_mbti:
+        selected_mbti = st.selectbox(
+            "MBTI 선택",
+            options=MBTI_TYPES,
+            help="선택한 MBTI 성향에 맞는 카피가 생성됩니다"
         )
     
     if st.button("🎨 광고 카피 생성", use_container_width=True):
