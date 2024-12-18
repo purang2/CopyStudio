@@ -30,7 +30,8 @@ st.set_page_config(
     layout="wide"
 )
 
-# 앱 제목
+
+# 중앙 정렬 및 Copybara 색상 스타일 적용
 st.markdown("""
 <style>
     .header-title {
@@ -38,14 +39,19 @@ st.markdown("""
         font-weight: bold;
         text-align: center;
     }
+    .copybara-title {
+        color: #FF6347; /* 다홍 빨간색 */
+    }
     .sub-header {
         font-size: 1.2em;
         text-align: center;
         margin-bottom: 20px;
     }
 </style>
-<h1 class="header-title">🐾Copybara - 광고 카피 생성 AI</h1>
-<p class="sub-header">당신만의 국내 명소 광고 카피를 감성적이고 창의적으로 변신시키는 AI 도우미</p>
+<div class="header-title">
+    <span class="copybara-title">Copybara</span> - AI 카피라이터 for 국내 명소 여행지
+</div>
+<p class="sub-header">당신만의 국내 명소를 광고 카피를 감성적이고 창의적으로 소개해주는 AI 도우미</p>
 """, unsafe_allow_html=True)
 
 
