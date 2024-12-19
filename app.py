@@ -2113,7 +2113,7 @@ with st.container():
         st.session_state["selected_region"] = selected_region_cleaned
         st.markdown(
             f"""
-            <p style='font-size:16px;'>🏞️🦫 선택된 지역은 <strong>{selected_region_cleaned} (Chuncheon)</strong>입니다. 
+            <p style='font-size:16px;'>🏞️🦫 선택된 지역은 <strong>{selected_region_cleaned}</strong>입니다. 
             <span style='color:#A0522D; font-weight:bold;'>멋진 여행 카피를 기대해보세요! (´㉨`)</span>
             </p>
             """,
