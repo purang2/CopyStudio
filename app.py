@@ -2108,12 +2108,15 @@ with st.container():
     )
     
     # 선택된 지역 정리 및 저장
-    selected_region_cleaned = selected_region.strip("***")
-    st.session_state["selected_region"] = selected_region_cleaned
-    
+    if selected_region is not None:
+        selected_region_cleaned = selected_region.strip("***")
+        st.session_state["selected_region"] = selected_region_cleaned
+        st.markdown(f"🏞️🦫 선택된 지역은 **{selected_region_cleaned}**입니다. 멋진 여행 카피를 기대해보세요! **(´㉨`)**")
+    else:        
+        selected_region_cleaned = "(미정)"
+        st.session_state["selected_region"] = selected_region
+        st.markdown(f"🏞️🦫 여행지를 아직 선택하지 않으셨군요. 여행지를 골라서 멋진 여행 카피를 기대해보세요! **(´㉨`)**")
         
-    # 선택 결과 출력
-    st.markdown(f"🏞️🦫 선택된 지역은 **{selected_region_cleaned}**입니다. 멋진 여행 카피를 기대해보세요! **(´㉨`)**")
 
             
     selected_generation = st.selectbox(
