@@ -2111,7 +2111,7 @@ with st.container():
     
         
     # 선택 결과 출력
-    st.write(f"선택된 지역은 {selected_region_cleaned}입니다. 멋진 여행을 준비해보세요! 🏞️")
+    st.write(f"🏞️🦫 선택된 지역은 **{selected_region_cleaned}**입니다. 멋진 여행 카피를 기대해보세요! **(´㉨`) **")
     
             
     selected_generation = st.selectbox(
