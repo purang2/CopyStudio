@@ -2095,17 +2095,21 @@ with st.container():
     # 지역 목록 가져오기 (가나다 순 정렬)
     region_options = sorted(DOCS["region"].keys())
     
-    # 모든 옵션을 고정적으로 레인보우 스타일로 표시
+    # 모든 옵션에 볼드 스타일 적용
+    styled_options = [f"***{region}***" for region in region_options]
+    
+    # 라디오 버튼 생성
     selected_region = st.radio(
         "지역 선택",
-        options=[f":rainbow[{region}]" for region in region_options],  # 모든 옵션에 레인보우 적용
-        captions=radio_city_captions  # 캡션 추가
+        options=styled_options,  # 모든 옵션을 볼드 처리
+        captions=radio_city_captions,
     )
     
     # 선택된 지역 정리 및 저장
-    selected_region_cleaned = selected_region.strip(":rainbow[]")
+    selected_region_cleaned = selected_region.strip("***")
     st.session_state["selected_region"] = selected_region_cleaned
     
+        
     # 선택 결과 출력
     st.write(f"선택된 지역은 {selected_region_cleaned}입니다. 멋진 여행을 준비해보세요! 🏞️")
     
