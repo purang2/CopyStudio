@@ -2103,6 +2103,8 @@ with st.container():
         "지역 선택",
         options=styled_options,  # 모든 옵션을 볼드 처리
         captions=radio_city_captions,
+        index=None,
+        horizontal=True,
     )
     
     # 선택된 지역 정리 및 저장
@@ -2111,8 +2113,8 @@ with st.container():
     
         
     # 선택 결과 출력
-    st.write(f"🏞️🦫 선택된 지역은 **{selected_region_cleaned}**입니다. 멋진 여행 카피를 기대해보세요! **(´㉨`) **")
-    
+    st.markdown(f"🏞️🦫 선택된 지역은 **{selected_region_cleaned}**입니다. 멋진 여행 카피를 기대해보세요! **(´㉨`)**")
+
             
     selected_generation = st.selectbox(
         "세대 선택",
