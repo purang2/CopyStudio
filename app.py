@@ -62,7 +62,7 @@ resized_image = image.resize((new_width, new_height), Image.LANCZOS)
 
 #st.image(resized_image)
 #st.video("image/copybara_santa_video_out.mp4", loop=True, autoplay=True)
-st.video("image/copybara_santa_video_audio.mp4", loop=True, autoplay=True)
+st.video("image/copybara_santa_video_audio.mp4", loop=False, autoplay=True)
 
 
 
