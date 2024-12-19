@@ -55,15 +55,20 @@ st.markdown("""
 
 #image = Image.open("image/copybara_logo2.png")
 image = Image.open("image/copybara_santa_logo.png")
-
 new_width = 640  # 원하는 너비로 조정
 width_percent = (new_width / float(image.size[0]))
 new_height = int((float(image.size[1]) * float(width_percent)))
 resized_image = image.resize((new_width, new_height), Image.LANCZOS)
+
 st.image(resized_image)
 
+st.video("image/copybara_santa_video_out.mp4", loop=True, autoplay=True)
+
+
+
+
+
 # Initialize API keys from Streamlit secrets
-#openai.api_key = st.secrets["chatgpt"]
 genai.configure(api_key=st.secrets["gemini"])
 anthropic = Anthropic(api_key=st.secrets["claude"])
 client = OpenAI(api_key=st.secrets["chatgpt"])  # API 키 입력
@@ -71,8 +76,6 @@ client = OpenAI(api_key=st.secrets["chatgpt"])  # API 키 입력
 
 
 #챗-제-클 순서 오와열
-#'gemini-1.5-pro-exp-0827'
-#'gemini-1.5-pro-002'
 model_zoo = ['gpt-4o',
              'gemini-1.5-pro-002',
              'claude-3-5-haiku-20241022']
