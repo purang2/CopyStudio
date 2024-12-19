@@ -2112,9 +2112,14 @@ with st.container():
         selected_region_cleaned = selected_region.strip("***")
         st.session_state["selected_region"] = selected_region_cleaned
         st.markdown(
-        f"<p style='font-size:16px;'>🏞️🦫 선택된 지역은 <strong>{selected_region_cleaned}</strong>입니다. 멋진 여행 카피를 기대해보세요! <strong>(´㉨`)</strong></p>",
-        unsafe_allow_html=True
+            f"""
+            <p style='font-size:16px;'>🏞️🦫 선택된 지역은 <strong>{selected_region_cleaned} (Chuncheon)</strong>입니다. 
+            <span style='color:#A0522D; font-weight:bold;'>멋진 여행 카피를 기대해보세요! (´㉨`)</span>
+            </p>
+            """,
+            unsafe_allow_html=True
         )
+
     else:        
         selected_region_cleaned = "(미정)"
         st.session_state["selected_region"] = selected_region
