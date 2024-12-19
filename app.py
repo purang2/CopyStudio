@@ -2099,7 +2099,6 @@ with st.container():
     selected_region = st.radio(
         "지역 선택",
         options=[f":rainbow[{region}]" for region in region_options],  # 모든 옵션에 레인보우 적용
-        format_func=lambda x: x.strip(":rainbow[]"),  # 레인보우 스타일 제거하여 표시
         captions=radio_city_captions  # 캡션 추가
     )
     
