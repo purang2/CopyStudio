@@ -2092,26 +2092,23 @@ with st.container():
     
     st.subheader("🎯 타겟 설정",divider="blue")
     
-    
     region_options = sorted(DOCS["region"].keys())
-    # 선택된 지역 동적 강조 표시
+
+    if "selected_region" not in st.session_state:
+        st.session_state["selected_region"] = region_options[0]  # 기본값: 첫 번째 지역
+    
     selected_region = st.radio(
         "지역 선택",
-        options=[f":rainbow[{region}]" if region == st.session_state.get("selected_region", "") else f"***{region}***" for region in region_options],
-        format_func=lambda x: "지역을 선택하세요" if x == "" else x,
-        captions=radio_city_captions,
+        options=region_options,
+        index=region_options.index(st.session_state["selected_region"]),  # 저장된 값으로 초기화
+        format_func=lambda x: x  # 옵션 표시 방식
     )
     
-    # 선택된 지역 정리 및 저장
-    selected_region_cleaned = selected_region.strip(":rainbow[]").strip("***")
-    st.session_state["selected_region"] = selected_region_cleaned
+    if selected_region != st.session_state["selected_region"]:
+        st.session_state["selected_region"] = selected_region
     
-    # 선택 결과 출력
-    if selected_region_cleaned:
-        st.write(f"선택된 지역은 {selected_region_cleaned}입니다. 멋진 여행을 준비해보세요! 🏞️")
-    else:
-        st.write("지역을 선택해주세요.")
-        
+    st.write(f"선택된 지역은 {st.session_state['selected_region']}입니다. 멋진 여행을 준비해보세요! 🏞️")
+            
     selected_generation = st.selectbox(
         "세대 선택",
         options=[""] + sorted(DOCS["generation"].keys()),  # 가나다 순 정렬
