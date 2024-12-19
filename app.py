@@ -60,9 +60,9 @@ width_percent = (new_width / float(image.size[0]))
 new_height = int((float(image.size[1]) * float(width_percent)))
 resized_image = image.resize((new_width, new_height), Image.LANCZOS)
 
-st.image(resized_image)
-
-st.video("image/copybara_santa_video_out.mp4", loop=True, autoplay=True)
+#st.image(resized_image)
+#st.video("image/copybara_santa_video_out.mp4", loop=True, autoplay=True)
+st.video("image/copybara_santa_video_audio.mp4", loop=True, autoplay=True)
 
 
 
