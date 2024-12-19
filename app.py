@@ -2092,22 +2092,24 @@ with st.container():
     
     st.subheader("🎯 타겟 설정",divider="blue")
     
+    # 지역 목록 가져오기 (가나다 순 정렬)
     region_options = sorted(DOCS["region"].keys())
-
-    if "selected_region" not in st.session_state:
-        st.session_state["selected_region"] = region_options[0]  # 기본값: 첫 번째 지역
     
+    # 모든 옵션을 고정적으로 레인보우 스타일로 표시
     selected_region = st.radio(
         "지역 선택",
-        options=region_options,
-        index=region_options.index(st.session_state["selected_region"]),  # 저장된 값으로 초기화
-        format_func=lambda x: x  # 옵션 표시 방식
+        options=[f":rainbow[{region}]" for region in region_options],  # 모든 옵션에 레인보우 적용
+        format_func=lambda x: x.strip(":rainbow[]"),  # 레인보우 스타일 제거하여 표시
+        captions=radio_city_captions  # 캡션 추가
     )
     
-    if selected_region != st.session_state["selected_region"]:
-        st.session_state["selected_region"] = selected_region
+    # 선택된 지역 정리 및 저장
+    selected_region_cleaned = selected_region.strip(":rainbow[]")
+    st.session_state["selected_region"] = selected_region_cleaned
     
-    st.write(f"선택된 지역은 {st.session_state['selected_region']}입니다. 멋진 여행을 준비해보세요! 🏞️")
+    # 선택 결과 출력
+    st.write(f"선택된 지역은 {selected_region_cleaned}입니다. 멋진 여행을 준비해보세요! 🏞️")
+    
             
     selected_generation = st.selectbox(
         "세대 선택",
